@@ -79,7 +79,7 @@ void AtlasLoader::loadAtlas(const std::string_view filePath) {
     }
 }
 
-Bounds AtlasLoader::getBounds(const std::string_view name) {
+Bounds AtlasLoader::getBounds(const std::string_view name) const {
     auto it = atlasMap.find(std::string(name));
     if (it != atlasMap.end()) {
         return it->second;
@@ -91,7 +91,8 @@ Bounds AtlasLoader::getBounds(const std::string_view name) {
 std::shared_ptr<Util::Image> AtlasLoader::getImage(const std::string_view name) {
     // 1. 快取命中直接回傳
     const std::string key(name);
-    if (m_Cache.count(key)) return m_Cache[key];
+    const auto cacheIt = m_Cache.find(key);
+    if (cacheIt != m_Cache.end()) return cacheIt->second;
 
     // 2. 取得 bounds
     Bounds b = getBounds(name); // 若找不到會拋例外

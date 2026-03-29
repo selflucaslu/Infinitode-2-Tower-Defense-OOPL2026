@@ -18,7 +18,7 @@ struct Bounds {
 class AtlasLoader {
 public:
     void loadAtlas(const std::string_view filePath);
-    Bounds getBounds(const std::string_view name);
+    Bounds getBounds(const std::string_view name) const;
     std::shared_ptr<Util::Image> getImage(const std::string_view name);
 private:
     std::string atlasImagePath;

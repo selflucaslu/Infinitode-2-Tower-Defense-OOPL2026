@@ -5,7 +5,7 @@
 
 class Tile {
 public:
-    Tile(const std::string spriteId);
+    Tile(std::string spriteId);
     std::string getSpriteId() const;
     bool getIsWalkable() const;
     bool getIsBuildable() const;
