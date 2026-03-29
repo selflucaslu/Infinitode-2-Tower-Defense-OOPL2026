@@ -1,0 +1,113 @@
+#include "map/GridMap.hpp"
+
+#include <fstream>
+#include <sstream>
+#include <stdexcept>
+
+
+GridMap::GridMap(std::string_view MAP_FILE_PATH) : MAP_FILE_PATH(MAP_FILE_PATH) {
+    std::ifstream file(MAP_FILE_PATH.data());
+
+    if (!file.is_open()) {
+        throw std::runtime_error("無法打開地圖文件: " + std::string(MAP_FILE_PATH));
+    }
+
+    std::string line;
+    bool isFirstLine = true;
+    bool isSecondLine = true;
+    bool isThirdLine = true;
+    int heightCounter = 0; // 用於計算地圖的高度
+    int widthCounter = -1;
+
+    while (std::getline(file, line)) {
+        // 讀取地圖文件的前三行，分別是地圖名稱、描述和難度
+        if (isFirstLine) {
+            mapName = line;
+            isFirstLine = false;
+            continue;
+        }
+        if (isSecondLine) {
+            mapDescription = line;
+            isSecondLine = false;
+            continue;
+        }
+        if (isThirdLine) {
+            mapDifficulty = line;
+            isThirdLine = false;
+            continue;
+        }
+
+        if (line.empty()) {
+            continue;
+        }
+
+        std::istringstream iss(line);  // 使用 istringstream 來解析每行的內容
+        std::string tileType;  // 用於存儲從每行解析出的 tile 類型
+        int currentRowWidth = 0;
+        while (std::getline(iss, tileType, ',')) {
+            tilesArray.emplace_back(tileType); // emplace_back(arg): 直接用 arg 呼叫 Tile(arg) 在 vector 內原地建構
+            currentRowWidth++;
+        }
+
+        if (widthCounter == -1) {
+            widthCounter = currentRowWidth;
+        } else if (currentRowWidth != widthCounter) {
+            throw std::runtime_error("地圖每一行欄數不一致");
+        }
+        heightCounter++; // 每讀取一行地圖數據，增加高度計數器
+    }
+
+    if (heightCounter == 0) throw std::runtime_error("地圖文件中沒有地圖數據");
+    mapHeight = heightCounter; // 最終的高度就是讀取的地圖數據行數
+    mapWidth = widthCounter;
+
+    atlasLoader.loadAtlas("assets/combined.atlas");
+    tileObjects.reserve(tilesArray.size());
+
+    const auto firstImage = atlasLoader.getImage(tilesArray.front().getSpriteId()); // 取第一格當作基準尺寸
+    const auto firstSize = firstImage->GetSize(); // PTSD API: 取得圖片原始寬高
+    constexpr float mapScale = 0.3F; // 地圖整體縮放倍率
+    const float cellW = firstSize.x * mapScale; // 每格在世界座標的寬（縮放後）
+    const float cellH = firstSize.y * mapScale; // 每格在世界座標的高（縮放後）
+    const float startX = -(mapWidth * cellW) * 0.5F + cellW * 0.5F; // 從左邊第一格中心開始，讓整張圖置中
+    const float startY = -(mapHeight * cellH) * 0.5F + cellH * 0.5F; // 從下邊第一格中心開始，讓整張圖置中
+
+    for (int y = 0; y < mapHeight; ++y) {
+        for (int x = 0; x < mapWidth; ++x) {
+            auto obj = std::make_shared<Util::GameObject>();
+            auto image = atlasLoader.getImage(getTile(x, y).getSpriteId());
+            obj->SetDrawable(image);
+            obj->m_Transform.scale = {mapScale, mapScale};
+            obj->m_Transform.translation = {
+                startX + x * cellW, // x 方向照欄位往右排
+                startY + y * cellH // world y 向上，y=0 是最下方
+            };
+            mapRoot.AddChild(obj);
+            tileObjects.emplace_back(obj);
+        }
+    }
+}
+
+std::string GridMap::getMapName() const {
+    return mapName;
+}
+
+std::string GridMap::getMapDescription() const {
+    return mapDescription;
+}
+
+std::string GridMap::getMapDifficulty() const {
+    return mapDifficulty;
+}
+
+Tile GridMap::getTile(int x, int y) const {
+    if (x < 0 || x >= mapWidth || y < 0 || y >= mapHeight) {
+        throw std::out_of_range("座標超出地圖範圍");
+    }
+    const int row = mapHeight - 1 - y; // world y -> 檔案 row（CSV 是由上往下）
+    return tilesArray[row * mapWidth + x];
+}
+
+void GridMap::displayMap() {
+    mapRoot.Update();
+}

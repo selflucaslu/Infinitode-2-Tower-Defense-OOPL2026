@@ -1,18 +1,27 @@
 #include "App.hpp"
 
-#include "Util/Image.hpp"
 #include "Util/Input.hpp"
 #include "Util/Keycode.hpp"
 #include "Util/Logger.hpp"
+#include "map/GridMap.hpp"
+
+#include <memory>
+
+namespace {
+std::unique_ptr<GridMap> g_Map;
+}
 
 void App::Start() {
     LOG_TRACE("Start");
+    g_Map = std::make_unique<GridMap>("assets/maps/map_01.csv");
+
     m_CurrentState = State::UPDATE;
 }
 
 void App::Update() {
-    
-    //TODO: do your things here and delete this line <3
+    if (g_Map) {
+        g_Map->displayMap();
+    }
     
     /*
      * Do not touch the code below as they serve the purpose for
