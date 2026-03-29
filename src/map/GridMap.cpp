@@ -20,6 +20,7 @@ GridMap::GridMap(std::string_view MAP_FILE_PATH, AtlasLoader& atlas)
     int heightCounter = 0; // 用於計算地圖的高度
     int widthCounter = -1;
 
+    // -------------------- 讀取地圖資料 --------------------
     while (std::getline(file, line)) {
         if (!line.empty() && line.back() == '\r') {
             line.pop_back();
@@ -69,6 +70,7 @@ GridMap::GridMap(std::string_view MAP_FILE_PATH, AtlasLoader& atlas)
     mapHeight = heightCounter; // 最終的高度就是讀取的地圖數據行數
     mapWidth = widthCounter;
 
+    // -------------------- 開始繪製地圖 --------------------
     tileObjects.reserve(tilesArray.size());
 
     const auto firstImage = this->atlasLoader.getImage(tilesArray.front().getSpriteId()); // 取第一格當作基準尺寸
