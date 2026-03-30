@@ -10,12 +10,13 @@
 
 namespace {
 std::unique_ptr<GridMap> g_Map;
-AtlasLoader g_AtlasLoader;
+std::shared_ptr<AtlasLoader> g_AtlasLoader;
 }
 
 void App::Start() {
     LOG_TRACE("Start");
-    g_AtlasLoader.loadAtlas("assets/combined.atlas");
+    g_AtlasLoader = std::make_shared<AtlasLoader>();
+    g_AtlasLoader->loadAtlas("assets/combined.atlas");
     g_Map = std::make_unique<GridMap>("assets/maps/map_01.csv", g_AtlasLoader);
 
     m_CurrentState = State::UPDATE;
@@ -38,10 +39,8 @@ void App::Update() {
         g_Map->displayMap();
     }
     
-    /*
-     * Do not touch the code below as they serve the purpose for
-     * closing the window.
-     */
+    // Do not touch the code below as they serve the purpose for
+    // closing the window.
     if (Util::Input::IsKeyUp(Util::Keycode::ESCAPE) ||
         Util::Input::IfExit()) {
         m_CurrentState = State::END;

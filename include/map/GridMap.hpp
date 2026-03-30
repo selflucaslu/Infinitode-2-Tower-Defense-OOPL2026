@@ -5,6 +5,7 @@
 #include "Util/Renderer.hpp"
 #include "utils/AtlasLoader.hpp"
 
+#include <memory>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -12,7 +13,7 @@
 
 class GridMap {
 public:
-    GridMap(std::string_view MAP_FILE_PATH, AtlasLoader& atlas);
+    GridMap(std::string_view MAP_FILE_PATH, std::shared_ptr<AtlasLoader> atlas);
     std::string getMapName() const;
     std::string getMapDescription() const;
     std::string getMapDifficulty() const;
@@ -31,7 +32,7 @@ private:
     int mapWidth;                    // 地圖寬度
     int mapHeight;                   // 地圖高度
     std::vector<Tile> tilesArray;    // 用於存儲地圖上每個 tile 的一維陣列
-    AtlasLoader& atlasLoader;
+    std::shared_ptr<AtlasLoader> atlasLoader;
     Util::Renderer mapRoot;
     std::vector<std::shared_ptr<Util::GameObject>> tileObjects;
 };

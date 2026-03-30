@@ -5,7 +5,7 @@
 #include <stdexcept>
 
 
-GridMap::GridMap(std::string_view MAP_FILE_PATH, AtlasLoader& atlas)
+GridMap::GridMap(std::string_view MAP_FILE_PATH, std::shared_ptr<AtlasLoader> atlas)
     : MAP_FILE_PATH(MAP_FILE_PATH), atlasLoader(atlas) {
     std::ifstream file(this->MAP_FILE_PATH);
 
@@ -73,8 +73,8 @@ GridMap::GridMap(std::string_view MAP_FILE_PATH, AtlasLoader& atlas)
     // -------------------- 開始繪製地圖 --------------------
     tileObjects.reserve(tilesArray.size());
 
-    const auto firstImage = this->atlasLoader.getImage(tilesArray.front().getSpriteId()); // 取第一格當作基準尺寸
-    const auto firstSize = firstImage->GetSize(); // PTSD API: 取得圖片原始寬高
+    const std::shared_ptr<Util::Image> firstImage = this->atlasLoader->getImage(tilesArray.front().getSpriteId()); // 取第一格當作基準尺寸
+    const glm::vec2 firstSize = firstImage->GetSize(); // PTSD API: 取得圖片原始寬高
     constexpr float mapScale = 0.3F; // 地圖整體縮放倍率
     const float cellW = firstSize.x * mapScale; // 每格在世界座標的寬（縮放後）
     const float cellH = firstSize.y * mapScale; // 每格在世界座標的高（縮放後）
@@ -83,8 +83,8 @@ GridMap::GridMap(std::string_view MAP_FILE_PATH, AtlasLoader& atlas)
 
     for (int y = 0; y < mapHeight; ++y) {
         for (int x = 0; x < mapWidth; ++x) {
-            auto obj = std::make_shared<Util::GameObject>();
-            auto image = this->atlasLoader.getImage(getTile(x, y).getSpriteId());
+            std::shared_ptr<Util::GameObject> obj = std::make_shared<Util::GameObject>();
+            std::shared_ptr<Util::Image> image = this->atlasLoader->getImage(getTile(x, y).getSpriteId());
             obj->SetDrawable(image);
             obj->m_Transform.scale = {mapScale, mapScale};
             obj->m_Transform.translation = {
@@ -118,7 +118,7 @@ Tile GridMap::getTile(int x, int y) const {
 }
 
 void GridMap::moveCamera(float dx, float dy) {
-    for (const auto &obj : tileObjects) {
+    for (const std::shared_ptr<Util::GameObject>& obj : tileObjects) {
         obj->m_Transform.translation.x += dx;
         obj->m_Transform.translation.y += dy;
     }

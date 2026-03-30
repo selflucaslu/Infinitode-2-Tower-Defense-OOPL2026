@@ -6,11 +6,11 @@
 #include <cctype>      // 用於檔名安全化
 #include <filesystem>  // 用於處理暫存目錄和檔名
 #include <fstream>     // 用於文件內容讀取
+#include <memory>
 #include <sstream>     // 用於字符分割讀取
 #include <stdexcept>   // 用於拋出異常
 #include <string>
 #include <string_view>
-
 
 void AtlasLoader::loadAtlas(const std::string_view filePath) {
     atlasMap.clear();
@@ -80,7 +80,7 @@ void AtlasLoader::loadAtlas(const std::string_view filePath) {
 }
 
 Bounds AtlasLoader::getBounds(const std::string_view name) const {
-    auto it = atlasMap.find(std::string(name));
+    std::unordered_map<std::string, Bounds>::const_iterator it = atlasMap.find(std::string(name));
     if (it != atlasMap.end()) {
         return it->second;
     } else {
@@ -91,14 +91,15 @@ Bounds AtlasLoader::getBounds(const std::string_view name) const {
 std::shared_ptr<Util::Image> AtlasLoader::getImage(const std::string_view name) {
     // 1. 快取命中直接回傳
     const std::string key(name);
-    const auto cacheIt = m_Cache.find(key);
+    std::unordered_map<std::string, std::shared_ptr<Util::Image>>::iterator cacheIt = m_Cache.find(key);
     if (cacheIt != m_Cache.end()) return cacheIt->second;
 
     // 2. 取得 bounds
     Bounds b = getBounds(name); // 若找不到會拋例外
 
     // 3. 載入整張 atlas 大圖
-    SDL_Surface* atlasSurface = IMG_Load(atlasImagePath.c_str());
+    using SurfacePtr = std::unique_ptr<SDL_Surface, decltype(&SDL_FreeSurface)>;
+    SurfacePtr atlasSurface(IMG_Load(atlasImagePath.c_str()), SDL_FreeSurface);
     if (!atlasSurface) {
         throw std::runtime_error("無法載入 atlas 圖片: " + atlasImagePath);
     }
@@ -106,23 +107,18 @@ std::shared_ptr<Util::Image> AtlasLoader::getImage(const std::string_view name) 
     // 4. 驗證 bounds 不超出大圖範圍
     if (b.x < 0 || b.y < 0 || b.w <= 0 || b.h <= 0 ||
         b.x + b.w > atlasSurface->w || b.y + b.h > atlasSurface->h) {
-        SDL_FreeSurface(atlasSurface);
         throw std::runtime_error("bounds 超出圖片範圍: " + key);
     }
 
     // 5. 建立與 sprite 等大的空白 surface
-    SDL_Surface* spriteSurface = SDL_CreateRGBSurfaceWithFormat(
-        0, b.w, b.h, 32, atlasSurface->format->format);
+    SurfacePtr spriteSurface(SDL_CreateRGBSurfaceWithFormat(0, b.w, b.h, 32, atlasSurface->format->format), SDL_FreeSurface);
     if (!spriteSurface) {
-        SDL_FreeSurface(atlasSurface);
         throw std::runtime_error("SDL_CreateRGBSurfaceWithFormat 失敗");
     }
 
     // 6. 從大圖 Blit 裁切區塊到小圖
     SDL_Rect srcRect{ b.x, b.y, b.w, b.h };
-    if (SDL_BlitSurface(atlasSurface, &srcRect, spriteSurface, nullptr) != 0) {
-        SDL_FreeSurface(spriteSurface);
-        SDL_FreeSurface(atlasSurface);
+    if (SDL_BlitSurface(atlasSurface.get(), &srcRect, spriteSurface.get(), nullptr) != 0) {
         throw std::runtime_error("SDL_BlitSurface 失敗");
     }
 
@@ -133,21 +129,20 @@ std::shared_ptr<Util::Image> AtlasLoader::getImage(const std::string_view name) 
 
     // 安全化檔名（特殊字元換成底線）
     std::string safeName(name);
-    for (char& c : safeName)
-        if (!std::isalnum((unsigned char)c) && c != '_' && c != '-') c = '_';
+    for (std::size_t i = 0; i < safeName.size(); ++i) {
+        const unsigned char c = static_cast<unsigned char>(safeName[i]);
+        if (!std::isalnum(c) && safeName[i] != '_' && safeName[i] != '-') {
+            safeName[i] = '_';
+        }
+    }
 
     std::string cachePath = (cacheDir / (safeName + ".bmp")).string();
-    if (SDL_SaveBMP(spriteSurface, cachePath.c_str()) != 0) {
-        SDL_FreeSurface(spriteSurface);
-        SDL_FreeSurface(atlasSurface);
+    if (SDL_SaveBMP(spriteSurface.get(), cachePath.c_str()) != 0) {
         throw std::runtime_error("SDL_SaveBMP 失敗");
     }
 
-    SDL_FreeSurface(spriteSurface);
-    SDL_FreeSurface(atlasSurface);
-
     // 8. 建立 Image 物件並寫入快取
-    auto img = std::make_shared<Util::Image>(cachePath);
+    std::shared_ptr<Util::Image> img = std::make_shared<Util::Image>(cachePath);
     m_Cache[key] = img;
     return img;
 }
