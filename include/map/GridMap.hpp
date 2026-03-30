@@ -20,6 +20,7 @@ public:
     Tile getTile(int x, int y) const;
     int getMapWidth() const;
     int getMapHeight() const;
+    bool canBuildTower(int x, int y) const; // 判斷該位置是否可以建造塔
     void moveCamera(float dx, float dy);
     void displayMap(); // 用於顯示地圖的函數
 private:

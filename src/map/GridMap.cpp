@@ -132,6 +132,10 @@ int GridMap::getMapHeight() const {
     return mapHeight;
 }
 
+bool GridMap::canBuildTower(int x, int y) const {
+    return getTile(x, y).getIsBuildable();
+}
+
 void GridMap::displayMap() {
     mapRoot.Update();
 }
