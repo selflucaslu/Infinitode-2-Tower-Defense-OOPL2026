@@ -124,6 +124,14 @@ void GridMap::moveCamera(float dx, float dy) {
     }
 }
 
+int GridMap::getMapWidth() const {
+    return mapWidth;
+}
+
+int GridMap::getMapHeight() const {
+    return mapHeight;
+}
+
 void GridMap::displayMap() {
     mapRoot.Update();
 }

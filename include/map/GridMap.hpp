@@ -18,6 +18,8 @@ public:
     std::string getMapDifficulty() const;
     // 第一象限座標： (0,0) 在左下，x 向右、y 向上。
     Tile getTile(int x, int y) const;
+    int getMapWidth() const;
+    int getMapHeight() const;
     void moveCamera(float dx, float dy);
     void displayMap(); // 用於顯示地圖的函數
 private:
