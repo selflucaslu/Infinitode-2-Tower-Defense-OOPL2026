@@ -3,6 +3,7 @@
 #include "Util/Input.hpp"
 #include "Util/Keycode.hpp"
 #include "Util/Logger.hpp"
+#include "Util/Time.hpp"
 
 // -------------------- 初始化 --------------------
 void App::Start() {
@@ -24,9 +25,9 @@ void App::Update() {
         static glm::vec2 lastMousePos = currentMousePos;
 
         // 1. WASD 以及 右鍵拖曳移動地圖
+        constexpr float cameraSpeed = 8.0F;
         float dx = 0.0F;
         float dy = 0.0F;
-        constexpr float cameraSpeed = 8.0F;
 
         if (Util::Input::IsKeyPressed(Util::Keycode::W)) dy -= cameraSpeed;
         if (Util::Input::IsKeyPressed(Util::Keycode::S)) dy += cameraSpeed;
@@ -47,7 +48,7 @@ void App::Update() {
         if (Util::Input::IfScroll()) {
             float scrollDelta = Util::Input::GetScrollDistance().y;
             if (scrollDelta != 0.0F) {
-                map.zoomCamera(scrollDelta); 
+                map.zoomCamera(scrollDelta);
             }
         }
 
@@ -72,7 +73,9 @@ void App::Update() {
         map.displayMap();
     }
 
-    if (Util::Input::IsKeyUp(Util::Keycode::ESCAPE) || Util::Input::IfExit()) {
+    // ESC 或視窗關閉 -> 進入結束流程
+    if (Util::Input::IsKeyUp(Util::Keycode::ESCAPE) ||
+        Util::Input::IfExit()) {
         m_CurrentState = State::END;
     }
 }
