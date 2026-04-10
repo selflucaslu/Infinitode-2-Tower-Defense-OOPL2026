@@ -6,6 +6,10 @@ GameSession::GameSession(std::string_view mapFilePath, int initialBaseHp, int in
       map(nullptr),
       baseHp(initialBaseHp),
       wave(initialWave) {
+
+    // 背景改為 Infinitode 風格的灰色同色系 #181818。
+    glClearColor(24.0F / 255.0F, 24.0F / 255.0F, 24.0F / 255.0F, 1.0F);
+
     // 最小流程：先載入圖集，再建立地圖。
     atlasLoader->loadAtlas("assets/combined.atlas");
     map = std::make_unique<GridMap>(mapFilePath, atlasLoader);
