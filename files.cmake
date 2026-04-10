@@ -3,6 +3,8 @@ set(SRC_FILES
     utils/AtlasLoader.cpp
     map/GridMap.cpp
     map/Tile.cpp
+    tower/tower.cpp
+
 )
 
 set(INCLUDE_FILES
@@ -10,6 +12,7 @@ set(INCLUDE_FILES
     utils/AtlasLoader.hpp
     map/GridMap.hpp
     map/Tile.hpp
+    tower/tower.hpp
 )
 
 set(TEST_FILES
