@@ -1,8 +1,9 @@
-//
-// Created by ChengYu on 2026/4/10.
-//
+#pragma once
+#include <tower/Tower.hpp>
 
-#ifndef REPLACE_WITH_YOUR_PROJECT_NAME_AMMOTOWER_HPP
-#define REPLACE_WITH_YOUR_PROJECT_NAME_AMMOTOWER_HPP
-
-#endif //REPLACE_WITH_YOUR_PROJECT_NAME_AMMOTOWER_HPP
+class AmmoTower:public Tower
+{
+    std::string AmmoID;
+    float AmmoSpece=10.0f,AmmoPower=10.0f;
+    
+};

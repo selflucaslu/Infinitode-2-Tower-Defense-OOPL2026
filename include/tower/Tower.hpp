@@ -9,13 +9,13 @@ class Tower{
         AMMO,//只要會射都叫AMMO
         AROUND_SKILL//用範圍技的都叫AROUND_SKILL
     }type;
-    std::string spriteId;
+    std::string TowerId;
     int originX=0,originY=0,Level=1;
     float attack_range=10.0f;
     public:
-        Tower(std::string spriteId,int originX=0,int originY=0,float attack_range=10.0f,int Level=1,TowerType type=AMMO);
+        Tower(std::string Tower,int originX=0,int originY=0,float attack_range=10.0f,int Level=1,TowerType type=AMMO);
         ~Tower();
-        std::string GetSpriteID() const;
+        std::string GetTowerID() const;
         virtual int GetX() const;
         virtual int GetY() const;
         virtual float GetAttackRange() const;
