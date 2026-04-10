@@ -42,13 +42,13 @@
 
 |        主塔名稱        | 外型分類 | 攻擊類型 |
 |:------------------:|:----:| :---:| 
-|    Basic (基礎塔)     | Ammo |
-|    Sniper (狙擊塔)    | Ammo |
-|    Cannon (加農塔)    | Ammo |
-|   Freezing (冰凍塔)   | Around_Skill |
-|    Venom (毒液塔)     | Ammo |
-|    Splash (濺射塔)    | Ammo |
-|    Blast (爆破塔)     | Around_Skill |
+|    Basic (基礎塔)     | Ammo | physical attack |
+|    Sniper (狙擊塔)    | Ammo | physical attack |
+|    Cannon (加農塔)    | Ammo | physical attack |
+|   Freezing (冰凍塔)   | Around_Skill | only frozen enemy<br>Damage is 0,is 0 !!! |
+|    Venom (毒液塔)     | Ammo | may it have physical attack <br> may it only have Toxic attack
+|    Splash (濺射塔)    | Ammo | physical attack
+|    Blast (爆破塔)     | Around_Skill | 
 |  Multishot (多重塔)   | Ammo |
 |   Minigun (機槍塔)    | Ammo |
 |     Air (對空塔)      | Ammo |
