@@ -3,6 +3,9 @@ set(SRC_FILES
     utils/AtlasLoader.cpp
     map/GridMap.cpp
     map/Tile.cpp
+    enemy/Enemy.cpp
+    enemy/EnemyManager.cpp
+    pathfinding/PythonPathfinder.cpp
 )
 
 set(INCLUDE_FILES
@@ -10,6 +13,9 @@ set(INCLUDE_FILES
     utils/AtlasLoader.hpp
     map/GridMap.hpp
     map/Tile.hpp
+    enemy/Enemy.hpp
+    enemy/EnemyManager.hpp
+    pathfinding/PythonPathfinder.hpp
 )
 
 set(TEST_FILES

@@ -29,6 +29,8 @@ set(INCLUDE_DIR ${CMAKE_SOURCE_DIR}/include)
 list(TRANSFORM SRC_FILES PREPEND ${SRC_DIR}/)
 list(TRANSFORM INCLUDE_FILES PREPEND ${INCLUDE_DIR}/)
 
+option(ENABLE_PYTHON_PATHFINDING "Enable Python ABI pathfinding for enemies" ON)
+
 # file(GLOB_RECURSE SRC_FILES src/*)
 # file(GLOB_RECURSE HEADER_FILES include/*)
 
@@ -59,3 +61,14 @@ target_link_libraries(${PROJECT_NAME}
     SDL2::SDL2main
     PTSD
 )
+
+if(ENABLE_PYTHON_PATHFINDING)
+    find_package(Python3 COMPONENTS Development REQUIRED)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE
+        ENABLE_PYTHON_PATHFINDING=1
+        PYTHON_PATHFINDING_SCRIPT_DIR="${CMAKE_CURRENT_SOURCE_DIR}/scripts/python"
+    )
+    target_link_libraries(${PROJECT_NAME}
+        Python3::Python
+    )
+endif()

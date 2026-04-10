@@ -3,6 +3,8 @@
 #include "Util/Input.hpp"
 #include "Util/Keycode.hpp"
 #include "Util/Logger.hpp"
+#include "Util/Time.hpp"
+#include "enemy/EnemyManager.hpp"
 #include "map/GridMap.hpp"
 #include "utils/AtlasLoader.hpp"
 
@@ -10,6 +12,7 @@
 
 namespace {
 std::unique_ptr<GridMap> g_Map;
+std::unique_ptr<EnemyManager> g_EnemyManager;
 std::shared_ptr<AtlasLoader> g_AtlasLoader;
 }
 
@@ -18,6 +21,7 @@ void App::Start() {
     g_AtlasLoader = std::make_shared<AtlasLoader>();
     g_AtlasLoader->loadAtlas("assets/combined.atlas");
     g_Map = std::make_unique<GridMap>("assets/maps/map_01.csv", g_AtlasLoader);
+    g_EnemyManager = std::make_unique<EnemyManager>(*g_Map, g_AtlasLoader);
 
     m_CurrentState = State::UPDATE;
 }
@@ -35,8 +39,20 @@ void App::Update() {
 
         if (dx != 0.0F || dy != 0.0F) {
             g_Map->moveCamera(dx, dy);
+            if (g_EnemyManager) {
+                g_EnemyManager->moveCamera(dx, dy);
+            }
         }
+
+        if (g_EnemyManager) {
+            const float deltaTimeSec = Util::Time::GetDeltaTimeMs() / 1000.0F;
+            g_EnemyManager->update(deltaTimeSec);
+        }
+
         g_Map->displayMap();
+        if (g_EnemyManager) {
+            g_EnemyManager->displayEnemies();
+        }
     }
     
     // Do not touch the code below as they serve the purpose for

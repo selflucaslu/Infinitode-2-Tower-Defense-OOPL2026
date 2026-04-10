@@ -76,10 +76,10 @@ GridMap::GridMap(std::string_view MAP_FILE_PATH, std::shared_ptr<AtlasLoader> at
     const std::shared_ptr<Util::Image> firstImage = this->atlasLoader->getImage(tilesArray.front().getSpriteId()); // 取第一格當作基準尺寸
     const glm::vec2 firstSize = firstImage->GetSize(); // PTSD API: 取得圖片原始寬高
     constexpr float mapScale = 0.3F; // 地圖整體縮放倍率
-    const float cellW = firstSize.x * mapScale; // 每格在世界座標的寬（縮放後）
-    const float cellH = firstSize.y * mapScale; // 每格在世界座標的高（縮放後）
-    const float startX = -(mapWidth * cellW) * 0.5F + cellW * 0.5F; // 從左邊第一格中心開始，讓整張圖置中
-    const float startY = -(mapHeight * cellH) * 0.5F + cellH * 0.5F; // 從下邊第一格中心開始，讓整張圖置中
+    cellW = firstSize.x * mapScale; // 每格在世界座標的寬（縮放後）
+    cellH = firstSize.y * mapScale; // 每格在世界座標的高（縮放後）
+    startX = -(mapWidth * cellW) * 0.5F + cellW * 0.5F; // 從左邊第一格中心開始，讓整張圖置中
+    startY = -(mapHeight * cellH) * 0.5F + cellH * 0.5F; // 從下邊第一格中心開始，讓整張圖置中
 
     for (int y = 0; y < mapHeight; ++y) {
         for (int x = 0; x < mapWidth; ++x) {
@@ -134,6 +134,13 @@ int GridMap::getMapHeight() const {
 
 bool GridMap::canBuildTower(int x, int y) const {
     return getTile(x, y).getIsBuildable();
+}
+
+std::pair<float, float> GridMap::getTileCenterWorld(int x, int y) const {
+    if (x < 0 || x >= mapWidth || y < 0 || y >= mapHeight) {
+        throw std::out_of_range("座標超出地圖範圍");
+    }
+    return {startX + x * cellW, startY + y * cellH};
 }
 
 void GridMap::displayMap() {

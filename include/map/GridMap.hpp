@@ -8,6 +8,7 @@
 #include <memory>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 
@@ -22,6 +23,7 @@ public:
     int getMapWidth() const;
     int getMapHeight() const;
     bool canBuildTower(int x, int y) const; // 判斷該位置是否可以建造塔
+    std::pair<float, float> getTileCenterWorld(int x, int y) const;
     void moveCamera(float dx, float dy);
     void displayMap(); // 用於顯示地圖的函數
 private:
@@ -35,4 +37,8 @@ private:
     std::shared_ptr<AtlasLoader> atlasLoader;
     Util::Renderer mapRoot;
     std::vector<std::shared_ptr<Util::GameObject>> tileObjects;
+    float cellW = 0.0F;
+    float cellH = 0.0F;
+    float startX = 0.0F;
+    float startY = 0.0F;
 };

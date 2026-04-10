@@ -1,16 +1,22 @@
 #include "map/Tile.hpp"
 
+#include <string_view>
 #include <utility>
 
+namespace {
+bool startsWith(const std::string& text, std::string_view prefix) {
+    return text.rfind(prefix, 0) == 0;
+}
+} // namespace
+
 Tile::Tile(std::string spriteId) : spriteId(std::move(spriteId)) {
-    // 建塔平台（不可行走）
-    if (spriteId == "tile-type-platform") {
-        isWalkable = false;
-        isBuildable = true;
-    } else {
-        isWalkable = true;
-        isBuildable = false;
-    }
+    isSpawn = startsWith(this->spriteId, "tile-type-spawn-");
+    isTarget = startsWith(this->spriteId, "tile-type-target-");
+    isRoad = startsWith(this->spriteId, "tile-type-road-");
+    isWall = this->spriteId == "tile-type-platform";
+
+    isBuildable = isWall;
+    isWalkable = !isWall;
 }
 
 std::string Tile::getSpriteId() const {
@@ -23,4 +29,20 @@ bool Tile::getIsWalkable() const {
 
 bool Tile::getIsBuildable() const {
     return isBuildable;
+}
+
+bool Tile::isSpawnTile() const {
+    return isSpawn;
+}
+
+bool Tile::isTargetTile() const {
+    return isTarget;
+}
+
+bool Tile::isRoadTile() const {
+    return isRoad;
+}
+
+bool Tile::isWallTile() const {
+    return isWall;
 }
