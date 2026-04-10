@@ -1,56 +1,53 @@
-#include <./tower/Tower.hpp>
+#include "tower/Tower.hpp"
 
-Tower::Tower(std::string spriteId, int originX, int originY, float attack_range, int Level, TowerType type):
-spriteId(spriteId),originX(originX),originY(originY),attack_range(attack_range),Level(Level),type(type)
-{
+#include <utility>
+
+// -------------------- 建立塔 --------------------
+Tower::Tower(int gridX, int gridY, std::string spriteId)
+    : gridX(gridX),
+      gridY(gridY),
+      spriteId(std::move(spriteId)),
+      range(2.5F),
+      attackDamage(10),
+      attackInterval(0.5F),
+      attackCooldown(0.0F) {
 }
 
-Tower::~Tower()
-{
+// -------------------- 讀取屬性 --------------------
+int Tower::getGridX() const {
+    return gridX;
 }
 
-int Tower::GetX() const
-{
-    return originX;
+int Tower::getGridY() const {
+    return gridY;
 }
 
-int Tower::GetY() const
-{
-    return originY;
-}
-
-std::string Tower::GetSpriteID() const
-{
+std::string Tower::getSpriteId() const {
     return spriteId;
 }
 
-float Tower::GetAttackRange() const
-{
-    return attack_range;
+float Tower::getRange() const {
+    return range;
 }
 
-int Tower::GetLevel() const
-{
-    return Level;
+int Tower::getAttackDamage() const {
+    return attackDamage;
 }
 
-Tower::TowerType Tower::GetTypes() const
-{
-    return type;
+float Tower::getAttackInterval() const {
+    return attackInterval;
 }
 
-void Tower::SetAttackRange(float new_attack_range)
-{
-    attack_range=(new_attack_range>0)? new_attack_range : throw std::invalid_argument("illegal value");
+float Tower::getAttackCooldown() const {
+    return attackCooldown;
 }
 
-void Tower::SetLevel(int new_Level)
-{
-    Level=new_Level>0?new_Level:throw std::invalid_argument("illegal value");
+// -------------------- 寫入屬性 --------------------
+void Tower::setGridPosition(int newGridX, int newGridY) {
+    gridX = newGridX;
+    gridY = newGridY;
 }
 
-void Tower::setPosition(float newX, float newY)
-{
-    originX=(newX>=0)? newX :throw std::invalid_argument("illegal value");
-    originY=(newY>=0)? newY :throw std::invalid_argument("illegal value");
+void Tower::setAttackCooldown(float newCooldown) {
+    attackCooldown = newCooldown;
 }

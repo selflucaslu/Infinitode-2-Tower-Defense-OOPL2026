@@ -3,27 +3,20 @@
 #include "Util/Input.hpp"
 #include "Util/Keycode.hpp"
 #include "Util/Logger.hpp"
-#include "map/GridMap.hpp"
-#include "utils/AtlasLoader.hpp"
 
-#include <memory>
-
-namespace {
-std::unique_ptr<GridMap> g_Map;
-std::shared_ptr<AtlasLoader> g_AtlasLoader;
-}
-
+// -------------------- 初始化 --------------------
 void App::Start() {
     LOG_TRACE("Start");
-    g_AtlasLoader = std::make_shared<AtlasLoader>();
-    g_AtlasLoader->loadAtlas("assets/combined.atlas");
-    g_Map = std::make_unique<GridMap>("assets/maps/map_01.csv", g_AtlasLoader);
+    // 建立最簡單單局（地圖 + 基地血量 + 波次）
+    m_GameSession = std::make_unique<GameSession>("assets/maps/map_01.csv");
 
     m_CurrentState = State::UPDATE;
 }
 
+// -------------------- 每幀更新 --------------------
 void App::Update() {
-    if (g_Map) {
+    if (m_GameSession) {
+        GridMap& map = m_GameSession->getMap();
         constexpr float cameraSpeed = 8.0F;
         float dx = 0.0F;
         float dy = 0.0F;
@@ -34,19 +27,19 @@ void App::Update() {
         if (Util::Input::IsKeyPressed(Util::Keycode::D)) dx -= cameraSpeed;  // 右（長按連續）
 
         if (dx != 0.0F || dy != 0.0F) {
-            g_Map->moveCamera(dx, dy);
+            map.moveCamera(dx, dy);
         }
-        g_Map->displayMap();
+        map.displayMap();
     }
-    
-    // Do not touch the code below as they serve the purpose for
-    // closing the window.
+
+    // ESC 或視窗關閉 -> 進入結束流程
     if (Util::Input::IsKeyUp(Util::Keycode::ESCAPE) ||
         Util::Input::IfExit()) {
         m_CurrentState = State::END;
     }
 }
 
+// -------------------- 結束 --------------------
 void App::End() { // NOLINT(this method will mutate members in the future)
     LOG_TRACE("End");
 }
