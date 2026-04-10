@@ -1,9 +1,12 @@
 #include "game/GameSession.hpp"
 
+#include "enemy/EnemyManager.hpp"
+
 // -------------------- 建立單局 --------------------
 GameSession::GameSession(std::string_view mapFilePath, int initialBaseHp, int initialWave)
     : atlasLoader(std::make_shared<AtlasLoader>()),
       map(nullptr),
+      enemyManager(nullptr),
       baseHp(initialBaseHp),
       wave(initialWave) {
 
@@ -13,7 +16,10 @@ GameSession::GameSession(std::string_view mapFilePath, int initialBaseHp, int in
     // 最小流程：先載入圖集，再建立地圖。
     atlasLoader->loadAtlas("assets/combined.atlas");
     map = std::make_unique<GridMap>(mapFilePath, atlasLoader);
+    enemyManager = std::make_unique<EnemyManager>(*map, atlasLoader);
 }
+
+GameSession::~GameSession() = default;
 
 // -------------------- 地圖存取 --------------------
 GridMap& GameSession::getMap() {
@@ -26,6 +32,28 @@ const GridMap& GameSession::getMap() const {
 
 std::shared_ptr<AtlasLoader> GameSession::getAtlasLoader() const {
     return atlasLoader;
+}
+
+EnemyManager& GameSession::getEnemyManager() {
+    return *enemyManager;
+}
+
+const EnemyManager& GameSession::getEnemyManager() const {
+    return *enemyManager;
+}
+
+void GameSession::update(float deltaTimeSec) {
+    enemyManager->update(deltaTimeSec);
+}
+
+void GameSession::moveCamera(float dx, float dy) {
+    map->moveCamera(dx, dy);
+    enemyManager->moveCamera(dx, dy);
+}
+
+void GameSession::display() {
+    map->displayMap();
+    enemyManager->displayEnemies();
 }
 
 // -------------------- 基地血量 --------------------
