@@ -133,7 +133,33 @@ int GridMap::getMapHeight() const {
 }
 
 bool GridMap::canBuildTower(int x, int y) const {
-    return getTile(x, y).getIsBuildable();
+    return getTile(x, y).getType() == Tile::Type::Platform;
+}
+
+std::vector<std::pair<int, int>> GridMap::getSpawnGridPoints() const {
+    std::vector<std::pair<int, int>> spawnPoints;
+
+    for (int y = 0; y < mapHeight; ++y) {
+        for (int x = 0; x < mapWidth; ++x) {
+            if (getTile(x, y).getType() == Tile::Type::Spawn) {
+                spawnPoints.emplace_back(x, y);
+            }
+        }
+    }
+
+    return spawnPoints;
+}
+
+std::optional<std::pair<int, int>> GridMap::getGoalGridPoint() const {
+    for (int y = 0; y < mapHeight; ++y) {
+        for (int x = 0; x < mapWidth; ++x) {
+            if (getTile(x, y).getType() == Tile::Type::Goal) {
+                return std::pair<int, int>{x, y};
+            }
+        }
+    }
+
+    return std::nullopt;
 }
 
 std::pair<float, float> GridMap::getTileCenterWorld(int x, int y) const {

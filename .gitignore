@@ -489,7 +489,6 @@ FodyWeavers.xsd
 # Default build directory for CMake extension
 build/
 build_*/
-build_py/
 
 # CMake generated metadata
 CMakeUserPresets.json

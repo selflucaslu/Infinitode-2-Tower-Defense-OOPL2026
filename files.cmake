@@ -1,21 +1,30 @@
 set(SRC_FILES
     App.cpp
+    game/GameSession.cpp
     utils/AtlasLoader.cpp
     map/GridMap.cpp
     map/Tile.cpp
     enemy/Enemy.cpp
     enemy/EnemyManager.cpp
     pathfinding/PythonPathfinder.cpp
+    tower/Tower.cpp
+    tower/AmmoTower.cpp
+    tower/AroundSkillTower.cpp
 )
 
 set(INCLUDE_FILES
     App.hpp
+    game/GameSession.hpp
     utils/AtlasLoader.hpp
     map/GridMap.hpp
     map/Tile.hpp
     enemy/Enemy.hpp
     enemy/EnemyManager.hpp
     pathfinding/PythonPathfinder.hpp
+    tower/Tower.hpp
+    tower/AmmoTower.hpp
+    tower/AroundSkillTower.hpp
+    tower/TowerManager.hpp
 )
 
 set(TEST_FILES

@@ -1,25 +1,27 @@
 #pragma once
 
 #include <string>
-
+#include <string_view>
 
 class Tile {
 public:
-    Tile(std::string spriteId);
-    std::string getSpriteId() const;
-    bool getIsWalkable() const;
-    bool getIsBuildable() const;
-    bool isSpawnTile() const;
-    bool isTargetTile() const;
-    bool isRoadTile() const;
-    bool isWallTile() const;
+    // Tile 類型：用於外部判斷道路、建塔地、起終點與牆。
+    enum class Type {
+        Road,
+        Platform,
+        Wall,
+        Spawn,
+        Goal,
+    };
+
+    explicit Tile(std::string spriteId);
+    std::string getSpriteId() const; // 回傳對應貼圖 ID
+    Type getType() const; // 回傳該格邏輯類型（外部統一以 Type 判斷）
+
 private:
-    std::string spriteId;
-    bool isWalkable;   // 可以行走地形
-    bool isBuildable;  // 可以建造地形
-    bool isSpawn = false;
-    bool isTarget = false;
-    bool isRoad = false;
-    bool isWall = false;
-    // int flags = 0;  // Future use for additional properties
+    // 由貼圖 ID 解析成 Tile 類型。
+    Type parseTypeFromSpriteId(std::string_view spriteId) const;
+
+    std::string spriteId; // 該格貼圖 ID
+    Type type; // 該格類型（由 spriteId 解析）
 };

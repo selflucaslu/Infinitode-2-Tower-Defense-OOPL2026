@@ -3,46 +3,46 @@
 #include <string_view>
 #include <utility>
 
-namespace {
-bool startsWith(const std::string& text, std::string_view prefix) {
-    return text.rfind(prefix, 0) == 0;
-}
-} // namespace
-
-Tile::Tile(std::string spriteId) : spriteId(std::move(spriteId)) {
-    isSpawn = startsWith(this->spriteId, "tile-type-spawn-");
-    isTarget = startsWith(this->spriteId, "tile-type-target-");
-    isRoad = startsWith(this->spriteId, "tile-type-road-");
-    isWall = this->spriteId == "tile-type-platform";
-
-    isBuildable = isWall;
-    isWalkable = !isWall;
+Tile::Tile(std::string spriteId)
+    : spriteId(std::move(spriteId)), type(parseTypeFromSpriteId(this->spriteId)) {
 }
 
 std::string Tile::getSpriteId() const {
     return spriteId;
 }
 
-bool Tile::getIsWalkable() const {
-    return isWalkable;
+Tile::Type Tile::getType() const {
+    return type;
 }
 
-bool Tile::getIsBuildable() const {
-    return isBuildable;
+namespace {
+bool hasPrefix(std::string_view text, std::string_view prefix) {
+    return text.rfind(prefix, 0) == 0;
 }
+} // namespace
 
-bool Tile::isSpawnTile() const {
-    return isSpawn;
-}
-
-bool Tile::isTargetTile() const {
-    return isTarget;
-}
-
-bool Tile::isRoadTile() const {
-    return isRoad;
-}
-
-bool Tile::isWallTile() const {
-    return isWall;
+Tile::Type Tile::parseTypeFromSpriteId(std::string_view spriteId) const {
+    // 識別邏輯採「前綴比對」：
+    // 1) 先比對可建塔地：tile-type-platform* -> Platform
+    // 2) 再比對道路：tile-type-road* -> Road
+    // 3) 起點相關（spawn / source）-> Spawn
+    // 4) 終點相關（target / game-value-base）-> Goal
+    // 5) 明確牆體：tile-type-wall* -> Wall
+    // 其餘未列入規則的 tile-type-* 一律視為 Wall。
+    if (hasPrefix(spriteId, "tile-type-platform")) {
+        return Type::Platform;
+    }
+    if (hasPrefix(spriteId, "tile-type-road")) {
+        return Type::Road;
+    }
+    if (hasPrefix(spriteId, "tile-type-spawn") || hasPrefix(spriteId, "tile-type-source")) {
+        return Type::Spawn;
+    }
+    if (hasPrefix(spriteId, "tile-type-target") || spriteId == "tile-type-game-value-base") {
+        return Type::Goal;
+    }
+    if (hasPrefix(spriteId, "tile-type-wall")) {
+        return Type::Wall;
+    }
+    return Type::Wall;
 }

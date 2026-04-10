@@ -9,13 +9,14 @@
 EnemyManager::EnemyManager(const GridMap& map, std::shared_ptr<AtlasLoader> atlasLoader)
     : map(map), atlasLoader(std::move(atlasLoader)) {
     const std::vector<std::vector<int>> grid = buildWalkabilityGrid();
-    const std::vector<std::pair<int, int>> starts = collectSpawnTiles();
-    const std::vector<std::pair<int, int>> goals = collectTargetTiles();
+    const std::vector<std::pair<int, int>> starts = map.getSpawnGridPoints();
+    const std::vector<std::pair<int, int>> goals = collectGoalTiles();
+
     if (starts.empty()) {
         LOG_WARN("地圖沒有 spawn tile，怪物不會生成。");
     }
     if (goals.empty()) {
-        LOG_WARN("地圖沒有 target tile，怪物不會生成。");
+        LOG_WARN("地圖沒有 goal tile，怪物不會生成。");
     }
 
     for (const std::pair<int, int>& start : starts) {
@@ -124,43 +125,38 @@ void EnemyManager::spawnEnemyFromLane(std::size_t laneIndex) {
 std::vector<std::vector<int>> EnemyManager::buildWalkabilityGrid() const {
     const int width = map.getMapWidth();
     const int height = map.getMapHeight();
-    std::vector<std::vector<int>> grid(static_cast<size_t>(height), std::vector<int>(static_cast<size_t>(width), 1));
+    std::vector<std::vector<int>> grid(static_cast<std::size_t>(height), std::vector<int>(static_cast<std::size_t>(width), 1));
 
     for (int y = 0; y < height; ++y) {
         for (int x = 0; x < width; ++x) {
-            grid[static_cast<size_t>(y)][static_cast<size_t>(x)] = map.getTile(x, y).getIsWalkable() ? 0 : 1;
+            const Tile::Type type = map.getTile(x, y).getType();
+            const bool isWalkable = type == Tile::Type::Road || type == Tile::Type::Spawn || type == Tile::Type::Goal;
+            grid[static_cast<std::size_t>(y)][static_cast<std::size_t>(x)] = isWalkable ? 0 : 1;
         }
     }
 
     return grid;
 }
 
-std::vector<std::pair<int, int>> EnemyManager::collectSpawnTiles() const {
-    const int width = map.getMapWidth();
-    const int height = map.getMapHeight();
-
-    std::vector<std::pair<int, int>> starts;
-    for (int y = 0; y < height; ++y) {
-        for (int x = 0; x < width; ++x) {
-            if (map.getTile(x, y).isSpawnTile()) {
-                starts.emplace_back(x, y);
-            }
-        }
-    }
-    return starts;
-}
-
-std::vector<std::pair<int, int>> EnemyManager::collectTargetTiles() const {
+std::vector<std::pair<int, int>> EnemyManager::collectGoalTiles() const {
     const int width = map.getMapWidth();
     const int height = map.getMapHeight();
 
     std::vector<std::pair<int, int>> goals;
     for (int y = 0; y < height; ++y) {
         for (int x = 0; x < width; ++x) {
-            if (map.getTile(x, y).isTargetTile()) {
+            if (map.getTile(x, y).getType() == Tile::Type::Goal) {
                 goals.emplace_back(x, y);
             }
         }
     }
+
+    if (goals.empty()) {
+        const std::optional<std::pair<int, int>> fallbackGoal = map.getGoalGridPoint();
+        if (fallbackGoal.has_value()) {
+            goals.emplace_back(fallbackGoal.value());
+        }
+    }
+
     return goals;
 }

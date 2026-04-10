@@ -6,6 +6,7 @@
 #include "pathfinding/PythonPathfinder.hpp"
 #include "utils/AtlasLoader.hpp"
 
+#include <cstddef>
 #include <memory>
 #include <utility>
 #include <vector>
@@ -21,8 +22,7 @@ public:
 private:
     void spawnEnemyFromLane(std::size_t laneIndex);
     std::vector<std::vector<int>> buildWalkabilityGrid() const;
-    std::vector<std::pair<int, int>> collectSpawnTiles() const;
-    std::vector<std::pair<int, int>> collectTargetTiles() const;
+    std::vector<std::pair<int, int>> collectGoalTiles() const;
 
 private:
     const GridMap& map;
