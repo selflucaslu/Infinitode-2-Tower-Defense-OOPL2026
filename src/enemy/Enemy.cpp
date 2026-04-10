@@ -3,7 +3,9 @@
 #include <cmath>
 #include <utility>
 
-Enemy::Enemy(float speed, int maxHealth, int damage, std::string spriteId, float startX, float startY, int startPathIndex) : x(startX), y(startY), pathIndex(startPathIndex), speed(speed), health(maxHealth), maxHealth(maxHealth), damage(damage), spriteId(std::move(spriteId)) {}
+Enemy::Enemy(float startX, float startY, float speed, int maxHealth, int damage, int startPathIndex, std::string spriteId)
+    : x(startX), y(startY), speed(speed), maxHealth(maxHealth), health(maxHealth), damage(damage), pathIndex(startPathIndex), spriteId(std::move(spriteId)) {
+}
 
 float Enemy::getX() const {
     return x;
