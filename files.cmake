@@ -4,7 +4,8 @@ set(SRC_FILES
     map/GridMap.cpp
     map/Tile.cpp
     tower/tower.cpp
-
+    tower/AmmoTower.cpp
+    tower/AroundSkillTower.cpp
 )
 
 set(INCLUDE_FILES
@@ -13,6 +14,8 @@ set(INCLUDE_FILES
     map/GridMap.hpp
     map/Tile.hpp
     tower/tower.hpp
+    tower/AmmoTower.hpp
+    tower/AroundSkillTower.hpp
 )
 
 set(TEST_FILES
