@@ -1,6 +1,9 @@
 #include "tower/Tower.hpp"
-
 #include <utility>
+Tower::Tower(std::string TowerId, int originX, int originY, float attack_range, int Level, TowerType type):
+TowerId(TowerId),originX(originX),originY(originY),attack_range(attack_range),Level(Level),type(type)
+{
+}
 
 // -------------------- 建立塔 --------------------
 Tower::Tower(int gridX, int gridY, std::string spriteId)
@@ -22,8 +25,9 @@ int Tower::getGridY() const {
     return gridY;
 }
 
-std::string Tower::getSpriteId() const {
-    return spriteId;
+std::string Tower::GetTowerID() const
+{
+    return TowerId;
 }
 
 float Tower::getRange() const {

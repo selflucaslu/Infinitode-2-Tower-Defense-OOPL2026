@@ -2,14 +2,23 @@
 
 #include <string>
 
-class Tower {
-public:
-    // 塔的格子位置與貼圖 ID。
-    Tower(
-        int gridX = 0,
-        int gridY = 0,
-        std::string spriteId = "tower-basic"
-    );
+class Tower{
+    enum TowerType {
+        AMMO,//只要會射都叫AMMO
+        AROUND_SKILL//用範圍技的都叫AROUND_SKILL
+    }type;
+    std::string TowerId = "tower-basic";
+    int originX=0,originY=0,Level=1;
+    float attack_range=10.0f;
+    public:
+        Tower(std::string TowerId,int originX=0,int originY=0,float attack_range=10.0f,int Level=1,TowerType type=AMMO);
+        ~Tower();
+        std::string GetTowerID() const;
+        virtual int GetX() const;
+        virtual int GetY() const;
+        virtual float GetAttackRange() const;
+        virtual int GetLevel() const;
+        virtual TowerType GetTypes() const;
 
     int getGridX() const; // 塔所在格子 x
     int getGridY() const; // 塔所在格子 y
