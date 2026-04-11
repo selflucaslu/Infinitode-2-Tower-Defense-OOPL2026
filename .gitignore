@@ -488,6 +488,11 @@ FodyWeavers.xsd
 
 # Default build directory for CMake extension
 build/
+build_*/
+
+# CMake generated metadata
+CMakeUserPresets.json
+Testing/
 
 # Ignore 3rd party dependencies
 lib/
@@ -497,6 +502,7 @@ docs/html/
 
 # MacOS files
 .DS_Store
+*.dSYM/
 
 # SSH keys
 id_ed25519a

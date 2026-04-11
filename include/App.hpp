@@ -1,29 +1,34 @@
 #ifndef APP_HPP
 #define APP_HPP
 
+#include "game/GameSession.hpp"
 #include "pch.hpp" // IWYU pragma: export
+
+#include <memory>
 
 class App {
 public:
+    // 應用程式主流程狀態。
     enum class State {
         START,
         UPDATE,
         END,
     };
 
-    State GetCurrentState() const { return m_CurrentState; }
+    State GetCurrentState() const { return m_CurrentState; } // 取得目前流程狀態
 
-    void Start();
+    void Start(); // 初始化本局與資源
 
-    void Update();
+    void Update(); // 每幀更新
 
-    void End(); // NOLINT(readability-convert-member-functions-to-static)
+    void End(); // 結束流程（NOLINT: 之後會修改成員）
 
 private:
     void ValidTask();
 
 private:
-    State m_CurrentState = State::START;
+    State m_CurrentState = State::START; // App 流程狀態
+    std::unique_ptr<GameSession> m_GameSession; // 本局執行期資料
 };
 
 #endif

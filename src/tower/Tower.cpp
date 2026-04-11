@@ -1,7 +1,7 @@
-#include <./tower/Tower.hpp>
-
-Tower::Tower(std::string spriteId, int originX, int originY, float attack_range, int Level, TowerType type):
-TowerId(spriteId),originX(originX),originY(originY),attack_range(attack_range),Level(Level),type(type)
+#include "tower/Tower.hpp"
+#include <utility>
+Tower::Tower(std::string TowerId, int originX, int originY, float attack_range, int Level, TowerType type):
+TowerId(TowerId),originX(originX),originY(originY),attack_range(attack_range),Level(Level),type(type)
 {
 }
 
