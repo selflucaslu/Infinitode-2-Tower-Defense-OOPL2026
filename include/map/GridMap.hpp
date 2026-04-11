@@ -6,23 +6,27 @@
 #include "utils/AtlasLoader.hpp"
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 
 class GridMap {
 public:
-    GridMap(std::string_view MAP_FILE_PATH, std::shared_ptr<AtlasLoader> atlas);
-    std::string getMapName() const;
-    std::string getMapDescription() const;
-    std::string getMapDifficulty() const;
+    GridMap(std::string_view MAP_FILE_PATH, std::shared_ptr<AtlasLoader> atlas); // 載入地圖與建立顯示物件
+    std::string getMapName() const; // 取得地圖名稱
+    std::string getMapDescription() const; // 取得地圖描述
+    std::string getMapDifficulty() const; // 取得地圖難度
     // 第一象限座標： (0,0) 在左下，x 向右、y 向上。
     Tile getTile(int x, int y) const;
     int getMapWidth() const;
     int getMapHeight() const;
     bool canBuildTower(int x, int y) const; // 判斷該位置是否可以建造塔
-    void moveCamera(float dx, float dy);
+    std::vector<std::pair<int, int>> getSpawnGridPoints() const; // 取得所有起點格座標
+    std::optional<std::pair<int, int>> getGoalGridPoint() const; // 取得終點格座標（沒有則回傳 nullopt）
+    void moveCamera(float dx, float dy); // 平移地圖視角
     void displayMap(); // 用於顯示地圖的函數
 private:
     std::string MAP_FILE_PATH;       // 地圖文件路徑

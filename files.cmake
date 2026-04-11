@@ -1,5 +1,6 @@
 set(SRC_FILES
     App.cpp
+    game/GameSession.cpp
     utils/AtlasLoader.cpp
     map/GridMap.cpp
     map/Tile.cpp
@@ -10,6 +11,7 @@ set(SRC_FILES
 
 set(INCLUDE_FILES
     App.hpp
+    game/GameSession.hpp
     utils/AtlasLoader.hpp
     map/GridMap.hpp
     map/Tile.hpp
