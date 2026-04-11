@@ -38,8 +38,23 @@
    ./build/REPLACE_WITH_YOUR_PROJECT_NAME
    ```
 
-## 進度表
+## 塔臺列表
 
-| 週次 |   目標狀態   | 目標 |
-| :---: |:--------:| :---:| 
-| 2 | &#x2705; | all |
+|        主塔名稱        | 外型分類 | 目標 |
+|:------------------:|:----:| :---:| 
+|    Basic (基礎塔)     | Ammo |
+|    Sniper (狙擊塔)    | Ammo |
+|    Cannon (加農塔)    |
+|   Freezing (冰凍塔)   |
+|    Venom (毒液塔)     |
+|    Splash (濺射塔)    |
+|    Blast (爆破塔)     |
+|  Multishot (多重塔)   |
+|   Minigun (機槍塔)    |
+|     Air (對空塔)      |
+|    Tesla (特斯拉塔)    |
+|   Missile (導彈塔)    |
+| Flamethrower (火焰塔) |
+|    Laser (雷射塔)     |
+|    Gauss (高斯塔)     |
+|    Crusher(粉碎塔)    |
