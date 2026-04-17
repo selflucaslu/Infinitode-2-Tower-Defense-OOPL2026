@@ -6,21 +6,21 @@
 #include <memory>
 #include <string>
 
-class Tower:public GridMap{
-    std::string TowerId = "tower-basic";
-    int Level=1; //砲台等級
-    int gridX=0; // 格子 x
-    int gridY=0; // 格子 y
-    float attack_range=10.0f;//攻擊範圍
-    float Traverse_Speed=5.0f;//砲台轉向速度
+class Tower{
+    std::string spriteId = "tower-basic";
+    int Level; //砲台等級
+    int gridX; // 格子 x
+    int gridY; // 格子 y
+    float attack_range;//攻擊範圍
+    float Traverse_Speed;//砲台轉向速度
     public:
         enum TowerType {
         AMMO,//只要會射都叫AMMO
         AROUND_SKILL//用範圍技的都叫AROUND_SKILL
         }type;
-        Tower(std::string TowerId,int gridX=0,int gridY=0,float attack_range=10.0f,int Level=1,TowerType type=AMMO);
+        Tower(std::string spriteId,int gridX=0,int gridY=0,float attack_range=10.0f,int Level=1,TowerType type=AMMO);
         virtual ~Tower();
-        std::string GetTowerID() const;
+        std::string GetspriteId() const;
         virtual int GetGridX() const;
         virtual int GetGridY() const;
         virtual float GetAttackRange() const;

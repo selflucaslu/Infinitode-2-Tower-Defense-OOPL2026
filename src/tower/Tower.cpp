@@ -1,17 +1,28 @@
 #include "tower/Tower.hpp"
 #include <utility>
-Tower::Tower(std::string TowerId, int gridX, int gridY, float attack_range, int Level, TowerType type):
-TowerId(TowerId),attack_range(attack_range),Level(Level),type(type),
-{
+#include <stdexcept>
+
+Tower::Tower(std::string spriteId, int gridX, int gridY, float attack_range, int Level, TowerType type):
+spriteId(spriteId), Level(Level), gridX(gridX), gridY(gridY), attack_range(attack_range), type(type) {
 }
 
 Tower::~Tower()
 {
 }
 
-std::string Tower::GetTowerID() const
+std::string Tower::GetspriteId() const
 {
-    return TowerId;
+    return spriteId;
+}
+
+int Tower::GetGridX() const
+{
+    return gridX;
+}
+
+int Tower::GetGridY() const
+{
+    return gridY;
 }
 
 float Tower::GetAttackRange() const
