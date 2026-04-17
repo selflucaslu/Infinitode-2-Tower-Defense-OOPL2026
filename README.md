@@ -40,21 +40,21 @@
 
 ## 塔臺列表
 
-|        主塔名稱        | 外型分類 | 目標 |
+|        主塔名稱        | 外型分類 |  |
 |:------------------:|:----:| :---:| 
 |    Basic (基礎塔)     | Ammo |
 |    Sniper (狙擊塔)    | Ammo |
-|    Cannon (加農塔)    |
-|   Freezing (冰凍塔)   |
-|    Venom (毒液塔)     |
-|    Splash (濺射塔)    |
-|    Blast (爆破塔)     |
-|  Multishot (多重塔)   |
-|   Minigun (機槍塔)    |
-|     Air (對空塔)      |
-|    Tesla (特斯拉塔)    |
-|   Missile (導彈塔)    |
-| Flamethrower (火焰塔) |
-|    Laser (雷射塔)     |
-|    Gauss (高斯塔)     |
-|    Crusher(粉碎塔)    |
+|    Cannon (加農塔)    | Ammo |
+|   Freezing (冰凍塔)   | Around_Skill |
+|    Venom (毒液塔)     | Ammo |
+|    Splash (濺射塔)    | Ammo |
+|    Blast (爆破塔)     | Around_Skill |
+|  Multishot (多重塔)   | Ammo |
+|   Minigun (機槍塔)    | Ammo |
+|     Air (對空塔)      | Ammo |
+|    Tesla (特斯拉塔)    | Ammo |
+|   Missile (導彈塔)    | Ammo |
+| Flamethrower (火焰塔) | Ammo |
+|    Laser (雷射塔)     | Ammo |
+|    Gauss (高斯塔)     | Ammo |
+|    Crusher(粉碎塔)    | Ammo |
