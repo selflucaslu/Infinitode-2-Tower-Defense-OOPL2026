@@ -4,6 +4,7 @@
 #include "map/GridMap.hpp"
 #include "tower/Tower.hpp"
 
+#include <cstddef>
 #include <functional>
 #include <optional>
 #include <string>
@@ -33,9 +34,9 @@ public:
 
 private:
     // 尋找指定塔可攻擊範圍內的最近敵人。
-    std::optional<int> findNearestEnemyIndex(const Tower& tower, const std::vector<Enemy>& enemies) const;
+    std::optional<std::size_t> findNearestEnemyIndex(const Tower& tower, const std::vector<Enemy>& enemies) const;
     // 依格子座標找塔索引。
-    std::optional<int> findTowerIndex(int gridX, int gridY) const;
+    std::optional<std::size_t> findTowerIndex(int gridX, int gridY) const;
 
 private:
     const GridMap& map; // 地圖參考（不擁有）
