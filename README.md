@@ -58,3 +58,5 @@
 |    Laser (雷射塔)     | Ammo |
 |    Gauss (高斯塔)     | Ammo |
 |    Crusher(粉碎塔)    | Ammo |
+
+[wiki](https://infinitode-2.fandom.com/wiki/Infinitode_2_Wiki)
