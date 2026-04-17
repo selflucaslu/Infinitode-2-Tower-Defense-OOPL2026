@@ -8,6 +8,7 @@ Enemy::Enemy(
     float startX,
     float startY,
     float speed,
+    MoveType moveType,
     int maxHealth,
     int damage,
     int startPathIndex,
@@ -17,6 +18,7 @@ Enemy::Enemy(
     : x(startX),
       y(startY),
       speed(speed),
+      moveType(moveType),
       maxHealth(maxHealth),
       health(maxHealth),
       damage(damage),
@@ -40,6 +42,10 @@ int Enemy::getPathIndex() const {
 
 float Enemy::getSpeed() const {
     return speed;
+}
+
+Enemy::MoveType Enemy::getMoveType() const {
+    return moveType;
 }
 
 int Enemy::getHealth() const {

@@ -39,7 +39,7 @@ void EnemyManager::spawnEnemiesAt(
 
             const float startX = path->front().first;
             const float startY = path->front().second;
-            enemies.emplace_back(startX, startY, speed, maxHealth, damage, 0, std::string(spriteId), path);
+            enemies.emplace_back(startX, startY, speed, Enemy::MoveType::Ground, maxHealth, damage, 0, std::string(spriteId), path);
         }
         return;
     }
@@ -57,7 +57,7 @@ void EnemyManager::spawnEnemiesAt(
 
         const float startX = path->front().first;
         const float startY = path->front().second;
-        enemies.emplace_back(startX, startY, speed, maxHealth, damage, 0, std::string(spriteId), path);
+        enemies.emplace_back(startX, startY, speed, Enemy::MoveType::Ground, maxHealth, damage, 0, std::string(spriteId), path);
     }
 }
 

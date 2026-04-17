@@ -14,8 +14,10 @@ set(SRC_FILES
 set(INCLUDE_FILES
     App.hpp
     game/GameSession.hpp
+    game/LevelConfig.hpp
     utils/AtlasLoader.hpp
     enemy/Enemy.hpp
+    enemy/EnemyTypeConfig.hpp
     enemy/EnemyManager.hpp
     map/GridMap.hpp
     map/Tile.hpp

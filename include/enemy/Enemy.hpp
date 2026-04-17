@@ -7,6 +7,11 @@
 
 class Enemy {
 public:
+    enum class MoveType {
+        Ground,
+        Air
+    };
+
     // -------------------- 建構 --------------------
     // 單一敵人基礎資料。
     // pathPoints 可在建構時綁定固定路徑（shared_ptr 共享，避免每隻敵人複製整條路徑）。
@@ -14,6 +19,7 @@ public:
         float startX,
         float startY,
         float speed,
+        MoveType moveType,
         int maxHealth,
         int damage,
         int startPathIndex,
@@ -26,6 +32,7 @@ public:
     float getY() const; // 取得世界座標 y
     int getPathIndex() const; // 取得目前路徑節點索引
     float getSpeed() const; // 取得移動速度
+    MoveType getMoveType() const; // 取得移動類型
     int getHealth() const; // 取得目前血量
     int getMaxHealth() const; // 取得最大血量
     int getDamage() const; // 取得到終點造成傷害
@@ -46,6 +53,7 @@ private:
     float x;        // 世界座標 x（平滑移動用 float）
     float y;        // 世界座標 y（平滑移動用 float）
     float speed;    // 每秒移動速度
+    MoveType moveType; // 移動類型（地面或飛行）
 
     // -------------------- 戰鬥屬性 --------------------
     int maxHealth;    // 血量上限
