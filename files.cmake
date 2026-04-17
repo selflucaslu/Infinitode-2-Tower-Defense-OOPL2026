@@ -2,6 +2,8 @@ set(SRC_FILES
     App.cpp
     game/GameSession.cpp
     utils/AtlasLoader.cpp
+    enemy/Enemy.cpp
+    enemy/EnemyManager.cpp
     map/GridMap.cpp
     map/Tile.cpp
     tower/tower.cpp
@@ -13,6 +15,8 @@ set(INCLUDE_FILES
     App.hpp
     game/GameSession.hpp
     utils/AtlasLoader.hpp
+    enemy/Enemy.hpp
+    enemy/EnemyManager.hpp
     map/GridMap.hpp
     map/Tile.hpp
     tower/tower.hpp

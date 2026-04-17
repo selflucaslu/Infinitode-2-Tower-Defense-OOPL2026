@@ -8,6 +8,7 @@
 
 class App {
 public:
+    // -------------------- App 主狀態 --------------------
     // 應用程式主流程狀態。
     enum class State {
         START,
@@ -15,6 +16,7 @@ public:
         END,
     };
 
+    // -------------------- 主迴圈介面 --------------------
     State GetCurrentState() const { return m_CurrentState; } // 取得目前流程狀態
 
     void Start(); // 初始化本局與資源
@@ -24,9 +26,7 @@ public:
     void End(); // 結束流程（NOLINT: 之後會修改成員）
 
 private:
-    void ValidTask();
-
-private:
+    // -------------------- App 成員 --------------------
     State m_CurrentState = State::START; // App 流程狀態
     std::unique_ptr<GameSession> m_GameSession; // 本局執行期資料
 };

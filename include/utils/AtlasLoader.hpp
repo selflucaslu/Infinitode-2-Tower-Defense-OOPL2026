@@ -7,7 +7,6 @@
 #include <string_view>
 #include <unordered_map>  // 用於存儲圖集名稱和對應的Bounds
 
-
 struct Bounds {
     int x; // 左上角 x
     int y; // 左上角 y

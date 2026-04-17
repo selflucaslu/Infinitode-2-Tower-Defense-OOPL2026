@@ -2,8 +2,7 @@
 
 // -------------------- 建立單局 --------------------
 GameSession::GameSession(std::string_view mapFilePath, int initialBaseHp, int initialWave)
-    : atlasLoader(std::make_shared<AtlasLoader>()),
-      map(nullptr),
+    : atlasLoader(std::make_unique<AtlasLoader>()),
       baseHp(initialBaseHp),
       wave(initialWave) {
 
@@ -12,7 +11,10 @@ GameSession::GameSession(std::string_view mapFilePath, int initialBaseHp, int in
 
     // 最小流程：先載入圖集，再建立地圖。
     atlasLoader->loadAtlas("assets/combined.atlas");
-    map = std::make_unique<GridMap>(mapFilePath, atlasLoader);
+    // 先建立地圖，再建立 EnemyManager（EnemyManager 需要引用 map）。
+    map = std::make_unique<GridMap>(mapFilePath, *atlasLoader);
+    // EnemyManager 共用本局 atlasLoader，不重複持有資源。
+    enemyManager = std::make_unique<EnemyManager>(*map, *atlasLoader);
 }
 
 // -------------------- 地圖存取 --------------------
@@ -22,6 +24,15 @@ GridMap& GameSession::getMap() {
 
 const GridMap& GameSession::getMap() const {
     return *map;
+}
+
+// -------------------- 敵人管理器存取 --------------------
+EnemyManager& GameSession::getEnemyManager() {
+    return *enemyManager;
+}
+
+const EnemyManager& GameSession::getEnemyManager() const {
+    return *enemyManager;
 }
 
 // -------------------- 基地血量 --------------------

@@ -4,8 +4,8 @@
 #include <sstream>
 #include <stdexcept>
 
-
-GridMap::GridMap(std::string_view MAP_FILE_PATH, std::shared_ptr<AtlasLoader> atlas)
+// -------------------- 建立地圖 --------------------
+GridMap::GridMap(std::string_view MAP_FILE_PATH, AtlasLoader& atlas)
     : MAP_FILE_PATH(MAP_FILE_PATH), atlasLoader(atlas) {
     std::ifstream file(this->MAP_FILE_PATH);
 
@@ -73,7 +73,7 @@ GridMap::GridMap(std::string_view MAP_FILE_PATH, std::shared_ptr<AtlasLoader> at
     // -------------------- 開始繪製地圖 --------------------
     tileObjects.reserve(tilesArray.size());
 
-    const std::shared_ptr<Util::Image> firstImage = this->atlasLoader->getImage(tilesArray.front().getSpriteId()); // 取第一格當作基準尺寸
+    const std::shared_ptr<Util::Image> firstImage = atlasLoader.getImage(tilesArray.front().getSpriteId()); // 取第一格當作基準尺寸
     const glm::vec2 firstSize = firstImage->GetSize(); // PTSD API: 取得圖片原始寬高
     constexpr float mapScale = 0.3F; // 地圖整體縮放倍率
     const float cellW = firstSize.x * mapScale; // 每格在世界座標的寬（縮放後）
@@ -84,7 +84,7 @@ GridMap::GridMap(std::string_view MAP_FILE_PATH, std::shared_ptr<AtlasLoader> at
     for (int y = 0; y < mapHeight; ++y) {
         for (int x = 0; x < mapWidth; ++x) {
             std::shared_ptr<Util::GameObject> obj = std::make_shared<Util::GameObject>();
-            std::shared_ptr<Util::Image> image = this->atlasLoader->getImage(getTile(x, y).getSpriteId());
+            std::shared_ptr<Util::Image> image = atlasLoader.getImage(getTile(x, y).getSpriteId());
             obj->SetDrawable(image);
             obj->m_Transform.scale = {mapScale, mapScale};
             obj->m_Transform.translation = {
@@ -97,6 +97,7 @@ GridMap::GridMap(std::string_view MAP_FILE_PATH, std::shared_ptr<AtlasLoader> at
     }
 }
 
+// -------------------- 地圖描述資訊 --------------------
 std::string GridMap::getMapName() const {
     return mapName;
 }
@@ -109,6 +110,7 @@ std::string GridMap::getMapDifficulty() const {
     return mapDifficulty;
 }
 
+// -------------------- 格子查詢 --------------------
 Tile GridMap::getTile(int x, int y) const {
     if (x < 0 || x >= mapWidth || y < 0 || y >= mapHeight) {
         throw std::out_of_range("座標超出地圖範圍");
@@ -117,13 +119,7 @@ Tile GridMap::getTile(int x, int y) const {
     return tilesArray[row * mapWidth + x];
 }
 
-void GridMap::moveCamera(float dx, float dy) {
-    for (const std::shared_ptr<Util::GameObject>& obj : tileObjects) {
-        obj->m_Transform.translation.x += dx;
-        obj->m_Transform.translation.y += dy;
-    }
-}
-
+// -------------------- 地圖尺寸 --------------------
 int GridMap::getMapWidth() const {
     return mapWidth;
 }
@@ -132,10 +128,25 @@ int GridMap::getMapHeight() const {
     return mapHeight;
 }
 
+// -------------------- 規則判斷 --------------------
 bool GridMap::canBuildTower(int x, int y) const {
+    if (x < 0 || x >= mapWidth || y < 0 || y >= mapHeight) {
+        return false;
+    }
+
     return getTile(x, y).getType() == Tile::Type::Platform;
 }
 
+bool GridMap::canWalk(int x, int y) const {
+    if (x < 0 || x >= mapWidth || y < 0 || y >= mapHeight) {
+        return false;
+    }
+
+    Tile::Type type = getTile(x, y).getType();
+    return type == Tile::Type::Road || type == Tile::Type::Spawn || type == Tile::Type::Goal;
+}
+
+// -------------------- 起終點座標 --------------------
 std::vector<std::pair<int, int>> GridMap::getSpawnGridPoints() const {
     std::vector<std::pair<int, int>> spawnPoints;
 
@@ -162,6 +173,16 @@ std::optional<std::pair<int, int>> GridMap::getGoalGridPoint() const {
     return std::nullopt;
 }
 
+// -------------------- 鏡頭與渲染 --------------------
+void GridMap::moveCamera(float dx, float dy) {
+    // 與敵人管理器保持一致：直接平移所有現有渲染物件。
+    for (const std::shared_ptr<Util::GameObject>& obj : tileObjects) {
+        obj->m_Transform.translation.x += dx;
+        obj->m_Transform.translation.y += dy;
+    }
+}
+
 void GridMap::displayMap() {
+    // 由 map root 統一提交整張地圖繪製。
     mapRoot.Update();
 }

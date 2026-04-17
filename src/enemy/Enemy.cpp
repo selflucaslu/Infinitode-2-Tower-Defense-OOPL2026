@@ -3,10 +3,29 @@
 #include <cmath>
 #include <utility>
 
-Enemy::Enemy(float startX, float startY, float speed, int maxHealth, int damage, int startPathIndex, std::string spriteId)
-    : x(startX), y(startY), speed(speed), maxHealth(maxHealth), health(maxHealth), damage(damage), pathIndex(startPathIndex), spriteId(std::move(spriteId)) {
+// -------------------- 建立單一敵人 --------------------
+Enemy::Enemy(
+    float startX,
+    float startY,
+    float speed,
+    int maxHealth,
+    int damage,
+    int startPathIndex,
+    std::string spriteId,
+    std::shared_ptr<const std::vector<std::pair<int, int>>> pathPoints
+)
+    : x(startX),
+      y(startY),
+      speed(speed),
+      maxHealth(maxHealth),
+      health(maxHealth),
+      damage(damage),
+      pathIndex(startPathIndex),
+      pathPoints(std::move(pathPoints)),
+      spriteId(std::move(spriteId)) {
 }
 
+// -------------------- 基本查詢 --------------------
 float Enemy::getX() const {
     return x;
 }
@@ -39,6 +58,7 @@ std::string Enemy::getSpriteId() const {
     return spriteId;
 }
 
+// -------------------- 基本設定 --------------------
 void Enemy::setPosition(float newX, float newY) {
     x = newX;
     y = newY;
@@ -49,22 +69,25 @@ void Enemy::setPathIndex(int newPathIndex) {
 }
 
 // -------------------- 更新敵人移動 --------------------
-void Enemy::update(float deltaTime, const std::vector<std::pair<float, float>>& pathPoints) {
+void Enemy::update(float deltaTime) {
     // deltaTime = 這一幀經過的秒數（例如 60 FPS 時約 0.016）。
     // 沒路徑、已死亡、已到終點 -> 不更新
-    if (pathPoints.empty() || !isAlive() || reachedGoal) {
+    if (!pathPoints || pathPoints->empty() || !isAlive() || reachedGoal) {
         return;
     }
 
+    // shared_ptr 綁定的固定路徑，於建構時注入。
+    const std::vector<std::pair<int, int>>& path = *pathPoints;
+
     // 安全檢查：索引超出代表已走完
-    if (pathIndex < 0 || pathIndex >= static_cast<int>(pathPoints.size())) {
+    if (pathIndex < 0 || pathIndex >= static_cast<int>(path.size())) {
         reachedGoal = true;
         return;
     }
 
     // 目前要前進到的目標點
-    const float targetX = pathPoints[pathIndex].first;
-    const float targetY = pathPoints[pathIndex].second;
+    const float targetX = path[pathIndex].first;
+    const float targetY = path[pathIndex].second;
     const float dx = targetX - x;
     const float dy = targetY - y;
     const float distance = std::sqrt(dx * dx + dy * dy);
@@ -78,7 +101,7 @@ void Enemy::update(float deltaTime, const std::vector<std::pair<float, float>>& 
         x = targetX;
         y = targetY;
         pathIndex++;
-        if (pathIndex >= static_cast<int>(pathPoints.size())) {
+        if (pathIndex >= static_cast<int>(path.size())) {
             reachedGoal = true;
         }
         return;
@@ -94,6 +117,7 @@ void Enemy::takeDamage(int amount) {
     if (health < 0) health = 0;
 }
 
+// -------------------- 狀態判斷 --------------------
 bool Enemy::isAlive() const {
     return health > 0;
 }
