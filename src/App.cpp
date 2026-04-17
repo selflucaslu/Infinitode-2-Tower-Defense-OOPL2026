@@ -43,9 +43,12 @@ void App::Update() {
         }
 
         // 2. 滾輪縮放地圖 (假定 Y 軸包含滾輪數值)
-        float scrollDelta = Util::Input::GetScrollDistance().y;
-        if (scrollDelta != 0.0F) {
-            map.zoomCamera(scrollDelta * 0.1F);
+        // 加上 IfScroll() 檢查，確保只有滾動發生的「那一幀」才執行
+        if (Util::Input::IfScroll()) {
+            float scrollDelta = Util::Input::GetScrollDistance().y;
+            if (scrollDelta != 0.0F) {
+                map.zoomCamera(scrollDelta); 
+            }
         }
 
         // 3. 滑鼠左鍵點擊建塔

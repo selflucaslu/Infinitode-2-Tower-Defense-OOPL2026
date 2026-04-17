@@ -79,7 +79,7 @@ GridMap::GridMap(std::string_view MAP_FILE_PATH, std::shared_ptr<AtlasLoader> at
     // 初始化基準寬高與相機狀態
     baseCellWidth = firstSize.x;
     baseCellHeight = firstSize.y;
-    currentScale = 0.3F;
+    currentScale = 1.0F;
     cameraX = 0.0F;
     cameraY = 0.0F;
 
@@ -151,9 +151,16 @@ void GridMap::moveCamera(float dx, float dy) {
 }
 
 void GridMap::zoomCamera(float zoomDelta) {
-    currentScale += zoomDelta;
-    if (currentScale < 0.1F) currentScale = 0.1F; // 限制最小縮放
-    if (currentScale > 2.0F) currentScale = 2.0F; // 限制最大縮放
+    // 使用乘法來縮放，這會讓縮放感更自然 (例如每次放大 10% 或縮小 10%)
+    // zoomDelta > 0 時放大 (例如 1.1倍)，zoomDelta < 0 時縮小 (例如 0.9倍)
+    float zoomFactor = (zoomDelta > 0.0F) ? 1.05F : 0.95F; 
+    
+    currentScale *= zoomFactor;
+
+    // 限制縮放範圍，避免縮得太小或放得太大
+    if (currentScale < 0.1F) currentScale = 0.1F; 
+    if (currentScale > 3.0F) currentScale = 3.0F; 
+
     updateTransforms();
 }
 
