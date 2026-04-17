@@ -5,6 +5,7 @@
 
 #include <memory>
 #include <string_view>
+#include "tower/TowerManager.hpp"
 
 class GameSession {
 public:
@@ -15,21 +16,24 @@ public:
         int initialWave = 1
     );
 
-    GridMap& getMap(); // 可修改地圖實體
-    const GridMap& getMap() const; // 唯讀地圖實體
+    [[nodiscard]] GridMap& getMap();
+    [[nodiscard]] const GridMap& getMap() const;
 
-    int getBaseHp() const; // 取得基地血量
-    void setBaseHp(int newBaseHp); // 設定基地血量
-    void applyBaseDamage(int damage); // 扣除基地血量
-    bool isBaseAlive() const; // 基地是否仍存活
+    [[nodiscard]] int getBaseHp() const;
+    void setBaseHp(int newBaseHp);
+    void applyBaseDamage(int damage);
+    [[nodiscard]] bool isBaseAlive() const;
 
-    int getWave() const; // 取得目前波次
-    void setWave(int newWave); // 設定目前波次
-    void nextWave(); // 進入下一波
+    [[nodiscard]] int getWave() const;
+    void setWave(int newWave);
+    void nextWave();
+
+    TowerManager& getTowerManager(); // 新增存取器
 
 private:
     std::shared_ptr<AtlasLoader> atlasLoader; // 圖集載入器（共用資源）
     std::unique_ptr<GridMap> map; // 本局地圖實體
     int baseHp; // 基地血量
     int wave; // 目前波次
+    std::unique_ptr<TowerManager> towerManager; // 新增成員
 };

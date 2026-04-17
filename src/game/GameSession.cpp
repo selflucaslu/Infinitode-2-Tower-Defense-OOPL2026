@@ -13,6 +13,9 @@ GameSession::GameSession(std::string_view mapFilePath, int initialBaseHp, int in
     // 最小流程：先載入圖集，再建立地圖。
     atlasLoader->loadAtlas("assets/combined.atlas");
     map = std::make_unique<GridMap>(mapFilePath, atlasLoader);
+
+    // 初始化 TowerManager
+    towerManager = std::make_unique<TowerManager>(*map);
 }
 
 // -------------------- 地圖存取 --------------------
@@ -55,4 +58,7 @@ void GameSession::setWave(int newWave) {
 
 void GameSession::nextWave() {
     wave += 1;
+}
+TowerManager& GameSession::getTowerManager() {
+    return *towerManager;
 }

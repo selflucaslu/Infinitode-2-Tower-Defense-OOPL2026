@@ -1,8 +1,8 @@
 #include "map/GridMap.hpp"
-
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
+#include <cmath>
 
 
 GridMap::GridMap(std::string_view MAP_FILE_PATH, std::shared_ptr<AtlasLoader> atlas)
@@ -67,33 +67,60 @@ GridMap::GridMap(std::string_view MAP_FILE_PATH, std::shared_ptr<AtlasLoader> at
     }
 
     if (heightCounter == 0) throw std::runtime_error("地圖文件中沒有地圖數據");
-    mapHeight = heightCounter; // 最終的高度就是讀取的地圖數據行數
+    mapHeight = heightCounter;
     mapWidth = widthCounter;
 
     // -------------------- 開始繪製地圖 --------------------
     tileObjects.reserve(tilesArray.size());
 
-    const std::shared_ptr<Util::Image> firstImage = this->atlasLoader->getImage(tilesArray.front().getSpriteId()); // 取第一格當作基準尺寸
-    const glm::vec2 firstSize = firstImage->GetSize(); // PTSD API: 取得圖片原始寬高
-    constexpr float mapScale = 0.3F; // 地圖整體縮放倍率
-    const float cellW = firstSize.x * mapScale; // 每格在世界座標的寬（縮放後）
-    const float cellH = firstSize.y * mapScale; // 每格在世界座標的高（縮放後）
-    const float startX = -(mapWidth * cellW) * 0.5F + cellW * 0.5F; // 從左邊第一格中心開始，讓整張圖置中
-    const float startY = -(mapHeight * cellH) * 0.5F + cellH * 0.5F; // 從下邊第一格中心開始，讓整張圖置中
+    const std::shared_ptr<Util::Image> firstImage = this->atlasLoader->getImage(tilesArray.front().getSpriteId());
+    const glm::vec2 firstSize = firstImage->GetSize();
+
+    // 初始化基準寬高與相機狀態
+    baseCellWidth = firstSize.x;
+    baseCellHeight = firstSize.y;
+    currentScale = 0.3F;
+    cameraX = 0.0F;
+    cameraY = 0.0F;
 
     for (int y = 0; y < mapHeight; ++y) {
         for (int x = 0; x < mapWidth; ++x) {
             std::shared_ptr<Util::GameObject> obj = std::make_shared<Util::GameObject>();
             std::shared_ptr<Util::Image> image = this->atlasLoader->getImage(getTile(x, y).getSpriteId());
             obj->SetDrawable(image);
-            obj->m_Transform.scale = {mapScale, mapScale};
-            obj->m_Transform.translation = {
-                startX + x * cellW, // x 方向照欄位往右排
-                startY + y * cellH // world y 向上，y=0 是最下方
-            };
             mapRoot.AddChild(obj);
             tileObjects.emplace_back(obj);
         }
+    }
+    // 套用初始位置
+    updateTransforms();
+}
+
+// 統一更新所有地圖方塊與塔物件的位置及縮放
+void GridMap::updateTransforms() {
+    const float cellW = baseCellWidth * currentScale;
+    const float cellH = baseCellHeight * currentScale;
+    const float startX = -(mapWidth * cellW) * 0.5F + cellW * 0.5F + cameraX;
+    const float startY = -(mapHeight * cellH) * 0.5F + cellH * 0.5F + cameraY;
+
+    int i = 0;
+    for (int y = 0; y < mapHeight; ++y) {
+        for (int x = 0; x < mapWidth; ++x) {
+            tileObjects[i]->m_Transform.scale = {currentScale, currentScale};
+            tileObjects[i]->m_Transform.translation = {
+                startX + x * cellW,
+                startY + y * cellH
+            };
+            i++;
+        }
+    }
+
+    for (auto& tv : towerVisuals) {
+        tv.obj->m_Transform.scale = {currentScale, currentScale};
+        tv.obj->m_Transform.translation = {
+            startX + tv.gridX * cellW,
+            startY + tv.gridY * cellH
+        };
     }
 }
 
@@ -118,10 +145,43 @@ Tile GridMap::getTile(int x, int y) const {
 }
 
 void GridMap::moveCamera(float dx, float dy) {
-    for (const std::shared_ptr<Util::GameObject>& obj : tileObjects) {
-        obj->m_Transform.translation.x += dx;
-        obj->m_Transform.translation.y += dy;
-    }
+    cameraX += dx;
+    cameraY += dy;
+    updateTransforms();
+}
+
+void GridMap::zoomCamera(float zoomDelta) {
+    currentScale += zoomDelta;
+    if (currentScale < 0.1F) currentScale = 0.1F; // 限制最小縮放
+    if (currentScale > 2.0F) currentScale = 2.0F; // 限制最大縮放
+    updateTransforms();
+}
+
+// 將畫面上的滑鼠座標轉換回格狀座標 (x, y)
+std::pair<int, int> GridMap::ScreenToGrid(float screenX, float screenY) const {
+    const float cellW = baseCellWidth * currentScale;
+    const float cellH = baseCellHeight * currentScale;
+    const float startX = -(mapWidth * cellW) * 0.5F + cellW * 0.5F + cameraX;
+    const float startY = -(mapHeight * cellH) * 0.5F + cellH * 0.5F + cameraY;
+
+    // 四捨五入找出最近的格子中心
+    int gridX = static_cast<int>(std::floor((screenX - startX + cellW * 0.5F) / cellW));
+    int gridY = static_cast<int>(std::floor((screenY - startY + cellH * 0.5F) / cellH));
+    return {gridX, gridY};
+}
+
+// 建立塔的視覺物件，使其隨地圖一起縮放與移動
+// 參數型別改為 std::string_view
+void GridMap::addTowerVisual(int gridX, int gridY, std::string_view spriteId) {
+    auto obj = std::make_shared<Util::GameObject>();
+    obj->SetDrawable(atlasLoader->getImage(spriteId));
+
+    // 修復 "Member is inaccessible" 錯誤：改用 SetZIndex 設值
+    obj->SetZIndex(1);
+
+    mapRoot.AddChild(obj);
+    towerVisuals.push_back({gridX, gridY, obj});
+    updateTransforms();
 }
 
 int GridMap::getMapWidth() const {

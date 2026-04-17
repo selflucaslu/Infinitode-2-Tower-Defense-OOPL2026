@@ -12,31 +12,55 @@
 #include <utility>
 #include <vector>
 
-
 class GridMap {
 public:
-    GridMap(std::string_view MAP_FILE_PATH, std::shared_ptr<AtlasLoader> atlas); // 載入地圖與建立顯示物件
-    std::string getMapName() const; // 取得地圖名稱
-    std::string getMapDescription() const; // 取得地圖描述
-    std::string getMapDifficulty() const; // 取得地圖難度
-    // 第一象限座標： (0,0) 在左下，x 向右、y 向上。
-    Tile getTile(int x, int y) const;
-    int getMapWidth() const;
-    int getMapHeight() const;
-    bool canBuildTower(int x, int y) const; // 判斷該位置是否可以建造塔
-    std::vector<std::pair<int, int>> getSpawnGridPoints() const; // 取得所有起點格座標
-    std::optional<std::pair<int, int>> getGoalGridPoint() const; // 取得終點格座標（沒有則回傳 nullopt）
-    void moveCamera(float dx, float dy); // 平移地圖視角
-    void displayMap(); // 用於顯示地圖的函數
+    GridMap(std::string_view MAP_FILE_PATH, std::shared_ptr<AtlasLoader> atlas);
+    [[nodiscard]] std::string getMapName() const;
+    [[nodiscard]] std::string getMapDescription() const;
+    [[nodiscard]] std::string getMapDifficulty() const;
+    [[nodiscard]] Tile getTile(int x, int y) const;
+    [[nodiscard]] int getMapWidth() const;
+    [[nodiscard]] int getMapHeight() const;
+    [[nodiscard]] bool canBuildTower(int x, int y) const;
+    [[nodiscard]] std::vector<std::pair<int, int>> getSpawnGridPoints() const;
+    [[nodiscard]] std::optional<std::pair<int, int>> getGoalGridPoint() const;
+
+    // --- 視角與互動 ---
+    void moveCamera(float dx, float dy);
+    void zoomCamera(float zoomDelta);
+    [[nodiscard]] std::pair<int, int> ScreenToGrid(float screenX, float screenY) const;
+
+    // 將 std::string 改為 std::string_view 避免複製
+    void addTowerVisual(int gridX, int gridY, std::string_view spriteId);
+
+    void displayMap();
+
 private:
-    std::string MAP_FILE_PATH;       // 地圖文件路徑
-    std::string mapName;             // 地圖名稱
-    std::string mapDescription;      // 地圖描述
-    std::string mapDifficulty;       // 地圖難度
-    int mapWidth;                    // 地圖寬度
-    int mapHeight;                   // 地圖高度
-    std::vector<Tile> tilesArray;    // 用於存儲地圖上每個 tile 的一維陣列
+    void updateTransforms(); // 統一更新所有物件的 Transform (位置與縮放)
+
+private:
+    std::string MAP_FILE_PATH;
+    std::string mapName;
+    std::string mapDescription;
+    std::string mapDifficulty;
+    int mapWidth;
+    int mapHeight;
+    std::vector<Tile> tilesArray;
     std::shared_ptr<AtlasLoader> atlasLoader;
     Util::Renderer mapRoot;
     std::vector<std::shared_ptr<Util::GameObject>> tileObjects;
+
+    // --- 新增用於儲存塔視覺物件與相機狀態的變數 ---
+    struct TowerVisual {
+        int gridX;
+        int gridY;
+        std::shared_ptr<Util::GameObject> obj;
+    };
+    std::vector<TowerVisual> towerVisuals;
+
+    float currentScale = 0.3F;
+    float cameraX = 0.0F;
+    float cameraY = 0.0F;
+    float baseCellWidth = 0.0F;
+    float baseCellHeight = 0.0F;
 };
