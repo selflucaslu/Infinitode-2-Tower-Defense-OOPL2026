@@ -14,31 +14,31 @@ void App::Start() {
     // 建立最簡單單局（地圖 + 基地血量 + 波次）
     m_GameSession = std::make_unique<GameSession>("assets/maps/map_01.csv");
 
+    // 建立 FPS 顯示
+    m_FpsOverlay = std::make_unique<FpsOverlay>();
+
     m_CurrentState = State::UPDATE;
 }
 
 // -------------------- 每幀更新 --------------------
 void App::Update() {
     if (m_GameSession) {
-        // 1) 取得上一幀到這一幀的實際經過時間（毫秒 -> 秒），並做夾制：
-        // 下限 0.0F（避免異常負值）/ 上限 0.05F（避免卡頓瞬移）。
-        const float deltaTime = std::clamp(Util::Time::GetDeltaTimeMs() * 0.001F, 0.0F, 0.05F);
+        const float rawDeltaTime = Util::Time::GetDeltaTimeMs() * 0.001F; // 真實每幀秒數（秒）
+        const float simDeltaTime = std::clamp(rawDeltaTime, 0.0F, 0.05F); // 過濾極端值
 
-        // 相機速度定義為「每秒多少單位」，不是每幀多少單位。
-        // 這樣才能搭配 deltaTime 做出 FPS 無關的等速移動。
-        constexpr float cameraSpeedPerSecond = 480.0F;
-        float dx = 0.0F; // 本幀 x 位移量（由輸入累加）
-        float dy = 0.0F; // 本幀 y 位移量（由輸入累加）
+        constexpr float cameraSpeedPerSecond = 480.0F; // 相機速度定義（每秒多少單位）
+        float dx = 0.0F; // 本幀 x 位移量
+        float dy = 0.0F; // 本幀 y 位移量
 
-        // 核心公式：本幀位移 = 每秒速度 * 本幀秒數（deltaTime）
+        // 核心公式：本幀位移 = 每秒速度 * 本幀秒數（simDeltaTime）
         // 例：480 * 0.016 ~= 7.68，代表 60 FPS 時每幀移動約 7.68 單位。
-        // FPS 降低時，deltaTime 變大、每幀位移也變大，最終「每秒移動距離」仍一致。
-        if (Util::Input::IsKeyPressed(Util::Keycode::W)) dy -= cameraSpeedPerSecond * deltaTime;  // 上（長按連續）
-        if (Util::Input::IsKeyPressed(Util::Keycode::S)) dy += cameraSpeedPerSecond * deltaTime;  // 下（長按連續）
-        if (Util::Input::IsKeyPressed(Util::Keycode::A)) dx += cameraSpeedPerSecond * deltaTime;  // 左（長按連續）
-        if (Util::Input::IsKeyPressed(Util::Keycode::D)) dx -= cameraSpeedPerSecond * deltaTime;  // 右（長按連續）
+        // FPS 降低時，simDeltaTime 變大、每幀位移也變大，最終「每秒移動距離」仍一致。
+        if (Util::Input::IsKeyPressed(Util::Keycode::W)) dy -= cameraSpeedPerSecond * simDeltaTime;  // 上（長按連續）
+        if (Util::Input::IsKeyPressed(Util::Keycode::S)) dy += cameraSpeedPerSecond * simDeltaTime;  // 下（長按連續）
+        if (Util::Input::IsKeyPressed(Util::Keycode::A)) dx += cameraSpeedPerSecond * simDeltaTime;  // 左（長按連續）
+        if (Util::Input::IsKeyPressed(Util::Keycode::D)) dx -= cameraSpeedPerSecond * simDeltaTime;  // 右（長按連續）
 
-        // 地圖與敵人共用同一組相機平移，避免畫面脫節。
+        // 相機視角移動。
         if (dx != 0.0F || dy != 0.0F) {
             m_GameSession->moveCamera(dx, dy);
         }
@@ -54,10 +54,13 @@ void App::Update() {
 
         // 每幀順序：
         // update：先更新邏輯狀態（敵人位置、路徑推進...）
-        // display：再把更新後結果畫到螢幕
-        // 這是最常見、最直覺的遊戲主迴圈流程。
-        m_GameSession->update(deltaTime);
+        // display：再把更新後結果渲染到螢幕
+        m_GameSession->update(simDeltaTime);
         m_GameSession->display();
+        if (m_FpsOverlay) {
+            m_FpsOverlay->update(rawDeltaTime); // 獨立使用 rawDeltaTime
+            m_FpsOverlay->display();
+        }
     }
 
     // ESC 或視窗關閉 -> 進入結束流程

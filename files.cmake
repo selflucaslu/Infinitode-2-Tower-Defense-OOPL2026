@@ -2,6 +2,7 @@ set(SRC_FILES
     App.cpp
     game/GameSession.cpp
     utils/AtlasLoader.cpp
+    utils/FpsOverlay.cpp
     enemy/Enemy.cpp
     enemy/EnemyManager.cpp
     map/GridMap.cpp
@@ -16,6 +17,7 @@ set(INCLUDE_FILES
     game/GameSession.hpp
     game/LevelConfig.hpp
     utils/AtlasLoader.hpp
+    utils/FpsOverlay.hpp
     enemy/Enemy.hpp
     enemy/EnemyTypeConfig.hpp
     enemy/EnemyManager.hpp

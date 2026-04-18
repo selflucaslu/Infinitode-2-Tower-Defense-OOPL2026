@@ -3,6 +3,7 @@
 
 #include "game/GameSession.hpp"
 #include "pch.hpp" // IWYU pragma: export
+#include "utils/FpsOverlay.hpp"
 
 #include <memory>
 
@@ -29,6 +30,7 @@ private:
     // -------------------- App 成員 --------------------
     State m_CurrentState = State::START; // App 流程狀態
     std::unique_ptr<GameSession> m_GameSession; // 本局執行期資料
+    std::unique_ptr<FpsOverlay> m_FpsOverlay; // FPS 顯示工具
 };
 
 #endif
