@@ -7,6 +7,7 @@ class Tile {
 public:
     // Tile 類型：用於外部判斷道路、建塔地、起終點與牆。
     enum class Type {
+        Empty,
         Road,
         Platform,
         Wall,

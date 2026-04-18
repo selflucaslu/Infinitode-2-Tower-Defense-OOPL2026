@@ -73,7 +73,19 @@ GridMap::GridMap(std::string_view MAP_FILE_PATH, AtlasLoader& atlas)
     // -------------------- 開始繪製地圖 --------------------
     tileObjects.reserve(tilesArray.size());
 
-    const std::shared_ptr<Util::Image> firstImage = atlasLoader.getImage(tilesArray.front().getSpriteId()); // 取第一格當作基準尺寸
+    // 取第一個「非 Empty」格子當作基準尺寸，避免地圖左上角是 empty 時載圖失敗。
+    std::string firstSpriteId;
+    for (const Tile& tile : tilesArray) {
+        if (tile.getType() != Tile::Type::Empty) {
+            firstSpriteId = tile.getSpriteId();
+            break;
+        }
+    }
+    if (firstSpriteId.empty()) {
+        throw std::runtime_error("地圖全部都是 Empty，無法建立地圖尺寸基準");
+    }
+
+    const std::shared_ptr<Util::Image> firstImage = atlasLoader.getImage(firstSpriteId);
     const glm::vec2 firstSize = firstImage->GetSize(); // PTSD API: 取得圖片原始寬高
     constexpr float mapScale = 0.3F; // 地圖整體縮放倍率
     const float cellW = firstSize.x * mapScale; // 每格在世界座標的寬（縮放後）
@@ -83,6 +95,9 @@ GridMap::GridMap(std::string_view MAP_FILE_PATH, AtlasLoader& atlas)
 
     for (int y = 0; y < mapHeight; ++y) {
         for (int x = 0; x < mapWidth; ++x) {
+            if (getTile(x, y).getType() == Tile::Type::Empty) {
+                continue; // Empty 不建立渲染物件
+            }
             std::shared_ptr<Util::GameObject> obj = std::make_shared<Util::GameObject>();
             std::shared_ptr<Util::Image> image = atlasLoader.getImage(getTile(x, y).getSpriteId());
             obj->SetDrawable(image);

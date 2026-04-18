@@ -12,7 +12,7 @@
 void App::Start() {
     LOG_TRACE("Start");
     // 建立最簡單單局（地圖 + 基地血量 + 波次）
-    m_GameSession = std::make_unique<GameSession>("assets/maps/map_01.csv");
+    m_GameSession = std::make_unique<GameSession>("assets/maps/map_00.csv");
 
     // 建立 FPS 顯示
     m_FpsOverlay = std::make_unique<FpsOverlay>();

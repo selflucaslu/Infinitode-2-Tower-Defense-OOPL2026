@@ -14,7 +14,25 @@ EnemyManager::EnemyManager(const GridMap& map, AtlasLoader& atlasLoader)
     buildPathsFromMap();
 
     // 參照 GridMap 的計算方式，預先算出格子到世界座標的轉換基準。
-    const std::shared_ptr<Util::Image> firstImage = m_AtlasLoader.getImage(m_Map.getTile(0, 0).getSpriteId());
+    // 取第一個「非 Empty」格子當作基準尺寸，避免地圖左上角是 empty 時載圖失敗。
+    std::string firstSpriteId;
+    for (int y = 0; y < m_Map.getMapHeight(); ++y) {
+        for (int x = 0; x < m_Map.getMapWidth(); ++x) {
+            const Tile tile = m_Map.getTile(x, y);
+            if (tile.getType() != Tile::Type::Empty) {
+                firstSpriteId = tile.getSpriteId();
+                break;
+            }
+        }
+        if (!firstSpriteId.empty()) {
+            break;
+        }
+    }
+    if (firstSpriteId.empty()) {
+        throw std::runtime_error("地圖沒有可渲染格子，無法建立敵人座標基準");
+    }
+
+    const std::shared_ptr<Util::Image> firstImage = m_AtlasLoader.getImage(firstSpriteId);
     const glm::vec2 firstSize = firstImage->GetSize();
     m_CellW = firstSize.x * m_MapScale;
     m_CellH = firstSize.y * m_MapScale;

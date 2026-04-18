@@ -32,6 +32,11 @@ Tile::Type Tile::parseTypeFromSpriteId(std::string_view spriteId) const {
     // 涵蓋範圍：
     // - combined.atlas 中目前地圖會用到的 road/platform/spawn/target 系列皆可被識別。
     // - 其餘未列入上述規則的 tile-type-* 一律視為 Wall，避免被誤判為可走或可建塔地。
+    // - tile-type-empty 為空白格（不渲染、不可走、不可建）
+    if (hasPrefix(spriteId, "tile-type-empty")) {
+        return Type::Empty;
+    }
+
     if (hasPrefix(spriteId, "tile-type-platform")) {
         return Type::Platform;
     }
