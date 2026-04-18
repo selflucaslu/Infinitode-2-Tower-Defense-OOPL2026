@@ -26,6 +26,7 @@ EnemyManager::EnemyManager(const GridMap& map, AtlasLoader& atlasLoader)
 void EnemyManager::spawnEnemiesAt(
     const std::vector<std::size_t>& spawnPointIndices,
     float speed,
+    Enemy::MoveType moveType,
     int maxHealth,
     int damage,
     std::string_view spriteId
@@ -39,7 +40,7 @@ void EnemyManager::spawnEnemiesAt(
 
             const float startX = path->front().first;
             const float startY = path->front().second;
-            enemies.emplace_back(startX, startY, speed, Enemy::MoveType::Ground, maxHealth, damage, 0, std::string(spriteId), path);
+            enemies.emplace_back(startX, startY, speed, moveType, maxHealth, damage, 0, std::string(spriteId), path);
         }
         return;
     }
@@ -57,7 +58,7 @@ void EnemyManager::spawnEnemiesAt(
 
         const float startX = path->front().first;
         const float startY = path->front().second;
-        enemies.emplace_back(startX, startY, speed, Enemy::MoveType::Ground, maxHealth, damage, 0, std::string(spriteId), path);
+        enemies.emplace_back(startX, startY, speed, moveType, maxHealth, damage, 0, std::string(spriteId), path);
     }
 }
 
@@ -97,6 +98,9 @@ void EnemyManager::update(float deltaTime) {
         };
     }
 
+}
+
+void EnemyManager::display() {
     // 由 enemy root 統一提交繪製。
     m_EnemyRoot.Update();
 }
@@ -164,42 +168,32 @@ void EnemyManager::buildPathsFromMap() {
     for (const std::pair<int, int>& spawn : spawnGridPoints) {
         std::queue<std::pair<std::pair<int, int>, std::vector<std::pair<int, int>>>> bfsQueue; // 元素是 (當前格座標, 從起點到當前格的路徑)
         std::vector<bool> visited(mapWidth * mapHeight, false); // 使用一維陣列來表示二維格子是否被訪問過
+        std::vector<std::pair<int, int>> shortestGridPath;
 
-        std::vector<std::vector<std::pair<int, int>>> allGridPaths;
         bfsQueue.push({spawn, {spawn}});
+        visited[spawn.second * mapWidth + spawn.first] = true;
         while (!bfsQueue.empty()) {
-            const std::pair<std::pair<int, int>, std::vector<std::pair<int, int>>>& currentAndPath = bfsQueue.front();
+            const std::pair<std::pair<int, int>, std::vector<std::pair<int, int>>> currentAndPath = bfsQueue.front();
             const std::pair<int, int>& current = currentAndPath.first;
             const std::vector<std::pair<int, int>>& path = currentAndPath.second;
             bfsQueue.pop();
 
-            if (visited[current.second * mapWidth + current.first]) {
-                continue;
-            }
-
             if (current == goalGridPoint) {
-                allGridPaths.push_back(path);
+                // BFS 第一次到達終點即為最短路徑，可直接結束。
+                shortestGridPath = path;
+                break;
             }
 
-            visited[current.second * mapWidth + current.first] = true; // 標記當前格子為已訪問
             for (const std::pair<int, int>& dir : kFourDirs) {
                 const int dx = dir.first;
                 const int dy = dir.second;
                 std::pair<int, int> next{current.first + dx, current.second + dy};
                 if (m_Map.canWalk(next.first, next.second) && !visited[next.second * mapWidth + next.first]) {
+                    visited[next.second * mapWidth + next.first] = true; // enqueue 時就標記，避免重複入隊
                     std::vector<std::pair<int, int>> newPath = path;
                     newPath.push_back(next);
                     bfsQueue.push({next, newPath});
                 }
-            }
-        }
-
-        // 從所有可行路徑中挑出最短的一條，並用 shared_ptr 保存。
-        // 之後每隻敵人可共享這份路徑，避免重複複製。
-        std::vector<std::pair<int, int>> shortestGridPath;
-        for (const std::vector<std::pair<int, int>>& gridPath : allGridPaths) {
-            if (shortestGridPath.empty() || gridPath.size() < shortestGridPath.size()) {
-                shortestGridPath = gridPath;
             }
         }
 

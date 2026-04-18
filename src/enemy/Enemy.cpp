@@ -60,7 +60,7 @@ int Enemy::getDamage() const {
     return damage;
 }
 
-std::string Enemy::getSpriteId() const {
+std::string_view Enemy::getSpriteId() const {
     return spriteId;
 }
 

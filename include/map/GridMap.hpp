@@ -16,9 +16,9 @@ class GridMap {
 public:
     // -------------------- 建構與基本資訊 --------------------
     GridMap(std::string_view MAP_FILE_PATH, AtlasLoader& atlas); // 載入地圖與建立顯示物件
-    std::string getMapName() const; // 取得地圖名稱
-    std::string getMapDescription() const; // 取得地圖描述
-    std::string getMapDifficulty() const; // 取得地圖難度
+    std::string_view getMapName() const; // 取得地圖名稱
+    std::string_view getMapDescription() const; // 取得地圖描述
+    std::string_view getMapDifficulty() const; // 取得地圖難度
 
     // -------------------- 地圖查詢 --------------------
     // 第一象限座標： (0,0) 在左下，x 向右、y 向上。

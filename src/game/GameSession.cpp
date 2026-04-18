@@ -67,3 +67,38 @@ void GameSession::setWave(int newWave) {
 void GameSession::nextWave() {
     wave += 1;
 }
+
+// -------------------- 每幀流程 --------------------
+void GameSession::update(float deltaTime) {
+    // 目前先由 EnemyManager 處理敵人更新與渲染提交。
+    enemyManager->update(deltaTime);
+}
+
+void GameSession::display() {
+    // 先畫地圖再畫敵人，避免敵人被地圖覆蓋。
+    map->displayMap();
+    enemyManager->display();
+}
+
+void GameSession::moveCamera(float dx, float dy) {
+    // 兩者雖然實作方式不同，但只要同一幀用相同 dx/dy 呼叫，
+    // 地圖（直接位移）與敵人（offset 重算）會保持同步。
+    map->moveCamera(dx, dy);
+    enemyManager->moveCamera(dx, dy);
+}
+
+// -------------------- 測試入口 --------------------
+void GameSession::spawnDebugEnemy(
+    EnemyTypeId enemyTypeId,
+    const std::vector<std::size_t>& spawnPointIndices
+) {
+    const EnemyTypeConfig& config = getEnemyTypeConfig(enemyTypeId);
+    enemyManager->spawnEnemiesAt(
+        spawnPointIndices,
+        config.speed,
+        config.moveType,
+        config.maxHealth,
+        config.damageToBase,
+        config.spriteId
+    );
+}

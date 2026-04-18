@@ -25,6 +25,7 @@ public:
     void spawnEnemiesAt(
         const std::vector<std::size_t>& spawnPointIndices,
         float speed = 1.0F,
+        Enemy::MoveType moveType = Enemy::MoveType::Ground,
         int maxHealth = 40,
         int damage = 5,
         std::string_view spriteId = "enemy-type-regular"
@@ -32,8 +33,10 @@ public:
 
     // -------------------- 每幀更新 --------------------
     // 更新敵人狀態（不做複雜尋路，沿固定路徑移動）。
-    // 同步維護敵人的渲染物件（貼圖與座標），最後統一繪製。
+    // 同步維護敵人的渲染物件（貼圖與座標）。
     void update(float deltaTime);
+    // 統一繪製敵人。
+    void display();
     // 平移敵人視角（行為對齊 GridMap::moveCamera）。
     void moveCamera(float dx, float dy);
 

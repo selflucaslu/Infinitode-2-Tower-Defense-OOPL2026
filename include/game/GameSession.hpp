@@ -1,11 +1,14 @@
 #pragma once
 
 #include "enemy/EnemyManager.hpp"
+#include "enemy/EnemyTypeConfig.hpp"
 #include "map/GridMap.hpp"
 #include "utils/AtlasLoader.hpp"
 
+#include <cstddef>
 #include <memory>
 #include <string_view>
+#include <vector>
 
 class GameSession {
 public:
@@ -33,6 +36,19 @@ public:
     int getWave() const; // 取得目前波次
     void setWave(int newWave); // 設定目前波次
     void nextWave(); // 進入下一波
+
+    // -------------------- 每幀流程 --------------------
+    // 統一由 GameSession 驅動本局物件更新與顯示。
+    void update(float deltaTime);
+    void display();
+    void moveCamera(float dx, float dy);
+
+    // -------------------- 測試入口 --------------------
+    // Debug 用生怪入口：由 App 觸發，GameSession 轉發給 EnemyManager。
+    void spawnDebugEnemy(
+        EnemyTypeId enemyTypeId,
+        const std::vector<std::size_t>& spawnPointIndices = {}
+    );
 
 private:
     // -------------------- 資源與核心物件 --------------------

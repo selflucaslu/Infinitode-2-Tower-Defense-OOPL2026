@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -36,7 +37,7 @@ public:
     int getHealth() const; // 取得目前血量
     int getMaxHealth() const; // 取得最大血量
     int getDamage() const; // 取得到終點造成傷害
-    std::string getSpriteId() const; // 取得貼圖 ID
+    std::string_view getSpriteId() const; // 取得貼圖 ID
 
     // -------------------- 設定 --------------------
     void setPosition(float newX, float newY); // 設定世界座標

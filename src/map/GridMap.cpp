@@ -98,15 +98,15 @@ GridMap::GridMap(std::string_view MAP_FILE_PATH, AtlasLoader& atlas)
 }
 
 // -------------------- 地圖描述資訊 --------------------
-std::string GridMap::getMapName() const {
+std::string_view GridMap::getMapName() const {
     return mapName;
 }
 
-std::string GridMap::getMapDescription() const {
+std::string_view GridMap::getMapDescription() const {
     return mapDescription;
 }
 
-std::string GridMap::getMapDifficulty() const {
+std::string_view GridMap::getMapDifficulty() const {
     return mapDifficulty;
 }
 
