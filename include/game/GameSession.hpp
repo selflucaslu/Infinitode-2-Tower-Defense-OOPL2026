@@ -42,8 +42,9 @@ public:
     void moveCamera(float dx, float dy);
 
     // -------------------- 遊戲流程控制 --------------------
-    void initSession(); // 初始化遊戲狀態（重置 timer、基地血量、波次、敵人等）
-    void startSession(); // 開始遊戲
+    void initSession(); // 初始化本局參數（重置 timer、基地血量、金幣、波次、敵人等）
+    void startSession(); // 開始/恢復遊戲
+    void pauseSession(); // 暫停遊戲
     void dispatchEnemiesByTimer(); // 根據 timer 觸發敵人生成
 
     // -------------------- 測試入口 --------------------
@@ -65,6 +66,7 @@ private:
     float waveTimer; // 本波經過時間（秒）
     float groupTimer; // 目前 group 內部計時（秒）
     int initBaseHp; // 初始基地血量
+    int initGold; // 初始金幣
     int baseHp; // 基地血量
     int gold; // 金幣
     int waveCount; // 目前波次

@@ -156,15 +156,29 @@ EnemyManager::FrameResolveResult EnemyManager::collectFrameResolveResult() const
 }
 
 void EnemyManager::removeDeadEnemies() {
-    // erase-remove_if：單次線性掃描清掉死亡敵人。
-    enemies.erase(std::remove_if(enemies.begin(), enemies.end(),
-        [](const Enemy& enemy) { return !enemy.isAlive(); }), enemies.end());
+    // 由尾到頭同步刪除 enemies 與 m_EnemyObjects，確保索引一致。
+    for (int enemyIndex = static_cast<int>(enemies.size()) - 1; enemyIndex >= 0; --enemyIndex) {
+        if (!enemies[enemyIndex].isAlive()) {
+            enemies.erase(enemies.begin() + enemyIndex);
+            if (enemyIndex < static_cast<int>(m_EnemyObjects.size())) {
+                m_EnemyRoot.RemoveChild(m_EnemyObjects[enemyIndex]);
+                m_EnemyObjects.erase(m_EnemyObjects.begin() + enemyIndex);
+            }
+        }
+    }
 }
 
 void EnemyManager::removeDeadAndReached() {
-    // 一次清掉死亡或已到終點敵人，避免容器殘留無效個體。
-    enemies.erase(std::remove_if(enemies.begin(), enemies.end(),
-        [](const Enemy& enemy) { return !enemy.isAlive() || enemy.hasReachedGoal(); }), enemies.end());
+    // 由尾到頭同步刪除 enemies 與 m_EnemyObjects，避免剛清掉的敵人多顯示一幀。
+    for (int enemyIndex = static_cast<int>(enemies.size()) - 1; enemyIndex >= 0; --enemyIndex) {
+        if (!enemies[enemyIndex].isAlive() || enemies[enemyIndex].hasReachedGoal()) {
+            enemies.erase(enemies.begin() + enemyIndex);
+            if (enemyIndex < static_cast<int>(m_EnemyObjects.size())) {
+                m_EnemyRoot.RemoveChild(m_EnemyObjects[enemyIndex]);
+                m_EnemyObjects.erase(m_EnemyObjects.begin() + enemyIndex);
+            }
+        }
+    }
 }
 
 // -------------------- 容器存取 --------------------

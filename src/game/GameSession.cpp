@@ -14,18 +14,11 @@ GameSession::GameSession(int levelNumber) {
     map = std::make_unique<GridMap>(level.mapPath, *atlasLoader);
     enemyManager = std::make_unique<EnemyManager>(*map, *atlasLoader);
 
-    // 初始化遊戲狀態（未開始、timer 歸零、基地血量與波次從配置讀取）。
-    isSessionActive = false;
-    timer = 0.0F;
-    waveTimer = 0.0F;
-    groupTimer = 0.0F;
+    // 初始化遊戲狀態（基地血量與金幣初始值從配置讀取）。
     initBaseHp = level.baseHp;
-    baseHp = initBaseHp;
-    gold = level.startingGold;
-    waveCount = 0;
-    groupIndex = 0;
-    groupSpawned = 0;
+    initGold = level.startingGold;
     spawnSchedule = level.waves;
+    initSession();
 
     // 背景改為 Infinitode 風格的灰色同色系 #181818。
     glClearColor(24.0F / 255.0F, 24.0F / 255.0F, 24.0F / 255.0F, 1.0F);
@@ -107,6 +100,21 @@ void GameSession::update(float deltaTime) {
     applyBaseDamage(frameResult.reachedGoalDamage);
     addGold(frameResult.killedRewardGold);
     enemyManager->removeDeadAndReached();
+
+    // 本波清空判定必須放在清理後，避免最後一隻剛消失時慢一幀才切下一波。
+    if (waveCount >= 0 && waveCount < static_cast<int>(spawnSchedule.size())) {
+        const WaveConfig& waveConfig = spawnSchedule[waveCount];
+        const int groupCount = static_cast<int>(waveConfig.groups.size());
+        const bool isWaveSpawnFinished = groupIndex >= groupCount;
+        if (isWaveSpawnFinished && enemyManager->getEnemies().empty()) {
+            addGold(waveConfig.clearRewardGold);
+            nextWave();
+            waveTimer = 0.0F;
+            groupTimer = 0.0F;
+            groupIndex = 0;
+            groupSpawned = 0;
+        }
+    }
 }
 
 void GameSession::display() {
@@ -129,6 +137,7 @@ void GameSession::initSession() {
     waveTimer = 0.0F;
     groupTimer = 0.0F;
     baseHp = initBaseHp;
+    gold = initGold;
     waveCount = 0;
     groupIndex = 0;
     groupSpawned = 0;
@@ -136,8 +145,11 @@ void GameSession::initSession() {
 }
 
 void GameSession::startSession() {
-    initSession();
     isSessionActive = true;
+}
+
+void GameSession::pauseSession() {
+    isSessionActive = false;
 }
 
 void GameSession::dispatchEnemiesByTimer() {
@@ -197,16 +209,6 @@ void GameSession::dispatchEnemiesByTimer() {
         }
     }
 
-    // 7) 本波派怪都完成且場上清空 -> 進下一波並重置波內狀態。
-    const bool isWaveSpawnFinished = groupIndex >= groupCount;
-    if (isWaveSpawnFinished && enemyManager->getEnemies().empty()) {
-        addGold(waveConfig.clearRewardGold);
-        nextWave();
-        waveTimer = 0.0F;
-        groupTimer = 0.0F;
-        groupIndex = 0;
-        groupSpawned = 0;
-    }
 }
 
 // -------------------- 測試入口 --------------------
