@@ -3,8 +3,11 @@
 #include "enemy/EnemyTypeConfig.hpp"
 
 #include <cstddef>
+#include <filesystem>
+#include <sstream>
 #include <stdexcept>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 // -------------------- 單組生怪配置 --------------------
@@ -145,11 +148,98 @@ inline const std::vector<LevelConfig> kLevelConfigs = {
 };
 
 // -------------------- 關卡查表介面 --------------------
+inline void validateLevelConfigs() {
+    std::vector<std::string> errors;
+    std::unordered_set<int> seenLevelNumbers;
+
+    for (const LevelConfig& levelConfig : kLevelConfigs) {
+        if (!seenLevelNumbers.insert(levelConfig.levelNumber).second) {
+            errors.push_back("重複關卡編號: " + std::to_string(levelConfig.levelNumber));
+        }
+        if (levelConfig.levelNumber <= 0) {
+            errors.push_back("非法關卡編號: " + std::to_string(levelConfig.levelNumber));
+        }
+        if (levelConfig.baseHp <= 0) {
+            errors.push_back("關卡 " + std::to_string(levelConfig.levelNumber) + " 的 baseHp 必須大於 0");
+        }
+        if (levelConfig.mapPath.empty()) {
+            errors.push_back("關卡 " + std::to_string(levelConfig.levelNumber) + " 缺少 mapPath");
+        } else if (!std::filesystem::exists(levelConfig.mapPath)) {
+            errors.push_back("關卡 " + std::to_string(levelConfig.levelNumber) + " 地圖不存在: " + levelConfig.mapPath);
+        }
+        if (levelConfig.waves.empty()) {
+            errors.push_back("關卡 " + std::to_string(levelConfig.levelNumber) + " 沒有任何 wave");
+        }
+
+        for (const WaveConfig& waveConfig : levelConfig.waves) {
+            if (waveConfig.waveNumber <= 0) {
+                errors.push_back(
+                    "關卡 " + std::to_string(levelConfig.levelNumber) +
+                    " 出現非法 waveNumber: " + std::to_string(waveConfig.waveNumber)
+                );
+            }
+            if (waveConfig.prepTime < 0.0F) {
+                errors.push_back(
+                    "關卡 " + std::to_string(levelConfig.levelNumber) +
+                    " wave " + std::to_string(waveConfig.waveNumber) + " prepTime 不可小於 0"
+                );
+            }
+            if (waveConfig.groups.empty()) {
+                errors.push_back(
+                    "關卡 " + std::to_string(levelConfig.levelNumber) +
+                    " wave " + std::to_string(waveConfig.waveNumber) + " 沒有 spawn group"
+                );
+            }
+
+            for (const SpawnGroup& spawnGroup : waveConfig.groups) {
+                if (spawnGroup.count <= 0) {
+                    errors.push_back(
+                        "關卡 " + std::to_string(levelConfig.levelNumber) +
+                        " wave " + std::to_string(waveConfig.waveNumber) + " group count 必須大於 0"
+                    );
+                }
+                if (spawnGroup.startDelay < 0.0F) {
+                    errors.push_back(
+                        "關卡 " + std::to_string(levelConfig.levelNumber) +
+                        " wave " + std::to_string(waveConfig.waveNumber) + " group startDelay 不可小於 0"
+                    );
+                }
+                if (spawnGroup.interval < 0.0F) {
+                    errors.push_back(
+                        "關卡 " + std::to_string(levelConfig.levelNumber) +
+                        " wave " + std::to_string(waveConfig.waveNumber) + " group interval 不可小於 0"
+                    );
+                }
+            }
+        }
+    }
+
+    if (!errors.empty()) {
+        std::ostringstream oss;
+        oss << "LevelConfig 驗證失敗(" << errors.size() << "):";
+        for (const std::string& error : errors) {
+            oss << "\n - " << error;
+        }
+        throw std::runtime_error(oss.str());
+    }
+}
+
 inline const std::vector<LevelConfig>& getAllLevelConfigs() {
+    static const bool kValidated = []() {
+        validateLevelConfigs();
+        return true;
+    }();
+    (void)kValidated;
     return kLevelConfigs;
 }
 
 inline const LevelConfig& getLevelConfig(int levelNumber) {
+    static const bool kValidated = []() {
+        validateLevelConfigs();
+        return true;
+    }();
+    (void)kValidated;
+
     for (const LevelConfig& levelConfig : kLevelConfigs) {
         if (levelConfig.levelNumber == levelNumber) {
             return levelConfig;

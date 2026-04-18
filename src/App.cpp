@@ -5,12 +5,18 @@
 #include "Util/Logger.hpp"
 #include "Util/Time.hpp"
 #include "enemy/EnemyTypeConfig.hpp"
+#include "game/LevelConfig.hpp"
 
 #include <algorithm>
 
 // -------------------- 初始化 --------------------
 void App::Start() {
     LOG_TRACE("Start");
+
+    // 啟動時先做關卡配置完整性檢查（含 map 路徑存在性）。
+    // 若配置有錯，會丟出例外，由 main 的全域 catch 統一記錄並結束。
+    (void)getAllLevelConfigs();
+
     // 建立最簡單單局（地圖 + 基地血量 + 波次）
     m_GameSession = std::make_unique<GameSession>("assets/maps/map_00.csv");
 

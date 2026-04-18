@@ -1,5 +1,7 @@
 #include "map/Tile.hpp"
 
+#include <stdexcept>
+#include <string>
 #include <string_view>
 #include <utility>
 
@@ -52,5 +54,14 @@ Tile::Type Tile::parseTypeFromSpriteId(std::string_view spriteId) const {
     if (hasPrefix(spriteId, "tile-type-wall")) {
         return Type::Wall;
     }
+
+// Debug 模式下，若遇到未知的 tile 類型，會丟出例外，正式版本則一律視為 Wall
+#ifndef NDEBUG
+    if (hasPrefix(spriteId, "tile-type-")) {
+        throw std::runtime_error("未知 tile 類型: " + std::string(spriteId));
+    }
+    throw std::runtime_error("非法 tile spriteId: " + std::string(spriteId));
+#else
     return Type::Wall;
+#endif
 }

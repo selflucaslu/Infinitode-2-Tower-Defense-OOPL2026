@@ -5,6 +5,7 @@
 #include <optional>
 #include <queue>
 #include <stdexcept>
+#include <string>
 #include <vector>
 
 // -------------------- 建立管理器 --------------------
@@ -213,6 +214,13 @@ void EnemyManager::buildPathsFromMap() {
                     bfsQueue.push({next, newPath});
                 }
             }
+        }
+
+        if (shortestGridPath.empty()) {
+            throw std::runtime_error(
+                "路徑不可達: spawn=(" + std::to_string(spawn.first) + "," + std::to_string(spawn.second) +
+                "), goal=(" + std::to_string(goalGridPoint.first) + "," + std::to_string(goalGridPoint.second) + ")"
+            );
         }
 
         fixedPathPoints.push_back(std::make_shared<const std::vector<std::pair<int, int>>>(shortestGridPath));
