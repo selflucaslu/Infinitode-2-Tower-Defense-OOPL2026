@@ -14,6 +14,8 @@
 
 class GridMap {
 public:
+    float kMapScale = 0.45F; // 地圖整體縮放倍率
+
     // -------------------- 建構與基本資訊 --------------------
     GridMap(std::string_view MAP_FILE_PATH, AtlasLoader& atlas); // 載入地圖與建立顯示物件
     std::string_view getMapName() const; // 取得地圖名稱

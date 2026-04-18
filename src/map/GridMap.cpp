@@ -87,9 +87,8 @@ GridMap::GridMap(std::string_view MAP_FILE_PATH, AtlasLoader& atlas)
 
     const std::shared_ptr<Util::Image> firstImage = atlasLoader.getImage(firstSpriteId);
     const glm::vec2 firstSize = firstImage->GetSize(); // PTSD API: 取得圖片原始寬高
-    constexpr float mapScale = 0.3F; // 地圖整體縮放倍率
-    const float cellW = firstSize.x * mapScale; // 每格在世界座標的寬（縮放後）
-    const float cellH = firstSize.y * mapScale; // 每格在世界座標的高（縮放後）
+    const float cellW = firstSize.x * kMapScale; // 每格在世界座標的寬（縮放後）
+    const float cellH = firstSize.y * kMapScale; // 每格在世界座標的高（縮放後）
     const float startX = -(mapWidth * cellW) * 0.5F + cellW * 0.5F; // 從左邊第一格中心開始，讓整張圖置中
     const float startY = -(mapHeight * cellH) * 0.5F + cellH * 0.5F; // 從下邊第一格中心開始，讓整張圖置中
 
@@ -101,7 +100,7 @@ GridMap::GridMap(std::string_view MAP_FILE_PATH, AtlasLoader& atlas)
             std::shared_ptr<Util::GameObject> obj = std::make_shared<Util::GameObject>();
             std::shared_ptr<Util::Image> image = atlasLoader.getImage(getTile(x, y).getSpriteId());
             obj->SetDrawable(image);
-            obj->m_Transform.scale = {mapScale, mapScale};
+            obj->m_Transform.scale = {kMapScale, kMapScale};
             obj->m_Transform.translation = {
                 startX + x * cellW, // x 方向照欄位往右排
                 startY + y * cellH // world y 向上，y=0 是最下方

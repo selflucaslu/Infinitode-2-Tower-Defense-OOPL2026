@@ -7,14 +7,14 @@
 
 FpsOverlay::FpsOverlay() {
     m_Text = std::make_shared<Util::Text>(
-        "PTSD/assets/fonts/Inter.ttf",
-        24,
+        kFontPath,
+        kFontSize,
         "FPS: 0",
         Util::Color::FromRGB(255, 255, 255)
     );
     m_TextObject = std::make_shared<Util::GameObject>();
     m_TextObject->SetDrawable(m_Text);
-    m_TextObject->SetZIndex(3.0F); // 高於地圖(0)與敵人(1)(2)
+    m_TextObject->SetZIndex(kZIndex); // 高於地圖(0)與敵人(1)(2)
 }
 
 void FpsOverlay::update(float rawDeltaTime) {
@@ -24,7 +24,7 @@ void FpsOverlay::update(float rawDeltaTime) {
 
     // 降低更新頻率，避免每幀重建文字貼圖。
     m_UpdateTimer += rawDeltaTime;
-    if (m_UpdateTimer < 0.2F) {
+    if (m_UpdateTimer < kRefreshInterval) {
         return;
     }
 
@@ -42,7 +42,6 @@ void FpsOverlay::display() {
     const float halfWindowWidth = static_cast<float>(context->GetWindowWidth()) * 0.5F;
     const float halfWindowHeight = static_cast<float>(context->GetWindowHeight()) * 0.5F;
     const glm::vec2 textSize = m_Text->GetSize();
-    constexpr float kPadding = 16.0F;
 
     m_TextObject->m_Transform.translation = {
         halfWindowWidth - textSize.x * 0.5F - kPadding,
