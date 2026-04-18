@@ -15,8 +15,6 @@
 
 class EnemyManager {
 public:
-    float kMapScale = 0.45F; // 敵人渲染縮放倍率（需與地圖視覺比例一致）
-
     // -------------------- 建構 --------------------
     // 綁定地圖與圖集載入器，並初始化固定路徑與敵人渲染基準參數。
     EnemyManager(const GridMap& map, AtlasLoader& atlasLoader);
@@ -71,7 +69,9 @@ private:
     std::vector<std::shared_ptr<const std::vector<std::pair<int, int>>>> fixedPathPoints; // 起點到終點的固定路徑格子列表(含所有起點開始的路徑)
 
     // -------------------- 格子轉世界座標快取 --------------------
-    float m_MapScale = kMapScale; // EnemyManager 內部使用的縮放倍率
+    const float kMapScale = 0.45F; // 敵人渲染縮放倍率（需與地圖視覺比例一致）
+    const float kGroundEnemyZIndex = 1.0F;
+    const float kAirEnemyZIndex = 2.0F;
     float m_CellW = 0.0F; // 單格世界寬度（縮放後）
     float m_CellH = 0.0F; // 單格世界高度（縮放後）
     float m_StartX = 0.0F; // 地圖左下格中心世界座標 x（置中後）

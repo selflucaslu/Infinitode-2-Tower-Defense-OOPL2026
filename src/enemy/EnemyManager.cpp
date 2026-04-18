@@ -14,7 +14,6 @@ EnemyManager::EnemyManager(const GridMap& map, AtlasLoader& atlasLoader)
     // 先建立固定路徑，確保後續生怪可直接綁定對應路徑。
     buildPathsFromMap();
 
-    // 參照 GridMap 的計算方式，預先算出格子到世界座標的轉換基準。
     // 取第一個「非 Empty」格子當作基準尺寸，避免地圖左上角是 empty 時載圖失敗。
     std::string firstSpriteId;
     for (int y = 0; y < m_Map.getMapHeight(); ++y) {
@@ -35,8 +34,8 @@ EnemyManager::EnemyManager(const GridMap& map, AtlasLoader& atlasLoader)
 
     const std::shared_ptr<Util::Image> firstImage = m_AtlasLoader.getImage(firstSpriteId);
     const glm::vec2 firstSize = firstImage->GetSize();
-    m_CellW = firstSize.x * m_MapScale;
-    m_CellH = firstSize.y * m_MapScale;
+    m_CellW = firstSize.x * kMapScale;
+    m_CellH = firstSize.y * kMapScale;
     m_StartX = -(m_Map.getMapWidth() * m_CellW) * 0.5F + m_CellW * 0.5F;
     m_StartY = -(m_Map.getMapHeight() * m_CellH) * 0.5F + m_CellH * 0.5F;
 }
@@ -99,7 +98,6 @@ void EnemyManager::update(float deltaTime) {
     // 不足的渲染物件要補齊並掛到 root。
     while (m_EnemyObjects.size() < enemies.size()) {
         std::shared_ptr<Util::GameObject> enemyObject = std::make_shared<Util::GameObject>();
-        enemyObject->SetZIndex(1.0F);
         m_EnemyRoot.AddChild(enemyObject);
         m_EnemyObjects.push_back(enemyObject);
     }
@@ -109,8 +107,11 @@ void EnemyManager::update(float deltaTime) {
         Enemy& enemy = enemies[enemyIndex];
         const std::shared_ptr<Util::GameObject>& enemyObject = m_EnemyObjects[enemyIndex];
 
+        enemyObject->SetZIndex(
+            enemy.getMoveType() == Enemy::MoveType::Air ? kAirEnemyZIndex : kGroundEnemyZIndex
+        );
         enemyObject->SetDrawable(m_AtlasLoader.getImage(enemy.getSpriteId()));
-        enemyObject->m_Transform.scale = {m_MapScale, m_MapScale};
+        enemyObject->m_Transform.scale = {kMapScale, kMapScale};
         enemyObject->m_Transform.translation = {
             m_StartX + enemy.getX() * m_CellW + m_CameraOffsetX,
             m_StartY + enemy.getY() * m_CellH + m_CameraOffsetY
