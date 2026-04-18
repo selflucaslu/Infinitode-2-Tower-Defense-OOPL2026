@@ -25,7 +25,7 @@ void AtlasLoader::loadAtlas(const std::string_view filePath) {
     }
 
     const std::string atlasFilePath(filePath);
-    const std::size_t slashPos = atlasFilePath.find_last_of("/\\");
+    const auto slashPos = atlasFilePath.find_last_of("/\\");
     const std::string atlasDir =
         slashPos == std::string::npos ? "" : atlasFilePath.substr(0, slashPos + 1);
 
@@ -152,10 +152,10 @@ std::shared_ptr<Util::Image> AtlasLoader::getImage(const std::string_view name) 
 
     // 安全化檔名（特殊字元換成底線）
     std::string safeName(name);
-    for (std::size_t i = 0; i < safeName.size(); ++i) {
-        const unsigned char c = static_cast<unsigned char>(safeName[i]);
-        if (!std::isalnum(c) && safeName[i] != '_' && safeName[i] != '-') {
-            safeName[i] = '_';
+    for (char& ch : safeName) {
+        const unsigned char c = static_cast<unsigned char>(ch);
+        if (!std::isalnum(c) && ch != '_' && ch != '-') {
+            ch = '_';
         }
     }
 

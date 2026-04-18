@@ -42,13 +42,16 @@ EnemyManager::EnemyManager(const GridMap& map, AtlasLoader& atlasLoader)
 
 // -------------------- 生怪 --------------------
 void EnemyManager::spawnEnemiesAt(
-    const std::vector<std::size_t>& spawnPointIndices,
+    const std::vector<int>& spawnPointIndices,
     float speed,
     Enemy::MoveType moveType,
     int maxHealth,
     int damage,
+    int rewardGold,
     std::string_view spriteId
 ) {
+    const int fixedPathCount = static_cast<int>(fixedPathPoints.size());
+
     // 空陣列 = 所有起點都生怪（最直覺預設行為）。
     if (spawnPointIndices.empty()) {
         for (const std::shared_ptr<const std::vector<std::pair<int, int>>>& path : fixedPathPoints) {
@@ -58,14 +61,14 @@ void EnemyManager::spawnEnemiesAt(
 
             const float startX = path->front().first;
             const float startY = path->front().second;
-            enemies.emplace_back(startX, startY, speed, moveType, maxHealth, damage, 0, std::string(spriteId), path);
+            enemies.emplace_back(startX, startY, speed, moveType, maxHealth, damage, rewardGold, 0, std::string(spriteId), path);
         }
         return;
     }
 
     // 指定起點索引生怪（例如 {0}, {0,2}, {0,1,2}）。
-    for (std::size_t spawnPointIndex : spawnPointIndices) {
-        if (spawnPointIndex >= fixedPathPoints.size()) {
+    for (int spawnPointIndex : spawnPointIndices) {
+        if (spawnPointIndex < 0 || spawnPointIndex >= fixedPathCount) {
             continue;
         }
 
@@ -76,7 +79,7 @@ void EnemyManager::spawnEnemiesAt(
 
         const float startX = path->front().first;
         const float startY = path->front().second;
-        enemies.emplace_back(startX, startY, speed, moveType, maxHealth, damage, 0, std::string(spriteId), path);
+        enemies.emplace_back(startX, startY, speed, moveType, maxHealth, damage, rewardGold, 0, std::string(spriteId), path);
     }
 }
 
@@ -103,7 +106,8 @@ void EnemyManager::update(float deltaTime) {
     }
 
     // 同步每隻敵人的貼圖與世界座標（含 camera 偏移）。
-    for (std::size_t enemyIndex = 0; enemyIndex < enemies.size(); enemyIndex++) {
+    const int enemyCount = static_cast<int>(enemies.size());
+    for (int enemyIndex = 0; enemyIndex < enemyCount; enemyIndex++) {
         Enemy& enemy = enemies[enemyIndex];
         const std::shared_ptr<Util::GameObject>& enemyObject = m_EnemyObjects[enemyIndex];
 
@@ -134,16 +138,21 @@ void EnemyManager::moveCamera(float dx, float dy) {
 }
 
 // -------------------- 狀態收集與清理 --------------------
-int EnemyManager::collectReachedGoalDamage() {
-    // 只統計「這一幀已到終點」的敵人傷害值。
-    // 外部通常會在扣血後呼叫 removeDeadAndReached() 清掉它們。
-    int totalDamage = 0;
+bool EnemyManager::isEnemysEmpty() {
+    return enemies.size() == 0;
+}
+
+EnemyManager::FrameResolveResult EnemyManager::collectFrameResolveResult() const {
+    FrameResolveResult result;
     for (const Enemy& enemy : enemies) {
+        // 到終點優先判定：同一隻不重複計成「到終點扣血 + 擊殺給錢」。
         if (enemy.hasReachedGoal()) {
-            totalDamage += enemy.getDamage();
+            result.reachedGoalDamage += enemy.getDamage();
+        } else if (!enemy.isAlive()) {
+            result.killedRewardGold += enemy.getRewardGold();
         }
     }
-    return totalDamage;
+    return result;
 }
 
 void EnemyManager::removeDeadEnemies() {

@@ -3,7 +3,6 @@
 #include "enemy/Enemy.hpp"
 
 #include <array>
-#include <cstddef>
 #include <string_view>
 
 // -------------------- 敵人類型識別 --------------------
@@ -89,12 +88,12 @@ struct EnemyTypeConfig {
     float rageHealFromDamageRatio = 0.0F; // 狂暴期間受傷轉回血比例（0.50 = 50%）
 };
 
-inline std::size_t toIndex(EnemyTypeId id) {
-    return static_cast<std::size_t>(id);
+inline int toIndex(EnemyTypeId id) {
+    return static_cast<int>(id);
 }
 
 // -------------------- 全域敵人配置表 --------------------
-inline const std::array<EnemyTypeConfig, static_cast<std::size_t>(EnemyTypeId::Count)> kEnemyTypeConfigs = {{
+inline const std::array<EnemyTypeConfig, static_cast<int>(EnemyTypeId::Count)> kEnemyTypeConfigs = {{
     // -------------------- Regular --------------------
     // 角色風格：最基礎、無特殊效果的標準敵人，用來建立玩家節奏。
     // 參考摘要：第一個敵人，約 1 tile/s，抵達基地造成 1 傷害。

@@ -11,11 +11,13 @@ Enemy::Enemy(
     MoveType moveType,
     int maxHealth,
     int damage,
+    int rewardGold,
     int startPathIndex,
     std::string spriteId,
     std::shared_ptr<const std::vector<std::pair<int, int>>> pathPoints
 )
-    : x(startX),
+    : rewardGold(rewardGold),
+      x(startX),
       y(startY),
       speed(speed),
       moveType(moveType),
@@ -58,6 +60,10 @@ int Enemy::getMaxHealth() const {
 
 int Enemy::getDamage() const {
     return damage;
+}
+
+int Enemy::getRewardGold() const {
+    return rewardGold;
 }
 
 std::string_view Enemy::getSpriteId() const {

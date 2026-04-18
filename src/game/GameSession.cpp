@@ -1,20 +1,34 @@
 #include "game/GameSession.hpp"
+#include "game/LevelConfig.hpp"
 
 // -------------------- 建立單局 --------------------
-GameSession::GameSession(std::string_view mapFilePath, int initialBaseHp, int initialWave)
-    : atlasLoader(std::make_unique<AtlasLoader>()),
-      baseHp(initialBaseHp),
-      wave(initialWave) {
+GameSession::GameSession(int levelNumber) {
+    // 先載入圖集，再建立地圖。
+    atlasLoader = std::make_unique<AtlasLoader>();
+    atlasLoader->loadAtlas("assets/combined.atlas");
+
+    // 讀取單局資料
+    LevelConfig level = getLevelConfig(levelNumber);
+  
+    // 建立地圖與敵人管理器，並傳入 atlasLoader 參考（共用資源）。
+    map = std::make_unique<GridMap>(level.mapPath, *atlasLoader);
+    enemyManager = std::make_unique<EnemyManager>(*map, *atlasLoader);
+
+    // 初始化遊戲狀態（未開始、timer 歸零、基地血量與波次從配置讀取）。
+    isSessionActive = false;
+    timer = 0.0F;
+    waveTimer = 0.0F;
+    groupTimer = 0.0F;
+    initBaseHp = level.baseHp;
+    baseHp = initBaseHp;
+    gold = level.startingGold;
+    waveCount = 0;
+    groupIndex = 0;
+    groupSpawned = 0;
+    spawnSchedule = level.waves;
 
     // 背景改為 Infinitode 風格的灰色同色系 #181818。
     glClearColor(24.0F / 255.0F, 24.0F / 255.0F, 24.0F / 255.0F, 1.0F);
-
-    // 最小流程：先載入圖集，再建立地圖。
-    atlasLoader->loadAtlas("assets/combined.atlas");
-    // 先建立地圖，再建立 EnemyManager（EnemyManager 需要引用 map）。
-    map = std::make_unique<GridMap>(mapFilePath, *atlasLoader);
-    // EnemyManager 共用本局 atlasLoader，不重複持有資源。
-    enemyManager = std::make_unique<EnemyManager>(*map, *atlasLoader);
 }
 
 // -------------------- 地圖存取 --------------------
@@ -51,27 +65,48 @@ void GameSession::applyBaseDamage(int damage) {
     }
 }
 
+void GameSession::addGold(int amount) {
+    if (amount <= 0) {
+        return;
+    }
+    gold += amount;
+}
+
 bool GameSession::isBaseAlive() const {
     return baseHp > 0;
 }
 
 // -------------------- 波次 --------------------
 int GameSession::getWave() const {
-    return wave;
+    return waveCount;
 }
 
 void GameSession::setWave(int newWave) {
-    wave = newWave;
+    waveCount = newWave;
 }
 
 void GameSession::nextWave() {
-    wave += 1;
+    waveCount += 1;
 }
 
 // -------------------- 每幀流程 --------------------
 void GameSession::update(float deltaTime) {
-    // 目前先由 EnemyManager 處理敵人更新與渲染提交。
+    if (!isSessionActive) {
+        return; // 如果遊戲未啟動，跳過更新。
+    }
+    timer += deltaTime;
+    waveTimer += deltaTime;
+    groupTimer += deltaTime;
+    dispatchEnemiesByTimer();
+
+    // EnemyManager 處理敵人更新與渲染提交。
     enemyManager->update(deltaTime);
+
+    // 每幀只收集一次結算結果，避免重複計算。
+    const EnemyManager::FrameResolveResult frameResult = enemyManager->collectFrameResolveResult();
+    applyBaseDamage(frameResult.reachedGoalDamage);
+    addGold(frameResult.killedRewardGold);
+    enemyManager->removeDeadAndReached();
 }
 
 void GameSession::display() {
@@ -87,10 +122,97 @@ void GameSession::moveCamera(float dx, float dy) {
     enemyManager->moveCamera(dx, dy);
 }
 
+// -------------------- 遊戲流程控制 --------------------
+void GameSession::initSession() {
+    isSessionActive = false;
+    timer = 0.0F;
+    waveTimer = 0.0F;
+    groupTimer = 0.0F;
+    baseHp = initBaseHp;
+    waveCount = 0;
+    groupIndex = 0;
+    groupSpawned = 0;
+    enemyManager->getEnemies().clear();
+}
+
+void GameSession::startSession() {
+    initSession();
+    isSessionActive = true;
+}
+
+void GameSession::dispatchEnemiesByTimer() {
+    // 1) 先確認波次合法。
+    if (waveCount < 0 || waveCount >= static_cast<int>(spawnSchedule.size())) {
+        return;
+    }
+
+    const WaveConfig& waveConfig = spawnSchedule[waveCount];
+    const int groupCount = static_cast<int>(waveConfig.groups.size());
+
+    // 2) 先等本波 prepTime。
+    if (waveTimer >= waveConfig.prepTime) {
+        // 3) 只處理目前 groupIndex 這一組（依序跑，不並行）。
+        if (groupIndex < groupCount) {
+            const SpawnGroup& spawnGroup = waveConfig.groups[groupIndex];
+            const EnemyTypeConfig& config = getEnemyTypeConfig(spawnGroup.type);
+
+            // 4) 第一隻：等到 prepTime + startDelay。
+            if (groupSpawned == 0) {
+                if (waveTimer >= waveConfig.prepTime + spawnGroup.startDelay) {
+                    enemyManager->spawnEnemiesAt(
+                        spawnGroup.spawnPointIndices,
+                        config.speed,
+                        config.moveType,
+                        config.maxHealth,
+                        config.damageToBase,
+                        config.rewardGold,
+                        config.spriteId
+                    );
+                    groupSpawned += 1;
+                    groupTimer = 0.0F;
+                }
+            } else {
+                // 5) 後續：用 groupTimer + interval 控制每次再生一隻。
+                if (spawnGroup.interval <= 0.0F || groupTimer >= spawnGroup.interval) {
+                    enemyManager->spawnEnemiesAt(
+                        spawnGroup.spawnPointIndices,
+                        config.speed,
+                        config.moveType,
+                        config.maxHealth,
+                        config.damageToBase,
+                        config.rewardGold,
+                        config.spriteId
+                    );
+                    groupSpawned += 1;
+                    groupTimer = 0.0F;
+                }
+            }
+
+            // 6) 這組完成就切下一組。
+            if (groupSpawned >= spawnGroup.count) {
+                groupIndex += 1;
+                groupSpawned = 0;
+                groupTimer = 0.0F;
+            }
+        }
+    }
+
+    // 7) 本波派怪都完成且場上清空 -> 進下一波並重置波內狀態。
+    const bool isWaveSpawnFinished = groupIndex >= groupCount;
+    if (isWaveSpawnFinished && enemyManager->getEnemies().empty()) {
+        addGold(waveConfig.clearRewardGold);
+        nextWave();
+        waveTimer = 0.0F;
+        groupTimer = 0.0F;
+        groupIndex = 0;
+        groupSpawned = 0;
+    }
+}
+
 // -------------------- 測試入口 --------------------
 void GameSession::spawnDebugEnemy(
     EnemyTypeId enemyTypeId,
-    const std::vector<std::size_t>& spawnPointIndices
+    const std::vector<int>& spawnPointIndices
 ) {
     const EnemyTypeConfig& config = getEnemyTypeConfig(enemyTypeId);
     enemyManager->spawnEnemiesAt(
@@ -99,6 +221,7 @@ void GameSession::spawnDebugEnemy(
         config.moveType,
         config.maxHealth,
         config.damageToBase,
+        config.rewardGold,
         config.spriteId
     );
 }

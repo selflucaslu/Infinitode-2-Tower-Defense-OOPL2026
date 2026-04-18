@@ -2,7 +2,6 @@
 
 #include "enemy/EnemyTypeConfig.hpp"
 
-#include <cstddef>
 #include <filesystem>
 #include <sstream>
 #include <stdexcept>
@@ -17,7 +16,7 @@ struct SpawnGroup {
     int count = 0; // 該組總數量
     float startDelay = 0.0F; // Wave 開始後幾秒才開始生這一組
     float interval = 1.0F; // 同組每隻之間的出生間隔（秒）
-    std::vector<std::size_t> spawnPointIndices; // 指定起點索引；空陣列 = 所有起點
+    std::vector<int> spawnPointIndices; // 指定起點索引；空陣列 = 所有起點
 };
 
 // -------------------- 單波配置 --------------------

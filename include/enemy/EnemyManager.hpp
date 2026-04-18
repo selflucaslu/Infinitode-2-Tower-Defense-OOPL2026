@@ -6,7 +6,6 @@
 #include "Util/GameObject.hpp"
 #include "Util/Renderer.hpp"
 
-#include <cstddef>
 #include <memory>
 #include <string>
 #include <string_view>
@@ -15,6 +14,11 @@
 
 class EnemyManager {
 public:
+    struct FrameResolveResult {
+        int reachedGoalDamage = 0; // 本幀到終點總傷害
+        int killedRewardGold = 0;  // 本幀擊殺總金幣
+    };
+
     // -------------------- 建構 --------------------
     // 綁定地圖與圖集載入器，並初始化固定路徑與敵人渲染基準參數。
     EnemyManager(const GridMap& map, AtlasLoader& atlasLoader);
@@ -23,11 +27,12 @@ public:
     // 依指定起點索引批量生怪（例如 {0}, {0,2}, {0,1,2}）。
     // 若傳入空陣列，代表所有起點都生一隻。
     void spawnEnemiesAt(
-        const std::vector<std::size_t>& spawnPointIndices,
+        const std::vector<int>& spawnPointIndices,
         float speed = 1.0F,
         Enemy::MoveType moveType = Enemy::MoveType::Ground,
         int maxHealth = 40,
         int damage = 5,
+        int rewardGold = 2,
         std::string_view spriteId = "enemy-type-regular"
     );
 
@@ -41,8 +46,9 @@ public:
     void moveCamera(float dx, float dy);
 
     // -------------------- 收集與清理 --------------------
-    // 收集到終點敵人的總傷害值（供外部扣 Base HP）。
-    int collectReachedGoalDamage();
+    bool isEnemysEmpty();
+    // 收集本幀「到終點傷害 + 擊殺金幣」結果（供外部更新狀態）。
+    FrameResolveResult collectFrameResolveResult() const;
     // 移除已死亡敵人。
     void removeDeadEnemies();
     // 移除已死亡或已到終點敵人（常用於每幀收尾清理）。
@@ -55,6 +61,7 @@ public:
     const std::vector<Enemy>& getEnemies() const;
 
     void buildPathsFromMap(); // 從地圖資訊建立固定路徑與起點資料
+
 private:
     // -------------------- 外部依賴（不擁有） --------------------
     const GridMap& m_Map; // 地圖參考（用於路徑資訊）

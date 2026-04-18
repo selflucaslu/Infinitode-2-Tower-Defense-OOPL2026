@@ -23,6 +23,7 @@ public:
         MoveType moveType,
         int maxHealth,
         int damage,
+        int rewardGold,
         int startPathIndex,
         std::string spriteId,
         std::shared_ptr<const std::vector<std::pair<int, int>>> pathPoints
@@ -37,6 +38,7 @@ public:
     int getHealth() const; // 取得目前血量
     int getMaxHealth() const; // 取得最大血量
     int getDamage() const; // 取得到終點造成傷害
+    int getRewardGold() const; // 取得被擊殺時給予金幣
     std::string_view getSpriteId() const; // 取得貼圖 ID
 
     // -------------------- 設定 --------------------
@@ -50,6 +52,8 @@ public:
     bool hasReachedGoal() const; // 是否已抵達終點
 
 private:
+    int rewardGold; // 被擊殺時給予金幣
+
     // -------------------- 位置與移動 --------------------
     float x;        // 世界座標 x（平滑移動用 float）
     float y;        // 世界座標 y（平滑移動用 float）
