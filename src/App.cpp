@@ -18,7 +18,7 @@ void App::Start() {
     (void)getAllLevelConfigs();
 
     // 建立最簡單單局（地圖 + 基地血量 + 波次）
-    m_GameSession = std::make_unique<GameSession>("assets/maps/map_01.csv");
+    m_GameSession = std::make_unique<GameSession>("assets/maps/map_02.csv");
 
     // 建立 FPS 顯示
     m_FpsOverlay = std::make_unique<FpsOverlay>();
@@ -28,6 +28,15 @@ void App::Start() {
 
 // -------------------- 每幀更新 --------------------
 void App::Update() {
+    if (m_GameSession && Util::Input::IsKeyDown(Util::Keycode::MOUSE_LB)) {
+        const glm::vec2 mouseWorld = Util::Input::GetCursorPosition();
+        if (auto grid = m_GameSession->getMap().worldToGrid(mouseWorld)) {
+            LOG_DEBUG("Clicked grid: ({}, {})", grid->first, grid->second);
+        } else {
+            LOG_DEBUG("Clicked outside map");
+        }
+    }
+
     if (m_GameSession) {
         const float rawDeltaTime = Util::Time::GetDeltaTimeMs() * 0.001F; // 真實每幀秒數（秒）
         const float simDeltaTime = std::clamp(rawDeltaTime, 0.0F, 0.05F); // 過濾極端值

@@ -2,8 +2,8 @@
 面對多條路線的分布與交會，學習判斷敵人的行進重點，並在合適的平台上配置更有效率的防禦塔。
 簡單
 tile-type-platform,tile-type-platform,tile-type-platform,tile-type-platform,tile-type-platform,tile-type-platform,tile-type-platform,tile-type-platform,tile-type-platform,tile-type-platform
-tile-type-platform,tile-type-spawn-portal,tile-type-platform,tile-type-road-xoox,tile-type-road-xoxo,tile-type-road-xoxo,tile-type-road-xoxo,tile-type-road-xoxo,tile-type-road-xxoo,tile-type-platform
-tile-type-platform,tile-type-road-oxox,tile-type-platform,tile-type-road-oxox,tile-type-spawn-portal,tile-type-platform,tile-type-platform,tile-type-spawn-portal,tile-type-road-oxox,tile-type-platform
+tile-type-platform,tile-type-spawn-portal,tile-type-platform,tile-type-road-xoox,tile-type-road-xooo,tile-type-road-xoxo,tile-type-road-xoxo,tile-type-road-xooo,tile-type-road-xxoo,tile-type-platform
+tile-type-platform,tile-type-road-oxox,tile-type-platform,tile-type-road-ooox,tile-type-spawn-portal,tile-type-platform,tile-type-platform,tile-type-spawn-portal,tile-type-road-oxoo,tile-type-platform
 tile-type-platform,tile-type-road-oxox,tile-type-platform,tile-type-road-oxox,tile-type-platform,tile-type-target-base,tile-type-road-xxoo,tile-type-platform,tile-type-road-oxox,tile-type-platform
 tile-type-platform,tile-type-road-oxox,tile-type-platform,tile-type-road-oxox,tile-type-platform,tile-type-platform,tile-type-road-oxox,tile-type-platform,tile-type-road-oxox,tile-type-platform
 tile-type-platform,tile-type-road-oxox,tile-type-platform,tile-type-road-oxox,tile-type-platform,tile-type-platform,tile-type-road-oxox,tile-type-platform,tile-type-road-oxox,tile-type-platform

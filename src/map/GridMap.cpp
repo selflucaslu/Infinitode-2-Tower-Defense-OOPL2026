@@ -1,8 +1,11 @@
 #include "map/GridMap.hpp"
 
+#include <cmath>
 #include <fstream>
+#include <memory>
 #include <sstream>
 #include <stdexcept>
+#include <string>
 
 // -------------------- 建立地圖 --------------------
 GridMap::GridMap(std::string_view MAP_FILE_PATH, AtlasLoader& atlas)
@@ -87,24 +90,50 @@ GridMap::GridMap(std::string_view MAP_FILE_PATH, AtlasLoader& atlas)
 
     const std::shared_ptr<Util::Image> firstImage = atlasLoader.getImage(firstSpriteId);
     const glm::vec2 firstSize = firstImage->GetSize(); // PTSD API: 取得圖片原始寬高
-    const float cellW = firstSize.x * kMapScale; // 每格在世界座標的寬（縮放後）
-    const float cellH = firstSize.y * kMapScale; // 每格在世界座標的高（縮放後）
-    const float startX = -(mapWidth * cellW) * 0.5F + cellW * 0.5F; // 從左邊第一格中心開始，讓整張圖置中
-    const float startY = -(mapHeight * cellH) * 0.5F + cellH * 0.5F; // 從下邊第一格中心開始，讓整張圖置中
+    m_CellW = firstSize.x * kMapScale; // 每格在世界座標的寬（縮放後）
+    m_CellH = firstSize.y * kMapScale; // 每格在世界座標的高（縮放後）
+    m_StartX = -(mapWidth * m_CellW) * 0.5F + m_CellW * 0.5F; // 從左邊第一格中心開始，讓整張圖置中
+    m_StartY = -(mapHeight * m_CellH) * 0.5F + m_CellH * 0.5F; // 從下邊第一格中心開始，讓整張圖置中
 
     for (int y = 0; y < mapHeight; ++y) {
         for (int x = 0; x < mapWidth; ++x) {
             if (getTile(x, y).getType() == Tile::Type::Empty) {
                 continue; // Empty 不建立渲染物件
             }
+            // 當偵測到 Spawn 或 Goal 時，建立一個 Road 圖層在 Spawn / Goal 圖層下方。
+            if (getTile(x, y).getType() == Tile::Type::Spawn || getTile(x, y).getType() == Tile::Type::Goal) {
+                std::string roadSpriteId = "tile-type-road-"; // 預設底圖
+                for (const auto [dx, dy] : std::vector<std::pair<int, int>>{{0, 1}, {1, 0}, {0, -1}, {-1, 0}}) {
+                    bool isRoad = false;
+                    try {
+                        isRoad = (getTile(x + dx, y + dy).getType() == Tile::Type::Road);
+                    } catch (const std::out_of_range&) {
+                        isRoad = false; // 越界視為無路
+                    }
+                    roadSpriteId += isRoad ? "o" : "x";
+                }
+                std::shared_ptr<Util::GameObject> baseObj = std::make_shared<Util::GameObject>();
+                std::shared_ptr<Util::Image> roadImage = atlasLoader.getImage(roadSpriteId);
+                baseObj->SetDrawable(roadImage);
+                baseObj->m_Transform.scale = {kMapScale, kMapScale};
+                baseObj->m_Transform.translation = {
+                    m_StartX + x * m_CellW, // x 方向照欄位
+                    m_StartY + y * m_CellH // world y 向上，y=0 是最下方
+                };
+                baseObj->SetZIndex(kTileZIndex - 1.0F); // 確保在 Spawn / Goal 圖層下方
+                mapRoot.AddChild(baseObj);
+                tileObjects.emplace_back(baseObj);
+            }
+
             std::shared_ptr<Util::GameObject> obj = std::make_shared<Util::GameObject>();
             std::shared_ptr<Util::Image> image = atlasLoader.getImage(getTile(x, y).getSpriteId());
             obj->SetDrawable(image);
             obj->m_Transform.scale = {kMapScale, kMapScale};
             obj->m_Transform.translation = {
-                startX + x * cellW, // x 方向照欄位往右排
-                startY + y * cellH // world y 向上，y=0 是最下方
+                m_StartX + x * m_CellW, // x 方向照欄位往右排
+                m_StartY + y * m_CellH // world y 向上，y=0 是最下方
             };
+            obj->SetZIndex(kTileZIndex);
             mapRoot.AddChild(obj);
             tileObjects.emplace_back(obj);
         }
@@ -187,9 +216,31 @@ std::optional<std::pair<int, int>> GridMap::getGoalGridPoint() const {
     return std::nullopt;
 }
 
+// -------------------- 滑鼠點擊轉換世界座標 --------------------
+std::optional<std::pair<int, int>> GridMap::worldToGrid(const glm::vec2& worldPos) const {
+    if (m_CellW <= 0.0F || m_CellH <= 0.0F) {
+        return std::nullopt;
+    }
+
+    // m_StartX / m_StartY 是「(0,0) 格中心」，先退半格得到地圖左下角邊界。
+    const float leftBound = (m_StartX + m_CameraOffsetX) - (m_CellW * 0.5F); // worldPos 是世界座標，先扣掉相機偏移，在扣掉半格寬高，獲取由中心點往外的邊界位置
+    const float bottomBound = (m_StartY + m_CameraOffsetY) - (m_CellH * 0.5F);
+    const int gridX = static_cast<int>(std::floor((worldPos.x - leftBound) / m_CellW));
+    const int gridY = static_cast<int>(std::floor((worldPos.y - bottomBound) / m_CellH));
+
+    // 檢查座標是否在地圖範圍內
+    if (gridX < 0 || gridX >= mapWidth || gridY < 0 || gridY >= mapHeight) {
+        return std::nullopt;
+    }
+
+    return std::pair<int, int>{gridX, gridY};
+}
+
 // -------------------- 鏡頭與渲染 --------------------
 void GridMap::moveCamera(float dx, float dy) {
     // 與敵人管理器保持一致：直接平移所有現有渲染物件。
+    m_CameraOffsetX += dx;
+    m_CameraOffsetY += dy;
     for (const std::shared_ptr<Util::GameObject>& obj : tileObjects) {
         obj->m_Transform.translation.x += dx;
         obj->m_Transform.translation.y += dy;
