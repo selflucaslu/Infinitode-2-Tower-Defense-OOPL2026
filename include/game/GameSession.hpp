@@ -25,6 +25,7 @@ public:
 
     // -------------------- 基地狀態 --------------------
     int getBaseHp() const; // 取得基地血量
+    int getGold() const; // 取得目前金幣
     void setBaseHp(int newBaseHp); // 設定基地血量
     void applyBaseDamage(int damage); // 扣除基地血量
     void addGold(int amount); // 增加金幣

@@ -47,11 +47,19 @@ int GameSession::getBaseHp() const {
     return baseHp;
 }
 
+int GameSession::getGold() const {
+    return gold;
+}
+
 void GameSession::setBaseHp(int newBaseHp) {
     baseHp = newBaseHp;
 }
 
 void GameSession::applyBaseDamage(int damage) {
+    if (damage <= 0) {
+        return;
+    }
+
     baseHp -= damage;
     if (baseHp < 0) {
         baseHp = 0;
