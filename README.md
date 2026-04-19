@@ -35,7 +35,7 @@
 4. 執行專案：
 
    ```bash
-   ./build/REPLACE_WITH_YOUR_PROJECT_NAME
+   ./build/Infinitode-2.exe
    ```
 
 ## 塔臺列表
