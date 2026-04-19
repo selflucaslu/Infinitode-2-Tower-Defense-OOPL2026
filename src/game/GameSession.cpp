@@ -1,5 +1,8 @@
 #include "game/GameSession.hpp"
 #include "game/LevelConfig.hpp"
+#include "Util/Logger.hpp"
+
+#include <array>
 
 // -------------------- 建立單局 --------------------
 GameSession::GameSession(int levelNumber) {
@@ -13,6 +16,19 @@ GameSession::GameSession(int levelNumber) {
     // 建立地圖與敵人管理器，並傳入 atlasLoader 參考（共用資源）。
     map = std::make_unique<GridMap>(level.mapPath, *atlasLoader);
     enemyManager = std::make_unique<EnemyManager>(*map, *atlasLoader);
+
+    // 預熱常用敵人貼圖，避免第一次出場時發生卡頓。
+    const std::array<EnemyTypeId, 5> preloadEnemyTypes = {
+        EnemyTypeId::Regular,
+        EnemyTypeId::Fast,
+        EnemyTypeId::Strong,
+        EnemyTypeId::Heli,
+        EnemyTypeId::Jet
+    };
+    for (EnemyTypeId enemyTypeId : preloadEnemyTypes) {
+        const EnemyTypeConfig& config = getEnemyTypeConfig(enemyTypeId);
+        (void)atlasLoader->getImage(config.spriteId);
+    }
 
     // 初始化遊戲狀態（基地血量與金幣初始值從配置讀取）。
     initBaseHp = level.baseHp;
@@ -93,6 +109,8 @@ void GameSession::nextWave() {
 // -------------------- 每幀流程 --------------------
 void GameSession::update(float deltaTime) {
     if (!isSessionActive) {
+        // 暫停時仍要同步敵人渲染座標，讓相機移動時敵人能跟著地圖一起平移。
+        enemyManager->updateEnemyDisplay();
         return; // 如果遊戲未啟動，跳過更新。
     }
     timer += deltaTime;
@@ -107,6 +125,11 @@ void GameSession::update(float deltaTime) {
     const EnemyManager::FrameResolveResult frameResult = enemyManager->resolveAndRemoveDeadAndReached();
     applyBaseDamage(frameResult.reachedGoalDamage);
     addGold(frameResult.killedRewardGold);
+    if (!isBaseAlive()) {
+        pauseSession();
+        LOG_INFO("[Session] Game Over");
+        return; // 阻止清波獎勵與進下一波
+    }
 
     // 本波清空判定必須放在清理後，避免最後一隻剛消失時慢一幀才切下一波。
     if (waveCount >= 0 && waveCount < static_cast<int>(spawnSchedule.size())) {
@@ -149,6 +172,7 @@ void GameSession::initSession() {
     groupIndex = 0;
     groupSpawned = 0;
     enemyManager->getEnemies().clear();
+    LOG_INFO("[Session] init: baseHp={}, gold={}", baseHp, gold);
 }
 
 void GameSession::startSession() {

@@ -90,6 +90,10 @@ void EnemyManager::update(float deltaTime) {
         enemy.update(deltaTime);
     }
 
+    updateEnemyDisplay();
+}
+
+void EnemyManager::updateEnemyDisplay() {
     m_EnemyObjects.reserve(enemies.size());
 
     // 將渲染物件數量與敵人數量對齊。

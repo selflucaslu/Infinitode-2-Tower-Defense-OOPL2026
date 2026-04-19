@@ -40,6 +40,8 @@ public:
     // 更新敵人狀態（不做複雜尋路，沿固定路徑移動）。
     // 同步維護敵人的渲染物件（貼圖與座標）。
     void update(float deltaTime);
+    // 只更新敵人的畫面顯示（不更新敵人邏輯）。
+    void updateEnemyDisplay();
     // 統一繪製敵人。
     void display();
     // 平移敵人視角（行為對齊 GridMap::moveCamera）。
