@@ -16,7 +16,7 @@ public:
     };
 
     explicit Tile(std::string spriteId);
-    std::string getSpriteId() const; // 回傳對應貼圖 ID
+    std::string_view getSpriteId() const; // 回傳對應貼圖 ID
     Type getType() const; // 回傳該格邏輯類型（外部統一以 Type 判斷）
 
 private:

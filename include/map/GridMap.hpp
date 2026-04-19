@@ -22,7 +22,7 @@ public:
 
     // -------------------- 地圖查詢 --------------------
     // 第一象限座標： (0,0) 在左下，x 向右、y 向上。
-    Tile getTile(int x, int y) const;
+    const Tile& getTile(int x, int y) const;
     int getMapWidth() const;
     int getMapHeight() const;
 

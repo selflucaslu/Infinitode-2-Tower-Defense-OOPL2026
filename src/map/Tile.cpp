@@ -9,7 +9,7 @@ Tile::Tile(std::string spriteId)
     : spriteId(std::move(spriteId)), type(parseTypeFromSpriteId(this->spriteId)) {
 }
 
-std::string Tile::getSpriteId() const {
+std::string_view Tile::getSpriteId() const {
     return spriteId;
 }
 

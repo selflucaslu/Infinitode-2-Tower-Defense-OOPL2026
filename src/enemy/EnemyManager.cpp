@@ -1,11 +1,11 @@
 #include "enemy/EnemyManager.hpp"
 
-#include <algorithm>
 #include <memory>
 #include <optional>
 #include <queue>
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 // -------------------- 建立管理器 --------------------
@@ -18,9 +18,9 @@ EnemyManager::EnemyManager(const GridMap& map, AtlasLoader& atlasLoader)
     std::string firstSpriteId;
     for (int y = 0; y < m_Map.getMapHeight(); ++y) {
         for (int x = 0; x < m_Map.getMapWidth(); ++x) {
-            const Tile tile = m_Map.getTile(x, y);
+            const Tile& tile = m_Map.getTile(x, y);
             if (tile.getType() != Tile::Type::Empty) {
-                firstSpriteId = tile.getSpriteId();
+                firstSpriteId = std::string(tile.getSpriteId());
                 break;
             }
         }
@@ -93,16 +93,25 @@ void EnemyManager::update(float deltaTime) {
     m_EnemyObjects.reserve(enemies.size());
 
     // 將渲染物件數量與敵人數量對齊。
-    // 多出來的渲染物件要從 root 與容器移除。
-    while (m_EnemyObjects.size() > enemies.size()) {
-        m_EnemyRoot.RemoveChild(m_EnemyObjects.back());
-        m_EnemyObjects.pop_back();
-    }
-    // 不足的渲染物件要補齊並掛到 root。
+    // 不足的渲染物件要補齊並掛到 root（固定屬性只在建立時設定一次）。
     while (m_EnemyObjects.size() < enemies.size()) {
+        const int enemyIndex = static_cast<int>(m_EnemyObjects.size());
+        Enemy& enemy = enemies[enemyIndex];
         std::shared_ptr<Util::GameObject> enemyObject = std::make_shared<Util::GameObject>();
+        enemyObject->SetZIndex(
+            enemy.getMoveType() == Enemy::MoveType::Air ? kAirEnemyZIndex : kGroundEnemyZIndex
+        );
+        enemyObject->SetDrawable(m_AtlasLoader.getImage(enemy.getSpriteId()));
+        enemyObject->m_Transform.scale = {kMapScale, kMapScale};
         m_EnemyRoot.AddChild(enemyObject);
         m_EnemyObjects.push_back(enemyObject);
+    }
+    // 多出來的渲染物件要從 root 與容器移除。
+    if (m_EnemyObjects.size() > enemies.size()) {
+        while (m_EnemyObjects.size() > enemies.size()) {
+            m_EnemyRoot.RemoveChild(m_EnemyObjects.back());
+            m_EnemyObjects.pop_back();
+        }
     }
 
     // 同步每隻敵人的貼圖與世界座標（含 camera 偏移）。
@@ -111,11 +120,6 @@ void EnemyManager::update(float deltaTime) {
         Enemy& enemy = enemies[enemyIndex];
         const std::shared_ptr<Util::GameObject>& enemyObject = m_EnemyObjects[enemyIndex];
 
-        enemyObject->SetZIndex(
-            enemy.getMoveType() == Enemy::MoveType::Air ? kAirEnemyZIndex : kGroundEnemyZIndex
-        );
-        enemyObject->SetDrawable(m_AtlasLoader.getImage(enemy.getSpriteId()));
-        enemyObject->m_Transform.scale = {kMapScale, kMapScale};
         enemyObject->m_Transform.translation = {
             m_StartX + enemy.getX() * m_CellW + m_CameraOffsetX,
             m_StartY + enemy.getY() * m_CellH + m_CameraOffsetY
@@ -139,7 +143,7 @@ void EnemyManager::moveCamera(float dx, float dy) {
 
 // -------------------- 狀態收集與清理 --------------------
 bool EnemyManager::isEnemysEmpty() {
-    return enemies.size() == 0;
+    return enemies.empty();
 }
 
 EnemyManager::FrameResolveResult EnemyManager::collectFrameResolveResult() const {
@@ -155,18 +159,6 @@ EnemyManager::FrameResolveResult EnemyManager::collectFrameResolveResult() const
     return result;
 }
 
-void EnemyManager::removeDeadEnemies() {
-    // 由尾到頭同步刪除 enemies 與 m_EnemyObjects，確保索引一致。
-    for (int enemyIndex = static_cast<int>(enemies.size()) - 1; enemyIndex >= 0; --enemyIndex) {
-        if (!enemies[enemyIndex].isAlive()) {
-            enemies.erase(enemies.begin() + enemyIndex);
-            if (enemyIndex < static_cast<int>(m_EnemyObjects.size())) {
-                m_EnemyRoot.RemoveChild(m_EnemyObjects[enemyIndex]);
-                m_EnemyObjects.erase(m_EnemyObjects.begin() + enemyIndex);
-            }
-        }
-    }
-}
 
 void EnemyManager::removeDeadAndReached() {
     // 由尾到頭同步刪除 enemies 與 m_EnemyObjects，避免剛清掉的敵人多顯示一幀。
@@ -179,6 +171,57 @@ void EnemyManager::removeDeadAndReached() {
             }
         }
     }
+}
+
+EnemyManager::FrameResolveResult EnemyManager::resolveAndRemoveDeadAndReached() {
+    FrameResolveResult result;
+
+    // 線性壓縮：單次掃描同時完成
+    // 1) 到終點傷害/擊殺金幣統計
+    // 2) 移除死亡或已到終點敵人
+    // 3) 同步維持 enemies / m_EnemyObjects 索引
+    const int enemyCount = static_cast<int>(enemies.size());
+    const int objectCount = static_cast<int>(m_EnemyObjects.size());
+    std::vector<std::shared_ptr<Util::GameObject>> removedObjects;
+    removedObjects.reserve(objectCount);
+    int writeIndex = 0;
+    for (int readIndex = 0; readIndex < enemyCount; ++readIndex) {
+        Enemy& enemy = enemies[readIndex];
+        if (enemy.hasReachedGoal()) {
+            result.reachedGoalDamage += enemy.getDamage();
+            if (readIndex < objectCount && m_EnemyObjects[readIndex]) {
+                removedObjects.push_back(m_EnemyObjects[readIndex]);
+            }
+            continue;
+        }
+        if (!enemy.isAlive()) {
+            result.killedRewardGold += enemy.getRewardGold();
+            if (readIndex < objectCount && m_EnemyObjects[readIndex]) {
+                removedObjects.push_back(m_EnemyObjects[readIndex]);
+            }
+            continue;
+        }
+
+        if (writeIndex != readIndex) {
+            enemies[writeIndex] = std::move(enemies[readIndex]);
+            if (readIndex < objectCount && writeIndex < objectCount) {
+                m_EnemyObjects[writeIndex] = std::move(m_EnemyObjects[readIndex]);
+            }
+        }
+        ++writeIndex;
+    }
+
+    if (writeIndex < enemyCount) {
+        enemies.erase(enemies.begin() + writeIndex, enemies.end());
+    }
+    if (writeIndex < objectCount) {
+        m_EnemyObjects.erase(m_EnemyObjects.begin() + writeIndex, m_EnemyObjects.end());
+    }
+    for (const std::shared_ptr<Util::GameObject>& removedObject : removedObjects) {
+        m_EnemyRoot.RemoveChild(removedObject);
+    }
+
+    return result;
 }
 
 // -------------------- 容器存取 --------------------

@@ -8,7 +8,7 @@ GameSession::GameSession(int levelNumber) {
     atlasLoader->loadAtlas("assets/combined.atlas");
 
     // 讀取單局資料
-    LevelConfig level = getLevelConfig(levelNumber);
+    const LevelConfig& level = getLevelConfig(levelNumber);
   
     // 建立地圖與敵人管理器，並傳入 atlasLoader 參考（共用資源）。
     map = std::make_unique<GridMap>(level.mapPath, *atlasLoader);
@@ -95,11 +95,10 @@ void GameSession::update(float deltaTime) {
     // EnemyManager 處理敵人更新與渲染提交。
     enemyManager->update(deltaTime);
 
-    // 每幀只收集一次結算結果，避免重複計算。
-    const EnemyManager::FrameResolveResult frameResult = enemyManager->collectFrameResolveResult();
+    // 每幀單次掃描完成「收集結果 + 清理」，避免重複遍歷 enemies。
+    const EnemyManager::FrameResolveResult frameResult = enemyManager->resolveAndRemoveDeadAndReached();
     applyBaseDamage(frameResult.reachedGoalDamage);
     addGold(frameResult.killedRewardGold);
-    enemyManager->removeDeadAndReached();
 
     // 本波清空判定必須放在清理後，避免最後一隻剛消失時慢一幀才切下一波。
     if (waveCount >= 0 && waveCount < static_cast<int>(spawnSchedule.size())) {

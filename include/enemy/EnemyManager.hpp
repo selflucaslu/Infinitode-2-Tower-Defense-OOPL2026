@@ -49,6 +49,8 @@ public:
     bool isEnemysEmpty();
     // 收集本幀「到終點傷害 + 擊殺金幣」結果（供外部更新狀態）。
     FrameResolveResult collectFrameResolveResult() const;
+    // 單次掃描同時完成「收集結果 + 清理死亡/到終點」。
+    FrameResolveResult resolveAndRemoveDeadAndReached();
     // 移除已死亡敵人。
     void removeDeadEnemies();
     // 移除已死亡或已到終點敵人（常用於每幀收尾清理）。

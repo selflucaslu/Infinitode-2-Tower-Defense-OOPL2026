@@ -1,5 +1,6 @@
 #include "map/GridMap.hpp"
 
+#include <array>
 #include <cmath>
 #include <fstream>
 #include <memory>
@@ -97,19 +98,22 @@ GridMap::GridMap(std::string_view MAP_FILE_PATH, AtlasLoader& atlas)
 
     for (int y = 0; y < mapHeight; ++y) {
         for (int x = 0; x < mapWidth; ++x) {
-            if (getTile(x, y).getType() == Tile::Type::Empty) {
+            const Tile& tile = getTile(x, y);
+            const Tile::Type tileType = tile.getType();
+            if (tileType == Tile::Type::Empty) {
                 continue; // Empty 不建立渲染物件
             }
             // 當偵測到 Spawn 或 Goal 時，建立一個 Road 圖層在 Spawn / Goal 圖層下方。
-            if (getTile(x, y).getType() == Tile::Type::Spawn || getTile(x, y).getType() == Tile::Type::Goal) {
+            if (tileType == Tile::Type::Spawn || tileType == Tile::Type::Goal) {
                 std::string roadSpriteId = "tile-type-road-"; // 預設底圖
-                for (const auto [dx, dy] : std::vector<std::pair<int, int>>{{0, 1}, {1, 0}, {0, -1}, {-1, 0}}) {
-                    bool isRoad = false;
-                    try {
-                        isRoad = (getTile(x + dx, y + dy).getType() == Tile::Type::Road);
-                    } catch (const std::out_of_range&) {
-                        isRoad = false; // 越界視為無路
-                    }
+                static constexpr std::array<std::pair<int, int>, 4> kFourDirs = {{
+                    {0, 1}, {1, 0}, {0, -1}, {-1, 0}
+                }};
+                for (const auto [dx, dy] : kFourDirs) {
+                    const int nx = x + dx;
+                    const int ny = y + dy;
+                    const bool inBounds = nx >= 0 && nx < mapWidth && ny >= 0 && ny < mapHeight;
+                    const bool isRoad = inBounds && getTile(nx, ny).getType() == Tile::Type::Road;
                     roadSpriteId += isRoad ? "o" : "x";
                 }
                 std::shared_ptr<Util::GameObject> baseObj = std::make_shared<Util::GameObject>();
@@ -126,7 +130,7 @@ GridMap::GridMap(std::string_view MAP_FILE_PATH, AtlasLoader& atlas)
             }
 
             std::shared_ptr<Util::GameObject> obj = std::make_shared<Util::GameObject>();
-            std::shared_ptr<Util::Image> image = atlasLoader.getImage(getTile(x, y).getSpriteId());
+            std::shared_ptr<Util::Image> image = atlasLoader.getImage(tile.getSpriteId());
             obj->SetDrawable(image);
             obj->m_Transform.scale = {kMapScale, kMapScale};
             obj->m_Transform.translation = {
@@ -154,7 +158,7 @@ std::string_view GridMap::getMapDifficulty() const {
 }
 
 // -------------------- 格子查詢 --------------------
-Tile GridMap::getTile(int x, int y) const {
+const Tile& GridMap::getTile(int x, int y) const {
     if (x < 0 || x >= mapWidth || y < 0 || y >= mapHeight) {
         throw std::out_of_range("座標超出地圖範圍");
     }
@@ -185,7 +189,7 @@ bool GridMap::canWalk(int x, int y) const {
         return false;
     }
 
-    Tile::Type type = getTile(x, y).getType();
+    const Tile::Type type = getTile(x, y).getType();
     return type == Tile::Type::Road || type == Tile::Type::Spawn || type == Tile::Type::Goal;
 }
 
