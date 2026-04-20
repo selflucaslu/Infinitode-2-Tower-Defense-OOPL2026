@@ -10,6 +10,7 @@
 #include <string_view>
 #include <utility>
 #include <vector>
+#include "tower/TowerManager.hpp"
 
 class GameSession {
 public:
@@ -31,7 +32,6 @@ public:
     void addGold(int amount); // 增加金幣
     bool isBaseAlive() const; // 基地是否仍存活
 
-    // -------------------- 波次狀態 --------------------
     int getWave() const; // 取得目前波次
     void setWave(int newWave); // 設定目前波次
     void nextWave(); // 進入下一波
@@ -73,5 +73,5 @@ private:
     int waveCount; // 目前波次
     int groupIndex; // 目前 group 索引（每波內依序處理）
     int groupSpawned; // 目前 group 已生成數量
-    std::vector<WaveConfig> spawnSchedule; 
+    std::vector<WaveConfig> spawnSchedule;
 };

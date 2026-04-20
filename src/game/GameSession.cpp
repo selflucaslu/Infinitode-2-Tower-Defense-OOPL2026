@@ -12,7 +12,7 @@ GameSession::GameSession(int levelNumber) {
 
     // 讀取單局資料
     const LevelConfig& level = getLevelConfig(levelNumber);
-  
+
     // 建立地圖與敵人管理器，並傳入 atlasLoader 參考（共用資源）。
     map = std::make_unique<GridMap>(level.mapPath, *atlasLoader);
     enemyManager = std::make_unique<EnemyManager>(*map, *atlasLoader);
@@ -38,6 +38,13 @@ GameSession::GameSession(int levelNumber) {
 
     // 背景改為 Infinitode 風格的灰色同色系 #181818。
     glClearColor(24.0F / 255.0F, 24.0F / 255.0F, 24.0F / 255.0F, 1.0F);
+
+    // 最小流程：先載入圖集，再建立地圖。
+    atlasLoader->loadAtlas("assets/combined.atlas");
+    map = std::make_unique<GridMap>(mapFilePath, atlasLoader);
+
+    // 初始化 TowerManager
+    towerManager = std::make_unique<TowerManager>(*map);
 }
 
 // -------------------- 地圖存取 --------------------
@@ -257,4 +264,7 @@ void GameSession::spawnDebugEnemy(
         config.rewardGold,
         config.spriteId
     );
+}
+TowerManager& GameSession::getTowerManager() {
+    return *towerManager;
 }

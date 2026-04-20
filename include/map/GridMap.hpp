@@ -73,3 +73,10 @@ private:
     Util::Renderer mapRoot; // 地圖渲染根節點
     std::vector<std::shared_ptr<Util::GameObject>> tileObjects; // 與 tilesArray 對應的渲染物件
 };
+
+    float currentScale = 0.3F;
+    float cameraX = 0.0F;
+    float cameraY = 0.0F;
+    float baseCellWidth = 0.0F;
+    float baseCellHeight = 0.0F;
+};
