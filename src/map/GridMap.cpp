@@ -167,10 +167,10 @@ void GridMap::updateTransforms() {
 
     for (auto& tv : towerVisuals) {
         tv.obj->m_Transform.scale = {currentScale, currentScale};
-        tv.obj->m_Transform.translation = {
-            startX + tv.gridX * cellW,
-            startY + tv.gridY * cellH
-        };
+        tv.obj->m_Transform.translation = glm::vec2(
+            m_StartX + tv.gridX * m_CellW + m_CameraOffsetX,
+            m_StartY + tv.gridY * m_CellH + m_CameraOffsetY
+        );
     }
 }
 

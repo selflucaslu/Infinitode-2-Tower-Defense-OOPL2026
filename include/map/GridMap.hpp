@@ -57,7 +57,8 @@ private:
     std::string mapDescription;      // 地圖描述
     std::string mapDifficulty;       // 地圖難度
     struct TowerVisual {
-        int x, y;
+        int gridX; // Changed from x
+        int gridY; // Changed from y
         std::shared_ptr<Util::GameObject> obj;
     };
     std::vector<TowerVisual> towerVisuals;
