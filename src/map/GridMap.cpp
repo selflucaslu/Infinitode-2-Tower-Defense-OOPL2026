@@ -241,13 +241,17 @@ std::optional<std::pair<int, int>> GridMap::worldToGrid(const glm::vec2& worldPo
 }
 
 std::optional<glm::vec2> GridMap::gridToWorld(int gridX, int gridY) const {
+    return gridToWorld(static_cast<float>(gridX), static_cast<float>(gridY));
+}
+
+std::optional<glm::vec2> GridMap::gridToWorld(float gridX, float gridY) const {
     if (gridX < 0 || gridX >= mapWidth || gridY < 0 || gridY >= mapHeight) {
         return std::nullopt;
     }
 
     return glm::vec2{
-        m_StartX + static_cast<float>(gridX) * m_CellW + m_CameraOffsetX,
-        m_StartY + static_cast<float>(gridY) * m_CellH + m_CameraOffsetY
+        m_StartX + gridX * m_CellW + m_CameraOffsetX,
+        m_StartY + gridY * m_CellH + m_CameraOffsetY
     };
 }
 

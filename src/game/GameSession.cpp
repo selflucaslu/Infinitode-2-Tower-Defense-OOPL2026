@@ -131,7 +131,8 @@ void GameSession::update(float deltaTime) {
     if (!isSessionActive) {
         // 暫停時仍要同步敵人渲染座標，讓相機移動時敵人能跟著地圖一起平移。
         enemyManager->updateEnemyDisplay();
-        enemyManager->updateTowerDisplay();
+        updateTowerDisplay();
+        updateProjectileDisplay();
         return; // 如果遊戲未啟動，跳過更新。
     }
     timer += deltaTime;
@@ -174,6 +175,8 @@ void GameSession::display() {
     map->displayMap();
     updateTowerDisplay();
     towerRoot.Update();
+    updateProjectileDisplay();
+    projectileRoot.Update();
     enemyManager->display();
 }
 
@@ -196,8 +199,9 @@ void GameSession::initSession() {
     groupIndex = 0;
     groupSpawned = 0;
     enemyManager->getEnemies().clear();
-    towerManager->getTowers().clear();
+    towerManager->clear();
     updateTowerDisplay();
+    updateProjectileDisplay();
     LOG_INFO("[Session] init: baseHp={}, gold={}", baseHp, gold);
 }
 
@@ -295,6 +299,35 @@ void GameSession::updateTowerDisplay() {
             continue;
         }
         towerObject->m_Transform.translation = worldPos.value();
+    }
+}
+
+void GameSession::updateProjectileDisplay() {
+    const std::vector<TowerManager::Projectile>& projectiles = towerManager->getProjectiles();
+    projectileObjects.reserve(projectiles.size());
+
+    while (projectileObjects.size() < projectiles.size()) {
+        std::shared_ptr<Util::GameObject> projectileObject = std::make_shared<Util::GameObject>();
+        projectileObject->SetZIndex(kProjectileZIndex);
+        projectileObject->m_Transform.scale = {kProjectileScale, kProjectileScale};
+        projectileObject->SetDrawable(atlasLoader->getImage("projectile-basic"));
+        projectileRoot.AddChild(projectileObject);
+        projectileObjects.push_back(projectileObject);
+    }
+
+    while (projectileObjects.size() > projectiles.size()) {
+        projectileRoot.RemoveChild(projectileObjects.back());
+        projectileObjects.pop_back();
+    }
+
+    for (std::size_t i = 0; i < projectiles.size(); ++i) {
+        const TowerManager::Projectile& projectile = projectiles[i];
+        const std::shared_ptr<Util::GameObject>& projectileObject = projectileObjects[i];
+        const std::optional<glm::vec2> worldPos = map->gridToWorld(projectile.x, projectile.y);
+        if (!worldPos.has_value()) {
+            continue;
+        }
+        projectileObject->m_Transform.translation = worldPos.value();
     }
 }
 

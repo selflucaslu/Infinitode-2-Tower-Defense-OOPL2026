@@ -65,6 +65,7 @@ public:
 
 private:
     void updateTowerDisplay(); // 同步塔渲染物件與位置
+    void updateProjectileDisplay(); // 同步子彈渲染物件與位置
 
 private:
     // -------------------- 資源與核心物件 --------------------
@@ -74,8 +75,12 @@ private:
     std::unique_ptr<TowerManager> towerManager; // 本局塔管理器（使用 map 參考）
     Util::Renderer towerRoot; // 塔渲染根節點
     std::vector<std::shared_ptr<Util::GameObject>> towerObjects; // 與塔容器對應的渲染物件
+    Util::Renderer projectileRoot; // 子彈渲染根節點
+    std::vector<std::shared_ptr<Util::GameObject>> projectileObjects; // 與子彈容器對應的渲染物件
     static constexpr float kTowerScale = 0.45F;
     static constexpr float kTowerZIndex = 1.5F;
+    static constexpr float kProjectileScale = 0.22F;
+    static constexpr float kProjectileZIndex = 2.3F;
 
     // -------------------- 遊戲狀態 --------------------
     bool isSessionActive; // 本局是否在進行中

@@ -42,6 +42,7 @@ public:
     std::optional<std::pair<int, int>> worldToGrid(const glm::vec2& worldPos) const;
     // 格子座標轉世界座標（格子中心點）。
     std::optional<glm::vec2> gridToWorld(int gridX, int gridY) const;
+    std::optional<glm::vec2> gridToWorld(float gridX, float gridY) const;
 
     // -------------------- 顯示與鏡頭 --------------------
     void moveCamera(float dx, float dy); // 平移地圖視角
