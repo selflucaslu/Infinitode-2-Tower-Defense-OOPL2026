@@ -63,8 +63,6 @@ void App::Update() {
             dy += (currentMousePos.y - lastMousePos.y);
         }
         constexpr float cameraSpeedPerSecond = 480.0F; // 相機速度定義（每秒多少單位）
-        float dx = 0.0F; // 本幀 x 位移量
-        float dy = 0.0F; // 本幀 y 位移量
 
         // 核心公式：本幀位移 = 每秒速度 * 本幀秒數（simDeltaTime）
         // 例：480 * 0.016 ~= 7.68，代表 60 FPS 時每幀移動約 7.68 單位。

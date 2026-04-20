@@ -41,7 +41,7 @@ GameSession::GameSession(int levelNumber) {
 
     // 最小流程：先載入圖集，再建立地圖。
     atlasLoader->loadAtlas("assets/combined.atlas");
-    map = std::make_unique<GridMap>(mapFilePath, atlasLoader);
+    map = std::make_unique<GridMap>(level.mapPath, *atlasLoader); // FIXED
 
     // 初始化 TowerManager
     towerManager = std::make_unique<TowerManager>(*map);

@@ -39,8 +39,8 @@ bool TowerManager::hasTower(int gridX, int gridY) const {
     return findTowerIndex(gridX, gridY).has_value();
 }
 
-std::optional<std::size_t> TowerManager::findTowerIndex(int gridX, int gridY) const {
-    for (std::size_t i = 0; i < towers.size(); ++i) {
+std::optional<int> TowerManager::findTowerIndex(int gridX, int gridY) const {
+    for (int i = 0; i < static_cast<int>(towers.size()); ++i) {
         if (towers[i].GetGridX() == gridX && towers[i].GetGridY() == gridY) {
             return i;
         }

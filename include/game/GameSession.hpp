@@ -54,12 +54,14 @@ public:
         EnemyTypeId enemyTypeId,
         const std::vector<int>& spawnPointIndices = {}
     );
+    TowerManager& getTowerManager(); // Add this
 
 private:
     // -------------------- 資源與核心物件 --------------------
     std::unique_ptr<AtlasLoader> atlasLoader; // 圖集載入器（本局唯一擁有，集中資源管理）
     std::unique_ptr<GridMap> map; // 本局地圖實體
     std::unique_ptr<EnemyManager> enemyManager; // 本局敵人管理器（使用 map 與 atlasLoader 的參考）
+    std::unique_ptr<TowerManager> towerManager; // Add this
 
     // -------------------- 遊戲狀態 --------------------
     bool isSessionActive; // 本局是否在進行中
