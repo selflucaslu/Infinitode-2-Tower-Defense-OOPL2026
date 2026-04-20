@@ -44,6 +44,11 @@ public:
     // -------------------- 顯示與鏡頭 --------------------
     void moveCamera(float dx, float dy); // 平移地圖視角
     void displayMap(); // 用於顯示地圖的函數
+
+    // ADD THESE MISSING DECLARATIONS
+    void zoomCamera(float zoomDelta);
+    std::pair<int, int> ScreenToGrid(float screenX, float screenY) const;
+    void addTowerVisual(int gridX, int gridY, std::string_view spriteId);
 private:
     // -------------------- 地圖來源與描述 --------------------
     std::string MAP_FILE_PATH;       // 地圖文件路徑
@@ -51,10 +56,13 @@ private:
     std::string mapDescription;      // 地圖描述
     std::string mapDifficulty;       // 地圖難度
 
+
     // -------------------- 地圖格子資料 --------------------
     int mapWidth;                    // 地圖寬度
     int mapHeight;                   // 地圖高度
     std::vector<Tile> tilesArray;    // 用於存儲地圖上每個 tile 的一維陣列
+    // ADD THIS MISSING PRIVATE METHOD
+    void updateTransforms();
 
     // -------------------- 格子轉世界座標快取 --------------------
     float kMapScale = 0.45F; // 地圖整體縮放倍率
