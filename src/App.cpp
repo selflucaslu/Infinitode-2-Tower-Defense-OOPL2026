@@ -32,7 +32,12 @@ void App::Update() {
     if (m_GameSession && Util::Input::IsKeyDown(Util::Keycode::MOUSE_LB)) {
         const glm::vec2 mouseWorld = Util::Input::GetCursorPosition();
         if (auto grid = m_GameSession->getMap().worldToGrid(mouseWorld)) {
-            LOG_DEBUG("Clicked grid: ({}, {})", grid->first, grid->second);
+            const bool placed = m_GameSession->placeTower(grid->first, grid->second);
+            if (placed) {
+                LOG_INFO("Tower placed at grid ({}, {})", grid->first, grid->second);
+            } else {
+                LOG_DEBUG("Cannot place tower at grid ({}, {})", grid->first, grid->second);
+            }
         } else {
             LOG_DEBUG("Clicked outside map");
         }

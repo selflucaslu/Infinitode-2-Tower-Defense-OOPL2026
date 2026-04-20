@@ -3,7 +3,10 @@
 #include "enemy/EnemyManager.hpp"
 #include "enemy/EnemyTypeConfig.hpp"
 #include "map/GridMap.hpp"
+#include "tower/TowerManager.hpp"
 #include "utils/AtlasLoader.hpp"
+#include "Util/GameObject.hpp"
+#include "Util/Renderer.hpp"
 #include "game/LevelConfig.hpp"
 
 #include <memory>
@@ -22,6 +25,11 @@ public:
     const GridMap& getMap() const; // 唯讀地圖實體
     EnemyManager& getEnemyManager(); // 可修改敵人管理器
     const EnemyManager& getEnemyManager() const; // 唯讀敵人管理器
+
+    // -------------------- 塔管理 --------------------
+    TowerManager& getTowerManager(); // 可修改塔管理器
+    const TowerManager& getTowerManager() const; // 唯讀塔管理器
+    bool placeTower(int gridX, int gridY, std::string_view spriteId = "tower-basic"); // 在格子上嘗試建塔
 
     // -------------------- 基地狀態 --------------------
     int getBaseHp() const; // 取得基地血量
@@ -56,10 +64,18 @@ public:
     );
 
 private:
+    void updateTowerDisplay(); // 同步塔渲染物件與位置
+
+private:
     // -------------------- 資源與核心物件 --------------------
     std::unique_ptr<AtlasLoader> atlasLoader; // 圖集載入器（本局唯一擁有，集中資源管理）
     std::unique_ptr<GridMap> map; // 本局地圖實體
     std::unique_ptr<EnemyManager> enemyManager; // 本局敵人管理器（使用 map 與 atlasLoader 的參考）
+    std::unique_ptr<TowerManager> towerManager; // 本局塔管理器（使用 map 參考）
+    Util::Renderer towerRoot; // 塔渲染根節點
+    std::vector<std::shared_ptr<Util::GameObject>> towerObjects; // 與塔容器對應的渲染物件
+    static constexpr float kTowerScale = 0.45F;
+    static constexpr float kTowerZIndex = 1.5F;
 
     // -------------------- 遊戲狀態 --------------------
     bool isSessionActive; // 本局是否在進行中

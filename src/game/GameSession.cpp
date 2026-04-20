@@ -3,6 +3,7 @@
 #include "Util/Logger.hpp"
 
 #include <array>
+#include <cstddef>
 
 // -------------------- 建立單局 --------------------
 GameSession::GameSession(int levelNumber) {
@@ -16,6 +17,7 @@ GameSession::GameSession(int levelNumber) {
     // 建立地圖與敵人管理器，並傳入 atlasLoader 參考（共用資源）。
     map = std::make_unique<GridMap>(level.mapPath, *atlasLoader);
     enemyManager = std::make_unique<EnemyManager>(*map, *atlasLoader);
+    towerManager = std::make_unique<TowerManager>(*map);
 
     // 預熱常用敵人貼圖，避免第一次出場時發生卡頓。
     const std::array<EnemyTypeId, 5> preloadEnemyTypes = {
@@ -56,6 +58,24 @@ EnemyManager& GameSession::getEnemyManager() {
 
 const EnemyManager& GameSession::getEnemyManager() const {
     return *enemyManager;
+}
+
+// -------------------- 塔管理器存取 --------------------
+TowerManager& GameSession::getTowerManager() {
+    return *towerManager;
+}
+
+const TowerManager& GameSession::getTowerManager() const {
+    return *towerManager;
+}
+
+bool GameSession::placeTower(int gridX, int gridY, std::string_view spriteId) {
+    if (!towerManager->placeTower(gridX, gridY, spriteId)) {
+        return false;
+    }
+
+    updateTowerDisplay();
+    return true;
 }
 
 // -------------------- 基地血量 --------------------
@@ -111,6 +131,7 @@ void GameSession::update(float deltaTime) {
     if (!isSessionActive) {
         // 暫停時仍要同步敵人渲染座標，讓相機移動時敵人能跟著地圖一起平移。
         enemyManager->updateEnemyDisplay();
+        enemyManager->updateTowerDisplay();
         return; // 如果遊戲未啟動，跳過更新。
     }
     timer += deltaTime;
@@ -120,6 +141,7 @@ void GameSession::update(float deltaTime) {
 
     // EnemyManager 處理敵人更新與渲染提交。
     enemyManager->update(deltaTime);
+    towerManager->updateAutoAttack(deltaTime, enemyManager->getEnemies());
 
     // 每幀單次掃描完成「收集結果 + 清理」，避免重複遍歷 enemies。
     const EnemyManager::FrameResolveResult frameResult = enemyManager->resolveAndRemoveDeadAndReached();
@@ -148,8 +170,10 @@ void GameSession::update(float deltaTime) {
 }
 
 void GameSession::display() {
-    // 先畫地圖再畫敵人，避免敵人被地圖覆蓋。
+    // 先畫地圖，再畫塔與敵人。
     map->displayMap();
+    updateTowerDisplay();
+    towerRoot.Update();
     enemyManager->display();
 }
 
@@ -172,6 +196,8 @@ void GameSession::initSession() {
     groupIndex = 0;
     groupSpawned = 0;
     enemyManager->getEnemies().clear();
+    towerManager->getTowers().clear();
+    updateTowerDisplay();
     LOG_INFO("[Session] init: baseHp={}, gold={}", baseHp, gold);
 }
 
@@ -240,6 +266,36 @@ void GameSession::dispatchEnemiesByTimer() {
         }
     }
 
+}
+
+void GameSession::updateTowerDisplay() {
+    const std::vector<Tower>& towers = towerManager->getTowers();
+    towerObjects.reserve(towers.size());
+
+    while (towerObjects.size() < towers.size()) {
+        std::shared_ptr<Util::GameObject> towerObject = std::make_shared<Util::GameObject>();
+        towerObject->SetZIndex(kTowerZIndex);
+        towerObject->m_Transform.scale = {kTowerScale, kTowerScale};
+        towerRoot.AddChild(towerObject);
+        towerObjects.push_back(towerObject);
+    }
+
+    while (towerObjects.size() > towers.size()) {
+        towerRoot.RemoveChild(towerObjects.back());
+        towerObjects.pop_back();
+    }
+
+    for (std::size_t i = 0; i < towers.size(); ++i) {
+        const Tower& tower = towers[i];
+        const std::shared_ptr<Util::GameObject>& towerObject = towerObjects[i];
+
+        towerObject->SetDrawable(atlasLoader->getImage(tower.GetspriteId()));
+        const std::optional<glm::vec2> worldPos = map->gridToWorld(tower.GetGridX(), tower.GetGridY());
+        if (!worldPos.has_value()) {
+            continue;
+        }
+        towerObject->m_Transform.translation = worldPos.value();
+    }
 }
 
 // -------------------- 測試入口 --------------------

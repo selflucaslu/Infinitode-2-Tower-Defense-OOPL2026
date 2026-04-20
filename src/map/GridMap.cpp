@@ -240,6 +240,17 @@ std::optional<std::pair<int, int>> GridMap::worldToGrid(const glm::vec2& worldPo
     return std::pair<int, int>{gridX, gridY};
 }
 
+std::optional<glm::vec2> GridMap::gridToWorld(int gridX, int gridY) const {
+    if (gridX < 0 || gridX >= mapWidth || gridY < 0 || gridY >= mapHeight) {
+        return std::nullopt;
+    }
+
+    return glm::vec2{
+        m_StartX + static_cast<float>(gridX) * m_CellW + m_CameraOffsetX,
+        m_StartY + static_cast<float>(gridY) * m_CellH + m_CameraOffsetY
+    };
+}
+
 // -------------------- 鏡頭與渲染 --------------------
 void GridMap::moveCamera(float dx, float dy) {
     // 與敵人管理器保持一致：直接平移所有現有渲染物件。

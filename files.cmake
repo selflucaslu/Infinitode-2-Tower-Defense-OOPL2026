@@ -7,7 +7,8 @@ set(SRC_FILES
     enemy/EnemyManager.cpp
     map/GridMap.cpp
     map/Tile.cpp
-    tower/tower.cpp
+    tower/Tower.cpp
+    tower/TowerManager.cpp
     tower/AmmoTower.cpp
     tower/AroundSkillTower.cpp
 )
@@ -23,7 +24,8 @@ set(INCLUDE_FILES
     enemy/EnemyManager.hpp
     map/GridMap.hpp
     map/Tile.hpp
-    tower/tower.hpp
+    tower/Tower.hpp
+    tower/TowerManager.hpp
     tower/AmmoTower.hpp
     tower/AroundSkillTower.hpp
 )
