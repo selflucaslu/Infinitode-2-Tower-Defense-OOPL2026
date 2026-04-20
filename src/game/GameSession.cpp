@@ -1,9 +1,12 @@
 #include "game/GameSession.hpp"
 #include "game/LevelConfig.hpp"
+#include "Core/Context.hpp"
+#include "Util/Color.hpp"
 #include "Util/Logger.hpp"
 
 #include <array>
 #include <cstddef>
+#include <string>
 
 // -------------------- 建立單局 --------------------
 GameSession::GameSession(int levelNumber) {
@@ -32,11 +35,52 @@ GameSession::GameSession(int levelNumber) {
         (void)atlasLoader->getImage(config.spriteId);
     }
 
+    // 預熱目前會用到的塔與子彈貼圖，避免第一次建塔/開火時卡頓。
+    const std::array<std::string_view, 4> preloadTowerSprites = {
+        "tower-basic",
+        "tower-basic-base",
+        "tower-basic-weapon",
+        "projectile-basic"
+    };
+    for (std::string_view spriteId : preloadTowerSprites) {
+        (void)atlasLoader->getImage(spriteId);
+    }
+
     // 初始化遊戲狀態（基地血量與金幣初始值從配置讀取）。
     initBaseHp = level.baseHp;
     initGold = level.startingGold;
     spawnSchedule = level.waves;
     initSession();
+
+    towerHpText = std::make_shared<Util::Text>(
+        kHudFontPath, kHudFontSize, "基地生命: 0", Util::Color::FromRGB(255, 255, 255)
+    );
+    towerHpTextObject = std::make_shared<Util::GameObject>();
+    towerHpTextObject->SetDrawable(towerHpText);
+    towerHpTextObject->SetZIndex(kHudZIndex);
+
+    goldText = std::make_shared<Util::Text>(
+        kHudFontPath, kHudFontSize, "金幣: 0", Util::Color::FromRGB(255, 255, 255)
+    );
+    goldTextObject = std::make_shared<Util::GameObject>();
+    goldTextObject->SetDrawable(goldText);
+    goldTextObject->SetZIndex(kHudZIndex);
+
+    towerHpIconObject = std::make_shared<Util::GameObject>();
+    towerHpIconObject->SetDrawable(atlasLoader->getImage("icon-heart"));
+    towerHpIconObject->m_Transform.scale = {kHudIconScale, kHudIconScale};
+    towerHpIconObject->SetZIndex(kHudZIndex);
+
+    goldIconObject = std::make_shared<Util::GameObject>();
+    goldIconObject->SetDrawable(atlasLoader->getImage("icon-coins"));
+    goldIconObject->m_Transform.scale = {kHudIconScale, kHudIconScale};
+    goldIconObject->SetZIndex(kHudZIndex);
+
+    hudRoot.AddChild(towerHpIconObject);
+    hudRoot.AddChild(towerHpTextObject);
+    hudRoot.AddChild(goldIconObject);
+    hudRoot.AddChild(goldTextObject);
+    updateHudDisplay();
 
     // 背景改為 Infinitode 風格的灰色同色系 #181818。
     glClearColor(24.0F / 255.0F, 24.0F / 255.0F, 24.0F / 255.0F, 1.0F);
@@ -70,11 +114,17 @@ const TowerManager& GameSession::getTowerManager() const {
 }
 
 bool GameSession::placeTower(int gridX, int gridY, std::string_view spriteId) {
+    if (gold < kTowerBuildCost) {
+        return false;
+    }
+
     if (!towerManager->placeTower(gridX, gridY, spriteId)) {
         return false;
     }
 
+    gold -= kTowerBuildCost;
     updateTowerDisplay();
+    updateHudDisplay();
     return true;
 }
 
@@ -133,6 +183,7 @@ void GameSession::update(float deltaTime) {
         enemyManager->updateEnemyDisplay();
         updateTowerDisplay();
         updateProjectileDisplay();
+        updateHudDisplay();
         return; // 如果遊戲未啟動，跳過更新。
     }
     timer += deltaTime;
@@ -178,6 +229,8 @@ void GameSession::display() {
     updateProjectileDisplay();
     projectileRoot.Update();
     enemyManager->display();
+    updateHudDisplay();
+    hudRoot.Update();
 }
 
 void GameSession::moveCamera(float dx, float dy) {
@@ -202,6 +255,7 @@ void GameSession::initSession() {
     towerManager->clear();
     updateTowerDisplay();
     updateProjectileDisplay();
+    updateHudDisplay();
     LOG_INFO("[Session] init: baseHp={}, gold={}", baseHp, gold);
 }
 
@@ -274,31 +328,47 @@ void GameSession::dispatchEnemiesByTimer() {
 
 void GameSession::updateTowerDisplay() {
     const std::vector<Tower>& towers = towerManager->getTowers();
-    towerObjects.reserve(towers.size());
+    towerBaseObjects.reserve(towers.size());
+    towerWeaponObjects.reserve(towers.size());
 
-    while (towerObjects.size() < towers.size()) {
-        std::shared_ptr<Util::GameObject> towerObject = std::make_shared<Util::GameObject>();
-        towerObject->SetZIndex(kTowerZIndex);
-        towerObject->m_Transform.scale = {kTowerScale, kTowerScale};
-        towerRoot.AddChild(towerObject);
-        towerObjects.push_back(towerObject);
+    while (towerBaseObjects.size() < towers.size()) {
+        std::shared_ptr<Util::GameObject> towerBaseObject = std::make_shared<Util::GameObject>();
+        towerBaseObject->SetZIndex(kTowerBaseZIndex);
+        towerBaseObject->m_Transform.scale = {kTowerScale, kTowerScale};
+        towerRoot.AddChild(towerBaseObject);
+        towerBaseObjects.push_back(towerBaseObject);
+
+        std::shared_ptr<Util::GameObject> towerWeaponObject = std::make_shared<Util::GameObject>();
+        towerWeaponObject->SetZIndex(kTowerWeaponZIndex);
+        towerWeaponObject->m_Transform.scale = {kTowerScale, kTowerScale};
+        towerRoot.AddChild(towerWeaponObject);
+        towerWeaponObjects.push_back(towerWeaponObject);
     }
 
-    while (towerObjects.size() > towers.size()) {
-        towerRoot.RemoveChild(towerObjects.back());
-        towerObjects.pop_back();
+    while (towerBaseObjects.size() > towers.size()) {
+        towerRoot.RemoveChild(towerBaseObjects.back());
+        towerBaseObjects.pop_back();
+
+        towerRoot.RemoveChild(towerWeaponObjects.back());
+        towerWeaponObjects.pop_back();
     }
 
     for (std::size_t i = 0; i < towers.size(); ++i) {
         const Tower& tower = towers[i];
-        const std::shared_ptr<Util::GameObject>& towerObject = towerObjects[i];
+        const std::shared_ptr<Util::GameObject>& towerBaseObject = towerBaseObjects[i];
+        const std::shared_ptr<Util::GameObject>& towerWeaponObject = towerWeaponObjects[i];
 
-        towerObject->SetDrawable(atlasLoader->getImage(tower.GetspriteId()));
+        towerBaseObject->SetDrawable(atlasLoader->getImage("tower-basic-base"));
+        towerWeaponObject->SetDrawable(atlasLoader->getImage("tower-basic-weapon"));
         const std::optional<glm::vec2> worldPos = map->gridToWorld(tower.GetGridX(), tower.GetGridY());
         if (!worldPos.has_value()) {
             continue;
         }
-        towerObject->m_Transform.translation = worldPos.value();
+        towerBaseObject->m_Transform.translation = worldPos.value();
+        towerBaseObject->m_Transform.rotation = 0.0F;
+
+        towerWeaponObject->m_Transform.translation = worldPos.value();
+        towerWeaponObject->m_Transform.rotation = tower.GetFacingRotation();
     }
 }
 
@@ -329,6 +399,44 @@ void GameSession::updateProjectileDisplay() {
         }
         projectileObject->m_Transform.translation = worldPos.value();
     }
+}
+
+void GameSession::updateHudDisplay() {
+    if (!towerHpText || !goldText || !towerHpIconObject || !goldIconObject || !towerHpTextObject || !goldTextObject) {
+        return;
+    }
+
+    towerHpText->SetText("基地生命: " + std::to_string(baseHp));
+    goldText->SetText("金幣: " + std::to_string(gold));
+
+    const std::shared_ptr<Core::Context> context = Core::Context::GetInstance();
+    const float halfWindowWidth = static_cast<float>(context->GetWindowWidth()) * 0.5F;
+    const float halfWindowHeight = static_cast<float>(context->GetWindowHeight()) * 0.5F;
+
+    const glm::vec2 towerIconSize = atlasLoader->getImage("icon-heart")->GetSize();
+    const glm::vec2 goldIconSize = atlasLoader->getImage("icon-coins")->GetSize();
+    const glm::vec2 towerTextSize = towerHpText->GetSize();
+    const glm::vec2 goldTextSize = goldText->GetSize();
+
+    const float topY = halfWindowHeight - kHudPadding;
+
+    towerHpIconObject->m_Transform.translation = {
+        -halfWindowWidth + kHudPadding + towerIconSize.x * kHudIconScale * 0.5F,
+        topY - towerIconSize.y * kHudIconScale * 0.5F
+    };
+    towerHpTextObject->m_Transform.translation = {
+        towerHpIconObject->m_Transform.translation.x + towerIconSize.x * kHudIconScale * 0.5F + kHudGap + towerTextSize.x * 0.5F,
+        topY - towerTextSize.y * 0.5F
+    };
+
+    goldTextObject->m_Transform.translation = {
+        halfWindowWidth - kHudPadding - goldTextSize.x * 0.5F,
+        topY - goldTextSize.y * 0.5F
+    };
+    goldIconObject->m_Transform.translation = {
+        goldTextObject->m_Transform.translation.x - goldTextSize.x * 0.5F - kHudGap - goldIconSize.x * kHudIconScale * 0.5F,
+        topY - goldIconSize.y * kHudIconScale * 0.5F
+    };
 }
 
 // -------------------- 測試入口 --------------------

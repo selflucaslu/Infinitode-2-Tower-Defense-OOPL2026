@@ -144,6 +144,9 @@ void TowerManager::updateAutoAttack(float deltaTime, std::vector<Enemy>& enemies
     }
 
     if (autoAttackEnabled) {
+        // 以貼圖朝上為零角度校正，將 atan2 的右向 0 弧度轉成貼圖座標。
+        static constexpr float kWeaponAngleOffset = -1.5707963F; // -PI/2
+
         // 每座塔冷卻完成就找最近敵人發射一顆追蹤彈。
         for (std::size_t i = 0; i < towers.size(); ++i) {
             if (towerCooldowns[i] > 0.0F) {
@@ -165,6 +168,8 @@ void TowerManager::updateAutoAttack(float deltaTime, std::vector<Enemy>& enemies
             if (distance <= 0.0001F) {
                 continue;
             }
+
+            towers[i].SetFacingRotation(std::atan2(dy, dx) + kWeaponAngleOffset);
 
             Projectile projectile;
             projectile.x = towerX;

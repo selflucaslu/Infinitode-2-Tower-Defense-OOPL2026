@@ -7,6 +7,7 @@
 #include "utils/AtlasLoader.hpp"
 #include "Util/GameObject.hpp"
 #include "Util/Renderer.hpp"
+#include "Util/Text.hpp"
 #include "game/LevelConfig.hpp"
 
 #include <memory>
@@ -66,6 +67,7 @@ public:
 private:
     void updateTowerDisplay(); // 同步塔渲染物件與位置
     void updateProjectileDisplay(); // 同步子彈渲染物件與位置
+    void updateHudDisplay(); // 同步上方 HUD（基地生命與金幣）
 
 private:
     // -------------------- 資源與核心物件 --------------------
@@ -74,13 +76,29 @@ private:
     std::unique_ptr<EnemyManager> enemyManager; // 本局敵人管理器（使用 map 與 atlasLoader 的參考）
     std::unique_ptr<TowerManager> towerManager; // 本局塔管理器（使用 map 參考）
     Util::Renderer towerRoot; // 塔渲染根節點
-    std::vector<std::shared_ptr<Util::GameObject>> towerObjects; // 與塔容器對應的渲染物件
+    std::vector<std::shared_ptr<Util::GameObject>> towerBaseObjects; // 塔底座渲染物件
+    std::vector<std::shared_ptr<Util::GameObject>> towerWeaponObjects; // 塔炮口渲染物件
     Util::Renderer projectileRoot; // 子彈渲染根節點
     std::vector<std::shared_ptr<Util::GameObject>> projectileObjects; // 與子彈容器對應的渲染物件
+    Util::Renderer hudRoot; // HUD 渲染根節點
+    std::shared_ptr<Util::GameObject> towerHpIconObject; // 基地生命 icon
+    std::shared_ptr<Util::GameObject> towerHpTextObject; // 基地生命文字
+    std::shared_ptr<Util::Text> towerHpText; // 基地生命文字內容
+    std::shared_ptr<Util::GameObject> goldIconObject; // 金幣 icon
+    std::shared_ptr<Util::GameObject> goldTextObject; // 金幣文字
+    std::shared_ptr<Util::Text> goldText; // 金幣文字內容
     static constexpr float kTowerScale = 0.45F;
-    static constexpr float kTowerZIndex = 1.5F;
+    static constexpr float kTowerBaseZIndex = 1.5F;
+    static constexpr float kTowerWeaponZIndex = 1.6F;
     static constexpr float kProjectileScale = 0.22F;
     static constexpr float kProjectileZIndex = 2.3F;
+    static constexpr const char* kHudFontPath = "PTSD/assets/fonts/Inter.ttf";
+    static constexpr int kHudFontSize = 24;
+    static constexpr float kHudZIndex = 4.0F;
+    static constexpr float kHudPadding = 16.0F;
+    static constexpr float kHudIconScale = 0.34F;
+    static constexpr float kHudGap = 10.0F;
+    static constexpr int kTowerBuildCost = 40;
 
     // -------------------- 遊戲狀態 --------------------
     bool isSessionActive; // 本局是否在進行中
