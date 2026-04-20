@@ -49,20 +49,24 @@ public:
     void zoomCamera(float zoomDelta);
     std::pair<int, int> ScreenToGrid(float screenX, float screenY) const;
     void addTowerVisual(int gridX, int gridY, std::string_view spriteId);
+    void updateTransforms();
 private:
     // -------------------- 地圖來源與描述 --------------------
     std::string MAP_FILE_PATH;       // 地圖文件路徑
     std::string mapName;             // 地圖名稱
     std::string mapDescription;      // 地圖描述
     std::string mapDifficulty;       // 地圖難度
+    struct TowerVisual {
+        int x, y;
+        std::shared_ptr<Util::GameObject> obj;
+    };
+    std::vector<TowerVisual> towerVisuals;
 
 
     // -------------------- 地圖格子資料 --------------------
     int mapWidth;                    // 地圖寬度
     int mapHeight;                   // 地圖高度
     std::vector<Tile> tilesArray;    // 用於存儲地圖上每個 tile 的一維陣列
-    // ADD THIS MISSING PRIVATE METHOD
-    void updateTransforms();
 
     // -------------------- 格子轉世界座標快取 --------------------
     float kMapScale = 0.45F; // 地圖整體縮放倍率

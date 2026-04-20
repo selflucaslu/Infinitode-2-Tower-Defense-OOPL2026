@@ -51,6 +51,6 @@ std::optional<int> TowerManager::findTowerIndex(int gridX, int gridY) const {
 // 其他 POC 留空介面可暫不實作
 void TowerManager::setAutoAttackEnabled(bool enabled) { autoAttackEnabled = enabled; }
 bool TowerManager::getAutoAttackEnabled() const { return autoAttackEnabled; }
-void TowerManager::updateAutoAttack(float deltaTime, std::vector<Enemy>& enemies) {}
+void TowerManager::updateAutoAttack(float /*deltaTime*/, std::vector<Enemy>& /*enemies*/) {}
 std::vector<Tower>& TowerManager::getTowers() { return towers; }
 const std::vector<Tower>& TowerManager::getTowers() const { return towers; }

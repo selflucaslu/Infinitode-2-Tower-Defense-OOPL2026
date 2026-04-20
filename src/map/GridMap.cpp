@@ -233,7 +233,7 @@ std::pair<int, int> GridMap::ScreenToGrid(float screenX, float screenY) const {
 // 參數型別改為 std::string_view
 void GridMap::addTowerVisual(int gridX, int gridY, std::string_view spriteId) {
     auto obj = std::make_shared<Util::GameObject>();
-    obj->SetDrawable(atlasLoader->getImage(spriteId));
+    obj->SetDrawable(atlasLoader.getImage(spriteId));
 
     // 修復 "Member is inaccessible" 錯誤：改用 SetZIndex 設值
     obj->SetZIndex(1);
@@ -317,15 +317,6 @@ std::optional<std::pair<int, int>> GridMap::worldToGrid(const glm::vec2& worldPo
 }
 
 // -------------------- 鏡頭與渲染 --------------------
-void GridMap::moveCamera(float dx, float dy) {
-    // 與敵人管理器保持一致：直接平移所有現有渲染物件。
-    m_CameraOffsetX += dx;
-    m_CameraOffsetY += dy;
-    for (const std::shared_ptr<Util::GameObject>& obj : tileObjects) {
-        obj->m_Transform.translation.x += dx;
-        obj->m_Transform.translation.y += dy;
-    }
-}
 
 void GridMap::displayMap() {
     // 由 map root 統一提交整張地圖繪製。
