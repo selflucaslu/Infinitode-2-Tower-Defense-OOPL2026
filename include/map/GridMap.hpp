@@ -61,6 +61,11 @@ private:
         int gridY; // Changed from y
         std::shared_ptr<Util::GameObject> obj;
     };
+    struct TileVisual {
+        int gridX;
+        int gridY;
+        std::shared_ptr<Util::GameObject> obj;
+    };
     std::vector<TowerVisual> towerVisuals;
 
 
@@ -84,7 +89,7 @@ private:
     static constexpr float kTileZIndex = 0.0F; // 所有地圖格子的統一 Z 軸層級
     AtlasLoader& atlasLoader; // 圖集載入器參考（不擁有）
     Util::Renderer mapRoot; // 地圖渲染根節點
-    std::vector<std::shared_ptr<Util::GameObject>> tileObjects; // 與 tilesArray 對應的渲染物件
+    std::vector<TileVisual> tileObjects; // 與 tilesArray 對應的渲染物件
 
     float currentScale = 0.3F;
     float cameraX = 0.0F;

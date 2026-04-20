@@ -93,6 +93,9 @@ GridMap::GridMap(std::string_view MAP_FILE_PATH, AtlasLoader& atlas)
     const glm::vec2 firstSize = firstImage->GetSize(); // PTSD API: 取得圖片原始寬高
     m_CellW = firstSize.x * kMapScale; // 每格在世界座標的寬（縮放後）
     m_CellH = firstSize.y * kMapScale; // 每格在世界座標的高（縮放後）
+    // 補上基礎寬高的初始化
+    baseCellWidth = m_CellW;
+    baseCellHeight = m_CellH;
     m_StartX = -(mapWidth * m_CellW) * 0.5F + m_CellW * 0.5F; // 從左邊第一格中心開始，讓整張圖置中
     m_StartY = -(mapHeight * m_CellH) * 0.5F + m_CellH * 0.5F; // 從下邊第一格中心開始，讓整張圖置中
 
@@ -126,7 +129,7 @@ GridMap::GridMap(std::string_view MAP_FILE_PATH, AtlasLoader& atlas)
                 };
                 baseObj->SetZIndex(kTileZIndex - 1.0F); // 確保在 Spawn / Goal 圖層下方
                 mapRoot.AddChild(baseObj);
-                tileObjects.emplace_back(baseObj);
+                tileObjects.push_back({x, y, baseObj});
             }
 
             std::shared_ptr<Util::GameObject> obj = std::make_shared<Util::GameObject>();
@@ -139,7 +142,7 @@ GridMap::GridMap(std::string_view MAP_FILE_PATH, AtlasLoader& atlas)
             };
             obj->SetZIndex(kTileZIndex);
             mapRoot.AddChild(obj);
-            tileObjects.emplace_back(obj);
+            tileObjects.push_back({x, y, obj});
         }
     }
     // 套用初始位置
@@ -153,23 +156,21 @@ void GridMap::updateTransforms() {
     const float startX = -(mapWidth * cellW) * 0.5F + cellW * 0.5F + cameraX;
     const float startY = -(mapHeight * cellH) * 0.5F + cellH * 0.5F + cameraY;
 
-    int i = 0;
-    for (int y = 0; y < mapHeight; ++y) {
-        for (int x = 0; x < mapWidth; ++x) {
-            tileObjects[i]->m_Transform.scale = {currentScale, currentScale};
-            tileObjects[i]->m_Transform.translation = {
-                startX + x * cellW,
-                startY + y * cellH
-            };
-            i++;
-        }
+    // 1. 確保每個方塊永遠對齊自己的 gridX 與 gridY
+    for (auto& tv : tileObjects) {
+        tv.obj->m_Transform.scale = {currentScale, currentScale};
+        tv.obj->m_Transform.translation = {
+            startX + tv.gridX * cellW,
+            startY + tv.gridY * cellH
+        };
     }
 
+    // 2. 修正防禦塔，讓塔在縮放時能與地圖方塊完美貼合
     for (auto& tv : towerVisuals) {
         tv.obj->m_Transform.scale = {currentScale, currentScale};
         tv.obj->m_Transform.translation = glm::vec2(
-            m_StartX + tv.gridX * m_CellW + m_CameraOffsetX,
-            m_StartY + tv.gridY * m_CellH + m_CameraOffsetY
+            startX + tv.gridX * cellW,
+            startY + tv.gridY * cellH
         );
     }
 }
