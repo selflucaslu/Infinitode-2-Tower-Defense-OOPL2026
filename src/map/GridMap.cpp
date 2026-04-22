@@ -161,7 +161,8 @@ void GridMap::updateTransforms() {
 
     // 1. 更新所有地圖方塊 (背景、道路、起點、終點)
     for (auto& tv : tileObjects) {
-        tv.obj->m_Transform.scale = {currentScale, currentScale};
+        // ★ 修正：將 kMapScale 乘回來，確保圖片大小與排版距離吻合
+        tv.obj->m_Transform.scale = {kMapScale * currentScale, kMapScale * currentScale};
         tv.obj->m_Transform.translation = {
             startX + tv.gridX * cellW,
             startY + tv.gridY * cellH
@@ -170,7 +171,8 @@ void GridMap::updateTransforms() {
 
     // 2. 更新所有已放置的防禦塔
     for (auto& tv : towerVisuals) {
-        tv.obj->m_Transform.scale = {currentScale, currentScale};
+        // ★ 修正：防禦塔也需要加上 kMapScale
+        tv.obj->m_Transform.scale = {kMapScale * currentScale, kMapScale * currentScale};
         tv.obj->m_Transform.translation = glm::vec2(
             startX + tv.gridX * cellW,
             startY + tv.gridY * cellH
