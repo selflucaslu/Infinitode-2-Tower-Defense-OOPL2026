@@ -151,12 +151,15 @@ GridMap::GridMap(std::string_view MAP_FILE_PATH, AtlasLoader& atlas)
 
 // 統一更新所有地圖方塊與塔物件的位置及縮放
 void GridMap::updateTransforms() {
+    // 這裡的 cellW 和 cellH 必須是用 "基礎寬高" 乘上 "當前縮放比例"
     const float cellW = baseCellWidth * currentScale;
     const float cellH = baseCellHeight * currentScale;
+
+    // 計算地圖左下角的起始點 (考慮攝影機位移)
     const float startX = -(mapWidth * cellW) * 0.5F + cellW * 0.5F + cameraX;
     const float startY = -(mapHeight * cellH) * 0.5F + cellH * 0.5F + cameraY;
 
-    // 1. 確保每個方塊永遠對齊自己的 gridX 與 gridY
+    // 1. 更新所有地圖方塊 (背景、道路、起點、終點)
     for (auto& tv : tileObjects) {
         tv.obj->m_Transform.scale = {currentScale, currentScale};
         tv.obj->m_Transform.translation = {
@@ -165,7 +168,7 @@ void GridMap::updateTransforms() {
         };
     }
 
-    // 2. 修正防禦塔，讓塔在縮放時能與地圖方塊完美貼合
+    // 2. 更新所有已放置的防禦塔
     for (auto& tv : towerVisuals) {
         tv.obj->m_Transform.scale = {currentScale, currentScale};
         tv.obj->m_Transform.translation = glm::vec2(
