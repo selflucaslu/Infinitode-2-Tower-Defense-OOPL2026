@@ -56,6 +56,8 @@ public:
     );
     TowerManager& getTowerManager(); // Add this
 
+    void zoomCamera(float zoomDelta);
+
 private:
     // -------------------- 資源與核心物件 --------------------
     std::unique_ptr<AtlasLoader> atlasLoader; // 圖集載入器（本局唯一擁有，集中資源管理）
