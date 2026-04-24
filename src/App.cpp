@@ -88,7 +88,7 @@ void App::Update() {
         if (Util::Input::IfScroll()) {
             float scrollDelta = Util::Input::GetScrollDistance().y;
             if (scrollDelta != 0.0F) {
-                map.zoomCamera(scrollDelta);
+                m_GameSession->zoomCamera(scrollDelta);
             }
         }
 

@@ -130,6 +130,29 @@ void EnemyManager::updateEnemyDisplay() {
         };
     }
 
+    const float cellW = m_CellW * m_CurrentScale;
+    const float cellH = m_CellH * m_CurrentScale;
+
+    // 動態計算當前縮放後的地圖左下角起點 (完美對齊 GridMap 的 updateTransforms 邏輯)
+    const float startX = -(m_Map.getMapWidth() * cellW) * 0.5F + cellW * 0.5F + m_CameraOffsetX;
+    const float startY = -(m_Map.getMapHeight() * cellH) * 0.5F + cellH * 0.5F + m_CameraOffsetY;
+
+    // 同步每隻敵人的貼圖與世界座標
+    const int enemyCount = static_cast<int>(enemies.size());
+    for (int enemyIndex = 0; enemyIndex < enemyCount; enemyIndex++) {
+        Enemy& enemy = enemies[enemyIndex];
+        const std::shared_ptr<Util::GameObject>& enemyObject = m_EnemyObjects[enemyIndex];
+
+        // 套用縮放比例 (原本只有 kMapScale，現在要乘上 m_CurrentScale)
+        enemyObject->m_Transform.scale = {kMapScale * m_CurrentScale, kMapScale * m_CurrentScale};
+
+        // 使用縮放後的起點與格子大小來計算真正的世界座標
+        enemyObject->m_Transform.translation = {
+            startX + enemy.getX() * cellW,
+            startY + enemy.getY() * cellH
+        };
+    }
+
 }
 
 void EnemyManager::display() {
@@ -296,4 +319,14 @@ void EnemyManager::buildPathsFromMap() {
 
         fixedPathPoints.push_back(std::make_shared<const std::vector<std::pair<int, int>>>(shortestGridPath));
     }
+}
+
+// 1. 新增 zoomCamera 實作
+void EnemyManager::zoomCamera(float zoomDelta) {
+    float zoomFactor = (zoomDelta > 0.0F) ? 1.05F : 0.95F;
+    m_CurrentScale *= zoomFactor;
+
+    // 保持與 GridMap 相同的縮放限制
+    if (m_CurrentScale < 0.1F) m_CurrentScale = 0.1F;
+    if (m_CurrentScale > 3.0F) m_CurrentScale = 3.0F;
 }

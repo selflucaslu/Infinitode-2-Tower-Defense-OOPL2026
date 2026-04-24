@@ -268,3 +268,8 @@ void GameSession::spawnDebugEnemy(
 TowerManager& GameSession::getTowerManager() {
     return *towerManager;
 }
+
+void GameSession::zoomCamera(float zoomDelta) {
+    map->zoomCamera(zoomDelta);
+    enemyManager->zoomCamera(zoomDelta); // 同步通知敵人管理器縮放
+}
