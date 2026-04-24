@@ -94,5 +94,5 @@ private:
     float m_CameraOffsetX = 0.0F; // 敵人整體視角偏移 x（與地圖同步）
     float m_CameraOffsetY = 0.0F; // 敵人整體視角偏移 y（與地圖同步）
 
-    float m_CurrentScale = 1.0F; // 記錄當前縮放比例
+    float m_CurrentScale = 0.3F; // 記錄當前縮放比例
 };
