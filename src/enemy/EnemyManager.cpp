@@ -36,8 +36,8 @@ EnemyManager::EnemyManager(const GridMap& map, AtlasLoader& atlasLoader)
     const glm::vec2 firstSize = firstImage->GetSize();
     m_CellW = firstSize.x * kMapScale;
     m_CellH = firstSize.y * kMapScale;
-    m_StartX = -(m_Map.getMapWidth() * m_CellW) * 0.5F + m_CellW * 0.5F;
-    m_StartY = -(m_Map.getMapHeight() * m_CellH) * 0.5F + m_CellH * 0.5F;
+    m_StartX = -(static_cast<float>(m_Map.getMapWidth()) * m_CellW) * 0.5F + m_CellW * 0.5F;
+    m_StartY = -(static_cast<float>(m_Map.getMapHeight()) * m_CellH) * 0.5F + m_CellH * 0.5F;
 }
 
 // -------------------- 生怪 --------------------
@@ -123,8 +123,8 @@ void EnemyManager::updateEnemyDisplay() {
     const float cellH = m_CellH * m_CurrentScale;
 
     // 動態計算當前縮放後的地圖左下角起點 (完美對齊 GridMap 的 updateTransforms 邏輯)
-    const float startX = -(m_Map.getMapWidth() * cellW) * 0.5F + cellW * 0.5F + m_CameraOffsetX;
-    const float startY = -(m_Map.getMapHeight() * cellH) * 0.5F + cellH * 0.5F + m_CameraOffsetY;
+    const float startX = -(static_cast<float>(m_Map.getMapWidth()) * cellW) * 0.5F + cellW * 0.5F + m_CameraOffsetX;
+    const float startY = -(static_cast<float>(m_Map.getMapHeight()) * cellH) * 0.5F + cellH * 0.5F + m_CameraOffsetY;
 
     // 同步每隻敵人的貼圖與世界座標
     const int enemyCount = static_cast<int>(enemies.size());
@@ -158,7 +158,7 @@ void EnemyManager::moveCamera(float dx, float dy) {
 }
 
 // -------------------- 狀態收集與清理 --------------------
-bool EnemyManager::isEnemysEmpty() {
+bool EnemyManager::isEnemiesEmpty() const {
     return enemies.empty();
 }
 

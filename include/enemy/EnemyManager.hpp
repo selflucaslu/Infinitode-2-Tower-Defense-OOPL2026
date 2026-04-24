@@ -48,7 +48,7 @@ public:
     void moveCamera(float dx, float dy);
 
     // -------------------- 收集與清理 --------------------
-    bool isEnemysEmpty();
+    [[nodiscard]] bool isEnemiesEmpty() const;
     // 收集本幀「到終點傷害 + 擊殺金幣」結果（供外部更新狀態）。
     FrameResolveResult collectFrameResolveResult() const;
     // 單次掃描同時完成「收集結果 + 清理死亡/到終點」。
