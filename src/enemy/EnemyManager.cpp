@@ -118,18 +118,7 @@ void EnemyManager::updateEnemyDisplay() {
         }
     }
 
-    // 同步每隻敵人的貼圖與世界座標（含 camera 偏移）。
-    const int enemyCount = static_cast<int>(enemies.size());
-    for (int enemyIndex = 0; enemyIndex < enemyCount; enemyIndex++) {
-        Enemy& enemy = enemies[enemyIndex];
-        const std::shared_ptr<Util::GameObject>& enemyObject = m_EnemyObjects[enemyIndex];
-
-        enemyObject->m_Transform.translation = {
-            m_StartX + enemy.getX() * m_CellW + m_CameraOffsetX,
-            m_StartY + enemy.getY() * m_CellH + m_CameraOffsetY
-        };
-    }
-
+    // 計算當前「縮放後」的格子大小 (m_CellW / m_CellH 是建構時的基礎大小)
     const float cellW = m_CellW * m_CurrentScale;
     const float cellH = m_CellH * m_CurrentScale;
 
