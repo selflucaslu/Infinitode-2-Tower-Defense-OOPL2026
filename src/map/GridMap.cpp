@@ -109,7 +109,7 @@ GridMap::GridMap(std::string_view MAP_FILE_PATH, AtlasLoader& atlas)
                 static constexpr std::array<std::pair<int, int>, 4> kFourDirs = {{
                     {0, 1}, {1, 0}, {0, -1}, {-1, 0}
                 }};
-                for (const auto [dx, dy] : kFourDirs) {
+                for (const auto &[dx, dy] : kFourDirs) {
                     const int nx = x + dx;
                     const int ny = y + dy;
                     const bool inBounds = nx >= 0 && nx < mapWidth && ny >= 0 && ny < mapHeight;
