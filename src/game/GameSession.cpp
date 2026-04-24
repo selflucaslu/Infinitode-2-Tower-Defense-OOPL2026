@@ -16,6 +16,7 @@ GameSession::GameSession(int levelNumber) {
     // 建立地圖與敵人管理器，並傳入 atlasLoader 參考（共用資源）。
     map = std::make_unique<GridMap>(level.mapPath, *atlasLoader);
     enemyManager = std::make_unique<EnemyManager>(*map, *atlasLoader);
+    towerManager = std::make_unique<TowerManager>(*map);
 
     // 預熱常用敵人貼圖，避免第一次出場時發生卡頓。
     const std::array<EnemyTypeId, 5> preloadEnemyTypes = {
@@ -38,9 +39,6 @@ GameSession::GameSession(int levelNumber) {
 
     // 背景改為 Infinitode 風格的灰色同色系 #181818。
     glClearColor(24.0F / 255.0F, 24.0F / 255.0F, 24.0F / 255.0F, 1.0F);
-
-    // 初始化 TowerManager
-    towerManager = std::make_unique<TowerManager>(*map);
 }
 
 // -------------------- 地圖存取 --------------------
