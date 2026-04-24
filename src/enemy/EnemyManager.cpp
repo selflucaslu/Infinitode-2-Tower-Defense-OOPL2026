@@ -89,15 +89,13 @@ void EnemyManager::update(float deltaTime) {
     for (Enemy& enemy : enemies) {
         enemy.update(deltaTime);
     }
-
-    updateEnemyDisplay();
+    // 注意：這裡不要呼叫 updateEnemyDisplay() 了，交由 GameSession 統一傳參數呼叫
 }
 
-void EnemyManager::updateEnemyDisplay() {
+void EnemyManager::updateEnemyDisplay(float cameraX, float cameraY, float cameraScale) {
     m_EnemyObjects.reserve(enemies.size());
 
-    // 將渲染物件數量與敵人數量對齊。
-    // 不足的渲染物件要補齊並掛到 root（固定屬性只在建立時設定一次）。
+    // 1. 將渲染物件數量與敵人數量對齊
     while (m_EnemyObjects.size() < enemies.size()) {
         const int enemyIndex = static_cast<int>(m_EnemyObjects.size());
         Enemy& enemy = enemies[enemyIndex];
@@ -106,11 +104,11 @@ void EnemyManager::updateEnemyDisplay() {
             enemy.getMoveType() == Enemy::MoveType::Air ? kAirEnemyZIndex : kGroundEnemyZIndex
         );
         enemyObject->SetDrawable(m_AtlasLoader.getImage(enemy.getSpriteId()));
-        enemyObject->m_Transform.scale = {kMapScale, kMapScale};
+        // 初始大小可以隨便給，下方迴圈會覆蓋
+        enemyObject->m_Transform.scale = {1.0f, 1.0f};
         m_EnemyRoot.AddChild(enemyObject);
         m_EnemyObjects.push_back(enemyObject);
     }
-    // 多出來的渲染物件要從 root 與容器移除。
     if (m_EnemyObjects.size() > enemies.size()) {
         while (m_EnemyObjects.size() > enemies.size()) {
             m_EnemyRoot.RemoveChild(m_EnemyObjects.back());
@@ -118,30 +116,29 @@ void EnemyManager::updateEnemyDisplay() {
         }
     }
 
-    // 計算當前「縮放後」的格子大小 (m_CellW / m_CellH 是建構時的基礎大小)
-    const float cellW = m_CellW * m_CurrentScale;
-    const float cellH = m_CellH * m_CurrentScale;
+    // 2. 計算當前「縮放後」的格子大小
+    const float cellW = m_CellW * cameraScale;
+    const float cellH = m_CellH * cameraScale;
 
-    // 動態計算當前縮放後的地圖左下角起點 (完美對齊 GridMap 的 updateTransforms 邏輯)
-    const float startX = -(static_cast<float>(m_Map.getMapWidth()) * cellW) * 0.5F + cellW * 0.5F + m_CameraOffsetX;
-    const float startY = -(static_cast<float>(m_Map.getMapHeight()) * cellH) * 0.5F + cellH * 0.5F + m_CameraOffsetY;
+    // 3. 動態計算當前縮放後的地圖左下角起點 (使用傳入的 cameraX 和 cameraY)
+    const float startX = -(static_cast<float>(m_Map.getMapWidth()) * cellW) * 0.5F + cellW * 0.5F + cameraX;
+    const float startY = -(static_cast<float>(m_Map.getMapHeight()) * cellH) * 0.5F + cellH * 0.5F + cameraY;
 
-    // 同步每隻敵人的貼圖與世界座標
+    // 4. 同步每隻敵人的貼圖與世界座標
     const int enemyCount = static_cast<int>(enemies.size());
     for (int enemyIndex = 0; enemyIndex < enemyCount; enemyIndex++) {
         Enemy& enemy = enemies[enemyIndex];
         const std::shared_ptr<Util::GameObject>& enemyObject = m_EnemyObjects[enemyIndex];
 
-        // 套用縮放比例 (原本只有 kMapScale，現在要乘上 m_CurrentScale)
-        enemyObject->m_Transform.scale = {kMapScale * m_CurrentScale, kMapScale * m_CurrentScale};
+        // 套用縮放比例
+        enemyObject->m_Transform.scale = {kMapScale * cameraScale, kMapScale * cameraScale};
 
-        // 使用縮放後的起點與格子大小來計算真正的世界座標
+        // 計算真正的世界座標
         enemyObject->m_Transform.translation = {
             startX + enemy.getX() * cellW,
             startY + enemy.getY() * cellH
         };
     }
-
 }
 
 void EnemyManager::display() {
@@ -149,13 +146,6 @@ void EnemyManager::display() {
     m_EnemyRoot.Update();
 }
 
-// -------------------- 鏡頭移動 --------------------
-void EnemyManager::moveCamera(float dx, float dy) {
-    // 只更新相機偏移，不直接平移物件。
-    // 物件最終位置統一在 update() 依 offset 重算，避免雙重位移。
-    m_CameraOffsetX += dx;
-    m_CameraOffsetY += dy;
-}
 
 // -------------------- 狀態收集與清理 --------------------
 bool EnemyManager::isEnemiesEmpty() const {
@@ -310,12 +300,3 @@ void EnemyManager::buildPathsFromMap() {
     }
 }
 
-// 1. 新增 zoomCamera 實作
-void EnemyManager::zoomCamera(float zoomDelta) {
-    float zoomFactor = (zoomDelta > 0.0F) ? 1.05F : 0.95F;
-    m_CurrentScale *= zoomFactor;
-
-    // 保持與 GridMap 相同的縮放限制
-    if (m_CurrentScale < 0.1F) m_CurrentScale = 0.1F;
-    if (m_CurrentScale > 3.0F) m_CurrentScale = 3.0F;
-}

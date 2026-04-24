@@ -39,10 +39,6 @@ GameSession::GameSession(int levelNumber) {
     // 背景改為 Infinitode 風格的灰色同色系 #181818。
     glClearColor(24.0F / 255.0F, 24.0F / 255.0F, 24.0F / 255.0F, 1.0F);
 
-    // 最小流程：先載入圖集，再建立地圖。
-    atlasLoader->loadAtlas("assets/combined.atlas");
-    map = std::make_unique<GridMap>(level.mapPath, *atlasLoader); // FIXED
-
     // 初始化 TowerManager
     towerManager = std::make_unique<TowerManager>(*map);
 }
@@ -116,9 +112,9 @@ void GameSession::nextWave() {
 // -------------------- 每幀流程 --------------------
 void GameSession::update(float deltaTime) {
     if (!isSessionActive) {
-        // 暫停時仍要同步敵人渲染座標，讓相機移動時敵人能跟著地圖一起平移。
-        enemyManager->updateEnemyDisplay();
-        return; // 如果遊戲未啟動，跳過更新。
+        // 暫停時也要同步渲染
+        enemyManager->updateEnemyDisplay(map->getOffsetX(), map->getOffsetY(), map->getCurrentScale());
+        return;
     }
     timer += deltaTime;
     waveTimer += deltaTime;
@@ -127,6 +123,12 @@ void GameSession::update(float deltaTime) {
 
     // EnemyManager 處理敵人更新與渲染提交。
     enemyManager->update(deltaTime);
+
+    enemyManager->updateEnemyDisplay(
+        map->getOffsetX(),
+        map->getOffsetY(),
+        map->getCurrentScale()
+    );
 
     // 每幀單次掃描完成「收集結果 + 清理」，避免重複遍歷 enemies。
     const EnemyManager::FrameResolveResult frameResult = enemyManager->resolveAndRemoveDeadAndReached();
@@ -164,7 +166,6 @@ void GameSession::moveCamera(float dx, float dy) {
     // 兩者雖然實作方式不同，但只要同一幀用相同 dx/dy 呼叫，
     // 地圖（直接位移）與敵人（offset 重算）會保持同步。
     map->moveCamera(dx, dy);
-    enemyManager->moveCamera(dx, dy);
 }
 
 // -------------------- 遊戲流程控制 --------------------
@@ -271,5 +272,4 @@ TowerManager& GameSession::getTowerManager() {
 
 void GameSession::zoomCamera(float zoomDelta) {
     map->zoomCamera(zoomDelta);
-    enemyManager->zoomCamera(zoomDelta); // 同步通知敵人管理器縮放
 }

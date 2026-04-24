@@ -50,6 +50,12 @@ public:
     std::pair<int, int> ScreenToGrid(float screenX, float screenY) const;
     void addTowerVisual(int gridX, int gridY, std::string_view spriteId);
     void updateTransforms();
+
+    // 👇 新增這三個 Getter 方法讓外部可以取得相機狀態 👇
+    // (請注意：如果你的 GridMap.cpp 實際位移是改變 cameraX 而非 m_CameraOffsetX，請將回傳值改為 cameraX)
+    float getOffsetX() const { return m_CameraOffsetX; }
+    float getOffsetY() const { return m_CameraOffsetY; }
+    float getCurrentScale() const { return currentScale; }
 private:
     // -------------------- 地圖來源與描述 --------------------
     std::string MAP_FILE_PATH;       // 地圖文件路徑

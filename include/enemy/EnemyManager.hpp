@@ -41,11 +41,9 @@ public:
     // 同步維護敵人的渲染物件（貼圖與座標）。
     void update(float deltaTime);
     // 只更新敵人的畫面顯示（不更新敵人邏輯）。
-    void updateEnemyDisplay();
+    void updateEnemyDisplay(float cameraX, float cameraY, float cameraScale);
     // 統一繪製敵人。
     void display();
-    // 平移敵人視角（行為對齊 GridMap::moveCamera）。
-    void moveCamera(float dx, float dy);
 
     // -------------------- 收集與清理 --------------------
     [[nodiscard]] bool isEnemiesEmpty() const;
@@ -65,8 +63,6 @@ public:
     const std::vector<Enemy>& getEnemies() const;
 
     void buildPathsFromMap(); // 從地圖資訊建立固定路徑與起點資料
-
-    void zoomCamera(float zoomDelta);
 
 private:
     // -------------------- 外部依賴（不擁有） --------------------
@@ -89,10 +85,4 @@ private:
     float m_CellH = 0.0F; // 單格世界高度（縮放後）
     float m_StartX = 0.0F; // 地圖左下格中心世界座標 x（置中後）
     float m_StartY = 0.0F; // 地圖左下格中心世界座標 y（置中後）
-
-    // -------------------- 相機偏移快取 --------------------
-    float m_CameraOffsetX = 0.0F; // 敵人整體視角偏移 x（與地圖同步）
-    float m_CameraOffsetY = 0.0F; // 敵人整體視角偏移 y（與地圖同步）
-
-    float m_CurrentScale = 0.3F; // 記錄當前縮放比例
 };
