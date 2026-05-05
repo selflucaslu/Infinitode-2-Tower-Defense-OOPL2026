@@ -11,14 +11,8 @@ set(FETCHCONTENT_QUIET FALSE)
 
 FetchContent_Declare(
     ptsd
-
-    URL         https://github.com/ntut-open-source-club/practical-tools-for-simple-design/archive/refs/tags/v0.2.zip
-
-    # Or alternatively if you want to use a specific git commit instead of a release:
-    # GIT_REPOSITORY  https://github.com/ntut-open-source-club/practical-tools-for-simple-design.git
-    # GIT_TAG         <git_tag>
-
-    SOURCE_DIR  ${CMAKE_CURRENT_SOURCE_DIR}/PTSD
+    GIT_REPOSITORY  https://github.com/ntut-open-source-club/practical-tools-for-simple-design.git
+    GIT_TAG         ad63ed87e5252c5d913dc70dcf69e1ac2298054d
 )
 
 FetchContent_MakeAvailable(ptsd)
@@ -52,7 +46,7 @@ else()
 endif()
 
 target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE ${DEPENDENCY_INCLUDE_DIRS})
-target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/PTSD/include)
+target_include_directories(${PROJECT_NAME} PRIVATE ${ptsd_SOURCE_DIR}/include)
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 target_link_libraries(${PROJECT_NAME}
