@@ -62,10 +62,10 @@ void App::Update() {
         // 測試代碼：按 1 / 2 生成不同敵人。
         // App 只負責輸入，實際生怪交給 GameSession 協調。
         if (Util::Input::IsKeyDown(Util::Keycode::NUM_1)) {
-            m_GameSession->spawnDebugEnemy(EnemyTypeId::Regular);
+            m_GameSession->spawnDebugEnemy(EnemyTypeId::Regular, {0});
         }
         if (Util::Input::IsKeyDown(Util::Keycode::NUM_2)) {
-            m_GameSession->spawnDebugEnemy(EnemyTypeId::Fast);
+            m_GameSession->spawnDebugEnemy(EnemyTypeId::Fast, {0});
         }
 
         // 每幀順序：
