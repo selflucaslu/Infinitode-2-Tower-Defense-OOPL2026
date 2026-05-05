@@ -2,11 +2,20 @@
 
 #include <array>
 #include <cmath>
+#include <cstddef>
 #include <fstream>
 #include <memory>
 #include <sstream>
 #include <stdexcept>
 #include <string>
+
+namespace {
+constexpr std::size_t kMaxMapFileBytes = 1024 * 1024; // 1 MiB
+constexpr int kMaxMapRows = 256;
+constexpr int kMaxMapCols = 256;
+constexpr std::size_t kMaxTileIdLength = 64;
+constexpr std::size_t kMaxTotalTiles = static_cast<std::size_t>(kMaxMapRows) * kMaxMapCols;
+}
 
 // -------------------- 建立地圖 --------------------
 GridMap::GridMap(std::string_view MAP_FILE_PATH, AtlasLoader& atlas)
@@ -16,6 +25,12 @@ GridMap::GridMap(std::string_view MAP_FILE_PATH, AtlasLoader& atlas)
     if (!file.is_open()) {
         throw std::runtime_error("無法打開地圖文件: " + std::string(MAP_FILE_PATH));
     }
+    file.seekg(0, std::ios::end);
+    const std::ifstream::pos_type fileSize = file.tellg();
+    if (fileSize < 0 || static_cast<std::size_t>(fileSize) > kMaxMapFileBytes) {
+        throw std::runtime_error("地圖文件過大，拒絕載入");
+    }
+    file.seekg(0, std::ios::beg);
 
     std::string line;
     bool isFirstLine = true;
@@ -58,6 +73,12 @@ GridMap::GridMap(std::string_view MAP_FILE_PATH, AtlasLoader& atlas)
             if (!tileType.empty() && tileType.back() == '\r') {
                 tileType.pop_back();
             }
+            if (tileType.size() > kMaxTileIdLength) {
+                throw std::runtime_error("tile 類型字串過長");
+            }
+            if (currentRowWidth >= kMaxMapCols || tilesArray.size() >= kMaxTotalTiles) {
+                throw std::runtime_error("地圖格子數量超出上限");
+            }
             tilesArray.emplace_back(tileType); // emplace_back(arg): 直接用 arg 呼叫 Tile(arg) 在 vector 內原地建構
             currentRowWidth++;
         }
@@ -68,6 +89,9 @@ GridMap::GridMap(std::string_view MAP_FILE_PATH, AtlasLoader& atlas)
             throw std::runtime_error("地圖每一行欄數不一致");
         }
         heightCounter++; // 每讀取一行地圖數據，增加高度計數器
+        if (heightCounter > kMaxMapRows) {
+            throw std::runtime_error("地圖列數超出上限");
+        }
     }
 
     if (heightCounter == 0) throw std::runtime_error("地圖文件中沒有地圖數據");
