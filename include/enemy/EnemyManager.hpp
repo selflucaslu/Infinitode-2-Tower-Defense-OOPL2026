@@ -41,14 +41,13 @@ public:
     // 同步維護敵人的渲染物件（貼圖與座標）。
     void update(float deltaTime);
     // 只更新敵人的畫面顯示（不更新敵人邏輯）。
-    void updateEnemyDisplay();
+    void updateEnemyDisplay(float cameraX, float cameraY, float cameraScale);
     // 統一繪製敵人。
     void display();
-    // 平移敵人視角（行為對齊 GridMap::moveCamera）。
-    void moveCamera(float dx, float dy);
 
     // -------------------- 收集與清理 --------------------
-    bool isEnemysEmpty();
+    // ★ 修正拼字與 const 宣告
+    [[nodiscard]] bool isEnemiesEmpty() const;
     // 收集本幀「到終點傷害 + 擊殺金幣」結果（供外部更新狀態）。
     FrameResolveResult collectFrameResolveResult() const;
     // 單次掃描同時完成「收集結果 + 清理死亡/到終點」。
@@ -87,8 +86,4 @@ private:
     float m_CellH = 0.0F; // 單格世界高度（縮放後）
     float m_StartX = 0.0F; // 地圖左下格中心世界座標 x（置中後）
     float m_StartY = 0.0F; // 地圖左下格中心世界座標 y（置中後）
-
-    // -------------------- 相機偏移快取 --------------------
-    float m_CameraOffsetX = 0.0F; // 敵人整體視角偏移 x（與地圖同步）
-    float m_CameraOffsetY = 0.0F; // 敵人整體視角偏移 y（與地圖同步）
 };

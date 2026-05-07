@@ -36,8 +36,8 @@ EnemyManager::EnemyManager(const GridMap& map, AtlasLoader& atlasLoader)
     const glm::vec2 firstSize = firstImage->GetSize();
     m_CellW = firstSize.x * kMapScale;
     m_CellH = firstSize.y * kMapScale;
-    m_StartX = -(m_Map.getMapWidth() * m_CellW) * 0.5F + m_CellW * 0.5F;
-    m_StartY = -(m_Map.getMapHeight() * m_CellH) * 0.5F + m_CellH * 0.5F;
+    m_StartX = -(static_cast<float>(m_Map.getMapWidth()) * m_CellW) * 0.5F + m_CellW * 0.5F;
+    m_StartY = -(static_cast<float>(m_Map.getMapHeight()) * m_CellH) * 0.5F + m_CellH * 0.5F;
 }
 
 // -------------------- 生怪 --------------------
@@ -50,7 +50,8 @@ void EnemyManager::spawnEnemiesAt(
     int rewardGold,
     std::string_view spriteId
 ) {
-    const int fixedPathCount = static_cast<int>(fixedPathPoints.size());
+    // ★ 修正警告：使用 auto
+    const auto fixedPathCount = static_cast<int>(fixedPathPoints.size());
 
     // 空陣列 = 所有起點都生怪（最直覺預設行為）。
     if (spawnPointIndices.empty()) {
@@ -59,8 +60,8 @@ void EnemyManager::spawnEnemiesAt(
                 continue;
             }
 
-            const float startX = path->front().first;
-            const float startY = path->front().second;
+            const float startX = static_cast<float>(path->front().first);
+            const float startY = static_cast<float>(path->front().second);
             enemies.emplace_back(startX, startY, speed, moveType, maxHealth, damage, rewardGold, 0, std::string(spriteId), path);
         }
         return;
@@ -77,8 +78,8 @@ void EnemyManager::spawnEnemiesAt(
             continue;
         }
 
-        const float startX = path->front().first;
-        const float startY = path->front().second;
+        const float startX = static_cast<float>(path->front().first);
+        const float startY = static_cast<float>(path->front().second);
         enemies.emplace_back(startX, startY, speed, moveType, maxHealth, damage, rewardGold, 0, std::string(spriteId), path);
     }
 }
@@ -89,28 +90,26 @@ void EnemyManager::update(float deltaTime) {
     for (Enemy& enemy : enemies) {
         enemy.update(deltaTime);
     }
-
-    updateEnemyDisplay();
 }
 
-void EnemyManager::updateEnemyDisplay() {
+void EnemyManager::updateEnemyDisplay(float cameraX, float cameraY, float cameraScale) {
     m_EnemyObjects.reserve(enemies.size());
 
-    // 將渲染物件數量與敵人數量對齊。
-    // 不足的渲染物件要補齊並掛到 root（固定屬性只在建立時設定一次）。
+    // 1. 將渲染物件數量與敵人數量對齊
     while (m_EnemyObjects.size() < enemies.size()) {
-        const int enemyIndex = static_cast<int>(m_EnemyObjects.size());
+        // ★ 修正警告：使用 auto
+        const auto enemyIndex = static_cast<int>(m_EnemyObjects.size());
         Enemy& enemy = enemies[enemyIndex];
         std::shared_ptr<Util::GameObject> enemyObject = std::make_shared<Util::GameObject>();
         enemyObject->SetZIndex(
             enemy.getMoveType() == Enemy::MoveType::Air ? kAirEnemyZIndex : kGroundEnemyZIndex
         );
         enemyObject->SetDrawable(m_AtlasLoader.getImage(enemy.getSpriteId()));
-        enemyObject->m_Transform.scale = {kMapScale, kMapScale};
+        enemyObject->m_Transform.scale = {1.0f, 1.0f};
         m_EnemyRoot.AddChild(enemyObject);
-        m_EnemyObjects.push_back(enemyObject);
+        // ★ 修正警告：使用 emplace_back
+        m_EnemyObjects.emplace_back(enemyObject);
     }
-    // 多出來的渲染物件要從 root 與容器移除。
     if (m_EnemyObjects.size() > enemies.size()) {
         while (m_EnemyObjects.size() > enemies.size()) {
             m_EnemyRoot.RemoveChild(m_EnemyObjects.back());
@@ -118,18 +117,30 @@ void EnemyManager::updateEnemyDisplay() {
         }
     }
 
-    // 同步每隻敵人的貼圖與世界座標（含 camera 偏移）。
-    const int enemyCount = static_cast<int>(enemies.size());
+    // 2. 計算當前「縮放後」的格子大小
+    const float cellW = m_CellW * cameraScale;
+    const float cellH = m_CellH * cameraScale;
+
+    // 3. 動態計算當前縮放後的地圖左下角起點 (使用傳入的 cameraX 和 cameraY)
+    const float startX = -(static_cast<float>(m_Map.getMapWidth()) * cellW) * 0.5F + cellW * 0.5F + cameraX;
+    const float startY = -(static_cast<float>(m_Map.getMapHeight()) * cellH) * 0.5F + cellH * 0.5F + cameraY;
+
+    // 4. 同步每隻敵人的貼圖與世界座標
+    // ★ 修正警告：使用 auto
+    const auto enemyCount = static_cast<int>(enemies.size());
     for (int enemyIndex = 0; enemyIndex < enemyCount; enemyIndex++) {
         Enemy& enemy = enemies[enemyIndex];
         const std::shared_ptr<Util::GameObject>& enemyObject = m_EnemyObjects[enemyIndex];
 
+        // 套用縮放比例
+        enemyObject->m_Transform.scale = {kMapScale * cameraScale, kMapScale * cameraScale};
+
+        // 計算真正的世界座標
         enemyObject->m_Transform.translation = {
-            m_StartX + enemy.getX() * m_CellW + m_CameraOffsetX,
-            m_StartY + enemy.getY() * m_CellH + m_CameraOffsetY
+            startX + enemy.getX() * cellW,
+            startY + enemy.getY() * cellH
         };
     }
-
 }
 
 void EnemyManager::display() {
@@ -137,16 +148,8 @@ void EnemyManager::display() {
     m_EnemyRoot.Update();
 }
 
-// -------------------- 鏡頭移動 --------------------
-void EnemyManager::moveCamera(float dx, float dy) {
-    // 只更新相機偏移，不直接平移物件。
-    // 物件最終位置統一在 update() 依 offset 重算，避免雙重位移。
-    m_CameraOffsetX += dx;
-    m_CameraOffsetY += dy;
-}
-
 // -------------------- 狀態收集與清理 --------------------
-bool EnemyManager::isEnemysEmpty() {
+bool EnemyManager::isEnemiesEmpty() const {
     return enemies.empty();
 }
 
@@ -163,10 +166,10 @@ EnemyManager::FrameResolveResult EnemyManager::collectFrameResolveResult() const
     return result;
 }
 
-
 void EnemyManager::removeDeadAndReached() {
+    // ★ 修正警告：使用 auto
     // 由尾到頭同步刪除 enemies 與 m_EnemyObjects，避免剛清掉的敵人多顯示一幀。
-    for (int enemyIndex = static_cast<int>(enemies.size()) - 1; enemyIndex >= 0; --enemyIndex) {
+    for (auto enemyIndex = static_cast<int>(enemies.size()) - 1; enemyIndex >= 0; --enemyIndex) {
         if (!enemies[enemyIndex].isAlive() || enemies[enemyIndex].hasReachedGoal()) {
             enemies.erase(enemies.begin() + enemyIndex);
             if (enemyIndex < static_cast<int>(m_EnemyObjects.size())) {
@@ -180,28 +183,28 @@ void EnemyManager::removeDeadAndReached() {
 EnemyManager::FrameResolveResult EnemyManager::resolveAndRemoveDeadAndReached() {
     FrameResolveResult result;
 
-    // 線性壓縮：單次掃描同時完成
-    // 1) 到終點傷害/擊殺金幣統計
-    // 2) 移除死亡或已到終點敵人
-    // 3) 同步維持 enemies / m_EnemyObjects 索引
-    const int enemyCount = static_cast<int>(enemies.size());
-    const int objectCount = static_cast<int>(m_EnemyObjects.size());
+    // ★ 修正警告：使用 auto
+    const auto enemyCount = static_cast<int>(enemies.size());
+    const auto objectCount = static_cast<int>(m_EnemyObjects.size());
     std::vector<std::shared_ptr<Util::GameObject>> removedObjects;
     removedObjects.reserve(objectCount);
     int writeIndex = 0;
+
     for (int readIndex = 0; readIndex < enemyCount; ++readIndex) {
         Enemy& enemy = enemies[readIndex];
         if (enemy.hasReachedGoal()) {
             result.reachedGoalDamage += enemy.getDamage();
             if (readIndex < objectCount && m_EnemyObjects[readIndex]) {
-                removedObjects.push_back(m_EnemyObjects[readIndex]);
+                // ★ 修正警告：使用 emplace_back
+                removedObjects.emplace_back(m_EnemyObjects[readIndex]);
             }
             continue;
         }
         if (!enemy.isAlive()) {
             result.killedRewardGold += enemy.getRewardGold();
             if (readIndex < objectCount && m_EnemyObjects[readIndex]) {
-                removedObjects.push_back(m_EnemyObjects[readIndex]);
+                // ★ 修正警告：使用 emplace_back
+                removedObjects.emplace_back(m_EnemyObjects[readIndex]);
             }
             continue;
         }
@@ -256,12 +259,13 @@ void EnemyManager::buildPathsFromMap() {
 
     // 對每個起點進行 BFS，找到可到終點的最短路徑。
     for (const std::pair<int, int>& spawn : spawnGridPoints) {
-        std::queue<std::pair<std::pair<int, int>, std::vector<std::pair<int, int>>>> bfsQueue; // 元素是 (當前格座標, 從起點到當前格的路徑)
-        std::vector<bool> visited(mapWidth * mapHeight, false); // 使用一維陣列來表示二維格子是否被訪問過
+        std::queue<std::pair<std::pair<int, int>, std::vector<std::pair<int, int>>>> bfsQueue;
+        std::vector<bool> visited(mapWidth * mapHeight, false);
         std::vector<std::pair<int, int>> shortestGridPath;
 
         bfsQueue.push({spawn, {spawn}});
         visited[spawn.second * mapWidth + spawn.first] = true;
+
         while (!bfsQueue.empty()) {
             const std::pair<std::pair<int, int>, std::vector<std::pair<int, int>>> currentAndPath = bfsQueue.front();
             const std::pair<int, int>& current = currentAndPath.first;
@@ -269,7 +273,6 @@ void EnemyManager::buildPathsFromMap() {
             bfsQueue.pop();
 
             if (current == goalGridPoint) {
-                // BFS 第一次到達終點即為最短路徑，可直接結束。
                 shortestGridPath = path;
                 break;
             }
@@ -279,7 +282,7 @@ void EnemyManager::buildPathsFromMap() {
                 const int dy = dir.second;
                 std::pair<int, int> next{current.first + dx, current.second + dy};
                 if (m_Map.canWalk(next.first, next.second) && !visited[next.second * mapWidth + next.first]) {
-                    visited[next.second * mapWidth + next.first] = true; // enqueue 時就標記，避免重複入隊
+                    visited[next.second * mapWidth + next.first] = true;
                     std::vector<std::pair<int, int>> newPath = path;
                     newPath.push_back(next);
                     bfsQueue.push({next, newPath});
@@ -294,6 +297,7 @@ void EnemyManager::buildPathsFromMap() {
             );
         }
 
-        fixedPathPoints.push_back(std::make_shared<const std::vector<std::pair<int, int>>>(shortestGridPath));
+        // ★ 修正警告：使用 emplace_back
+        fixedPathPoints.emplace_back(std::make_shared<const std::vector<std::pair<int, int>>>(shortestGridPath));
     }
 }

@@ -9,7 +9,6 @@
 #include <string>
 
 // -------------------- 建立單局 --------------------
-// 修正 Clang-Tidy：在建構子加上初始化列表，確保所有變數都有初始狀態
 GameSession::GameSession(int levelNumber)
     : isSessionActive(false), timer(0.0F), waveTimer(0.0F), groupTimer(0.0F),
       baseHp(0), gold(0), waveCount(0), groupIndex(0), groupSpawned(0) {
@@ -26,7 +25,6 @@ GameSession::GameSession(int levelNumber)
     enemyManager = std::make_unique<EnemyManager>(*map, *atlasLoader);
     towerManager = std::make_unique<TowerManager>(*map);
 
-    // 修正 Clang-Tidy：使用 static constexpr
     static constexpr std::array<EnemyTypeId, 5> preloadEnemyTypes = {
         EnemyTypeId::Regular,
         EnemyTypeId::Fast,
@@ -39,7 +37,6 @@ GameSession::GameSession(int levelNumber)
         (void)atlasLoader->getImage(config.spriteId);
     }
 
-    // 修正 Clang-Tidy：使用 static constexpr
     static constexpr std::array<std::string_view, 4> preloadTowerSprites = {
         "tower-basic",
         "tower-basic-base",
@@ -137,7 +134,7 @@ void GameSession::nextWave() { waveCount += 1; }
 // -------------------- 每幀流程 --------------------
 void GameSession::update(float deltaTime) {
     if (!isSessionActive) {
-        enemyManager->updateEnemyDisplay();
+        enemyManager->updateEnemyDisplay(map->getOffsetX(), map->getOffsetY(), map->getCurrentScale());
         updateTowerDisplay();
         updateProjectileDisplay();
         updateHudDisplay();
@@ -150,6 +147,7 @@ void GameSession::update(float deltaTime) {
 
     enemyManager->update(deltaTime);
     towerManager->updateAutoAttack(deltaTime, enemyManager->getEnemies());
+    enemyManager->updateEnemyDisplay(map->getOffsetX(), map->getOffsetY(), map->getCurrentScale());
 
     const EnemyManager::FrameResolveResult frameResult = enemyManager->resolveAndRemoveDeadAndReached();
     applyBaseDamage(frameResult.reachedGoalDamage);
@@ -175,6 +173,7 @@ void GameSession::update(float deltaTime) {
     }
 }
 
+// NOLINTNEXTLINE(readability-make-member-function-const)
 void GameSession::display() {
     map->displayMap();
     updateTowerDisplay();
@@ -188,7 +187,7 @@ void GameSession::display() {
 
 void GameSession::moveCamera(float dx, float dy) const {
     map->moveCamera(dx, dy);
-    enemyManager->moveCamera(dx, dy);
+    // ★ 已移除錯誤呼叫：enemyManager->moveCamera(dx, dy);
 }
 
 void GameSession::zoomCamera(float zoomDelta) const {
@@ -253,8 +252,7 @@ void GameSession::dispatchEnemiesByTimer() {
 
 void GameSession::updateTowerDisplay() {
     const std::vector<Tower>& towers = towerManager->getTowers();
-    towerBaseObjects.reserve(towers.size());
-    towerWeaponObjects.reserve(towers.size());
+    const float currentScale = map->getCurrentScale();
 
     while (towerBaseObjects.size() < towers.size()) {
         std::shared_ptr<Util::GameObject> towerBaseObject = std::make_shared<Util::GameObject>();
@@ -285,12 +283,14 @@ void GameSession::updateTowerDisplay() {
 
         towerBaseObject->SetDrawable(atlasLoader->getImage("tower-basic-base"));
         towerWeaponObject->SetDrawable(atlasLoader->getImage("tower-basic-weapon"));
+
         const std::optional<glm::vec2> worldPos = map->gridToWorld(tower.GetGridX(), tower.GetGridY());
         if (!worldPos.has_value()) continue;
 
-        towerBaseObject->m_Transform.translation = worldPos.value();
-        towerBaseObject->m_Transform.rotation = 0.0F;
+        towerBaseObject->m_Transform.scale = {kTowerScale * currentScale, kTowerScale * currentScale};
+        towerWeaponObject->m_Transform.scale = {kTowerScale * currentScale, kTowerScale * currentScale};
 
+        towerBaseObject->m_Transform.translation = worldPos.value();
         towerWeaponObject->m_Transform.translation = worldPos.value();
         towerWeaponObject->m_Transform.rotation = tower.GetFacingRotation();
     }
@@ -298,7 +298,7 @@ void GameSession::updateTowerDisplay() {
 
 void GameSession::updateProjectileDisplay() {
     const std::vector<TowerManager::Projectile>& projectiles = towerManager->getProjectiles();
-    projectileObjects.reserve(projectiles.size());
+    const float currentScale = map->getCurrentScale();
 
     while (projectileObjects.size() < projectiles.size()) {
         std::shared_ptr<Util::GameObject> projectileObject = std::make_shared<Util::GameObject>();
@@ -317,6 +317,9 @@ void GameSession::updateProjectileDisplay() {
     for (std::size_t i = 0; i < projectiles.size(); ++i) {
         const TowerManager::Projectile& projectile = projectiles[i];
         const std::shared_ptr<Util::GameObject>& projectileObject = projectileObjects[i];
+
+        projectileObject->m_Transform.scale = {kProjectileScale * currentScale, kProjectileScale * currentScale};
+
         const std::optional<glm::vec2> worldPos = map->gridToWorld(projectile.x, projectile.y);
         if (!worldPos.has_value()) continue;
 
@@ -324,6 +327,8 @@ void GameSession::updateProjectileDisplay() {
     }
 }
 
+// ★ 加上 NOLINT 標籤，讓 IDE 忽略 const 轉換警告
+// NOLINTNEXTLINE(readability-make-member-function-const)
 void GameSession::updateHudDisplay() {
     if (!towerHpText || !goldText || !towerHpIconObject || !goldIconObject || !towerHpTextObject || !goldTextObject) return;
 
