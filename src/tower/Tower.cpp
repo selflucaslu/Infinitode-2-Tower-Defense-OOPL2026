@@ -3,7 +3,7 @@
 #include <stdexcept>
 
 Tower::Tower(std::string spriteId, int gridX, int gridY, float attack_range, int Level, TowerType type):
-spriteId(spriteId), Level(Level), gridX(gridX), gridY(gridY), attack_range(attack_range), type(type) {
+spriteId(spriteId), Level(Level), gridX(gridX), gridY(gridY), facingRotation(0.0F), attack_range(attack_range), type(type) {
 }
 
 Tower::~Tower()
@@ -25,6 +25,11 @@ int Tower::GetGridY() const
     return gridY;
 }
 
+float Tower::GetFacingRotation() const
+{
+    return facingRotation;
+}
+
 float Tower::GetAttackRange() const
 {
     return attack_range;
@@ -38,6 +43,11 @@ int Tower::GetLevel() const
 Tower::TowerType Tower::GetTypes() const
 {
     return type;
+}
+
+void Tower::SetFacingRotation(float newFacingRotation)
+{
+    facingRotation = newFacingRotation;
 }
 
 void Tower::SetAttackRange(float new_attack_range)

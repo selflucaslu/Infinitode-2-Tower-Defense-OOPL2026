@@ -21,7 +21,7 @@ GridMap::GridMap(std::string_view MAP_FILE_PATH, AtlasLoader& atlas)
     bool isFirstLine = true;
     bool isSecondLine = true;
     bool isThirdLine = true;
-    int heightCounter = 0; // 用於計算地圖的高度
+    int heightCounter = 0;
     int widthCounter = -1;
 
     // -------------------- 讀取地圖資料 --------------------
@@ -30,35 +30,20 @@ GridMap::GridMap(std::string_view MAP_FILE_PATH, AtlasLoader& atlas)
             line.pop_back();
         }
 
-        // 讀取地圖文件的前三行，分別是地圖名稱、描述和難度
-        if (isFirstLine) {
-            mapName = line;
-            isFirstLine = false;
-            continue;
-        }
-        if (isSecondLine) {
-            mapDescription = line;
-            isSecondLine = false;
-            continue;
-        }
-        if (isThirdLine) {
-            mapDifficulty = line;
-            isThirdLine = false;
-            continue;
-        }
+        if (isFirstLine) { mapName = line; isFirstLine = false; continue; }
+        if (isSecondLine) { mapDescription = line; isSecondLine = false; continue; }
+        if (isThirdLine) { mapDifficulty = line; isThirdLine = false; continue; }
 
-        if (line.empty()) {
-            continue;
-        }
+        if (line.empty()) continue;
 
-        std::istringstream iss(line);  // 使用 istringstream 來解析每行的內容
-        std::string tileType;  // 用於存儲從每行解析出的 tile 類型
+        std::istringstream iss(line);
+        std::string tileType;
         int currentRowWidth = 0;
         while (std::getline(iss, tileType, ',')) {
             if (!tileType.empty() && tileType.back() == '\r') {
                 tileType.pop_back();
             }
-            tilesArray.emplace_back(tileType); // emplace_back(arg): 直接用 arg 呼叫 Tile(arg) 在 vector 內原地建構
+            tilesArray.emplace_back(tileType);
             currentRowWidth++;
         }
 
@@ -67,7 +52,7 @@ GridMap::GridMap(std::string_view MAP_FILE_PATH, AtlasLoader& atlas)
         } else if (currentRowWidth != widthCounter) {
             throw std::runtime_error("地圖每一行欄數不一致");
         }
-        heightCounter++; // 每讀取一行地圖數據，增加高度計數器
+        heightCounter++;
     }
 
     if (heightCounter == 0) throw std::runtime_error("地圖文件中沒有地圖數據");
@@ -77,7 +62,6 @@ GridMap::GridMap(std::string_view MAP_FILE_PATH, AtlasLoader& atlas)
     // -------------------- 開始繪製地圖 --------------------
     tileObjects.reserve(tilesArray.size());
 
-    // 取第一個「非 Empty」格子當作基準尺寸，避免地圖左上角是 empty 時載圖失敗。
     std::string firstSpriteId;
     for (const Tile& tile : tilesArray) {
         if (tile.getType() != Tile::Type::Empty) {
@@ -90,29 +74,28 @@ GridMap::GridMap(std::string_view MAP_FILE_PATH, AtlasLoader& atlas)
     }
 
     const std::shared_ptr<Util::Image> firstImage = atlasLoader.getImage(firstSpriteId);
-    const glm::vec2 firstSize = firstImage->GetSize(); // PTSD API: 取得圖片原始寬高
-    m_CellW = firstSize.x * kMapScale; // 每格在世界座標的寬（縮放後）
-    m_CellH = firstSize.y * kMapScale; // 每格在世界座標的高（縮放後）
-    // 補上基礎寬高的初始化
-    baseCellWidth = m_CellW;
-    baseCellHeight = m_CellH;
-    m_StartX = -(mapWidth * m_CellW) * 0.5F + m_CellW * 0.5F; // 從左邊第一格中心開始，讓整張圖置中
-    m_StartY = -(mapHeight * m_CellH) * 0.5F + m_CellH * 0.5F; // 從下邊第一格中心開始，讓整張圖置中
+    const glm::vec2 firstSize = firstImage->GetSize();
+
+    baseCellWidth = firstSize.x * kMapScale;
+    baseCellHeight = firstSize.y * kMapScale;
+    m_CellW = baseCellWidth;
+    m_CellH = baseCellHeight;
+
+    m_StartX = -(static_cast<float>(mapWidth) * m_CellW) * 0.5F + m_CellW * 0.5F;
+    m_StartY = -(static_cast<float>(mapHeight) * m_CellH) * 0.5F + m_CellH * 0.5F;
 
     for (int y = 0; y < mapHeight; ++y) {
         for (int x = 0; x < mapWidth; ++x) {
             const Tile& tile = getTile(x, y);
             const Tile::Type tileType = tile.getType();
-            if (tileType == Tile::Type::Empty) {
-                continue; // Empty 不建立渲染物件
-            }
-            // 當偵測到 Spawn 或 Goal 時，建立一個 Road 圖層在 Spawn / Goal 圖層下方。
+            if (tileType == Tile::Type::Empty) continue;
+
             if (tileType == Tile::Type::Spawn || tileType == Tile::Type::Goal) {
-                std::string roadSpriteId = "tile-type-road-"; // 預設底圖
+                std::string roadSpriteId = "tile-type-road-";
                 static constexpr std::array<std::pair<int, int>, 4> kFourDirs = {{
                     {0, 1}, {1, 0}, {0, -1}, {-1, 0}
                 }};
-                for (const auto& [dx, dy] : kFourDirs){
+                for (const auto &[dx, dy] : kFourDirs) {
                     const int nx = x + dx;
                     const int ny = y + dy;
                     const bool inBounds = nx >= 0 && nx < mapWidth && ny >= 0 && ny < mapHeight;
@@ -122,12 +105,7 @@ GridMap::GridMap(std::string_view MAP_FILE_PATH, AtlasLoader& atlas)
                 std::shared_ptr<Util::GameObject> baseObj = std::make_shared<Util::GameObject>();
                 std::shared_ptr<Util::Image> roadImage = atlasLoader.getImage(roadSpriteId);
                 baseObj->SetDrawable(roadImage);
-                baseObj->m_Transform.scale = {kMapScale, kMapScale};
-                baseObj->m_Transform.translation = {
-                    m_StartX + x * m_CellW, // x 方向照欄位
-                    m_StartY + y * m_CellH // world y 向上，y=0 是最下方
-                };
-                baseObj->SetZIndex(kTileZIndex - 1.0F); // 確保在 Spawn / Goal 圖層下方
+                baseObj->SetZIndex(kTileZIndex - 1.0F);
                 mapRoot.AddChild(baseObj);
                 tileObjects.push_back({x, y, baseObj});
             }
@@ -135,142 +113,61 @@ GridMap::GridMap(std::string_view MAP_FILE_PATH, AtlasLoader& atlas)
             std::shared_ptr<Util::GameObject> obj = std::make_shared<Util::GameObject>();
             std::shared_ptr<Util::Image> image = atlasLoader.getImage(tile.getSpriteId());
             obj->SetDrawable(image);
-            obj->m_Transform.scale = {kMapScale, kMapScale};
-            obj->m_Transform.translation = {
-                m_StartX + x * m_CellW, // x 方向照欄位往右排
-                m_StartY + y * m_CellH // world y 向上，y=0 是最下方
-            };
             obj->SetZIndex(kTileZIndex);
             mapRoot.AddChild(obj);
             tileObjects.push_back({x, y, obj});
         }
     }
-    // 套用初始位置
+
     updateTransforms();
 }
 
-// 統一更新所有地圖方塊與塔物件的位置及縮放
+// -------------------- 相機與畫面更新 --------------------
 void GridMap::updateTransforms() {
-    // 這裡的 cellW 和 cellH 必須是用 "基礎寬高" 乘上 "當前縮放比例"
-    const float cellW = baseCellWidth * currentScale;
-    const float cellH = baseCellHeight * currentScale;
+    m_CellW = baseCellWidth * currentScale;
+    m_CellH = baseCellHeight * currentScale;
 
-    // 計算地圖左下角的起始點 (考慮攝影機位移)
-    const float startX = -(mapWidth * cellW) * 0.5F + cellW * 0.5F + cameraX;
-    const float startY = -(mapHeight * cellH) * 0.5F + cellH * 0.5F + cameraY;
+    // 計算置中座標，並套用相機平移
+    const float startX = -(static_cast<float>(mapWidth) * m_CellW) * 0.5F + m_CellW * 0.5F + m_CameraOffsetX;
+    const float startY = -(static_cast<float>(mapHeight) * m_CellH) * 0.5F + m_CellH * 0.5F + m_CameraOffsetY;
 
-    // 1. 更新所有地圖方塊 (背景、道路、起點、終點)
-    for (auto& tv : tileObjects) {
-        // ★ 修正：將 kMapScale 乘回來，確保圖片大小與排版距離吻合
+    // 供世界座標轉換用的基準也需同步更新
+    m_StartX = -(static_cast<float>(mapWidth) * m_CellW) * 0.5F + m_CellW * 0.5F;
+    m_StartY = -(static_cast<float>(mapHeight) * m_CellH) * 0.5F + m_CellH * 0.5F;
+
+    for (const TileVisual& tv : tileObjects) {
         tv.obj->m_Transform.scale = {kMapScale * currentScale, kMapScale * currentScale};
         tv.obj->m_Transform.translation = {
-            startX + tv.gridX * cellW,
-            startY + tv.gridY * cellH
+            startX + static_cast<float>(tv.gridX) * m_CellW,
+            startY + static_cast<float>(tv.gridY) * m_CellH
         };
-    }
-
-    // 2. 更新所有已放置的防禦塔
-    for (auto& tv : towerVisuals) {
-        // ★ 修正：防禦塔也需要加上 kMapScale
-        tv.obj->m_Transform.scale = {kMapScale * currentScale, kMapScale * currentScale};
-        tv.obj->m_Transform.translation = glm::vec2(
-            startX + tv.gridX * cellW,
-            startY + tv.gridY * cellH
-        );
     }
 }
 
 // -------------------- 地圖描述資訊 --------------------
-std::string_view GridMap::getMapName() const {
-    return mapName;
-}
+std::string_view GridMap::getMapName() const { return mapName; }
+std::string_view GridMap::getMapDescription() const { return mapDescription; }
+std::string_view GridMap::getMapDifficulty() const { return mapDifficulty; }
 
-std::string_view GridMap::getMapDescription() const {
-    return mapDescription;
-}
-
-std::string_view GridMap::getMapDifficulty() const {
-    return mapDifficulty;
-}
-
-// -------------------- 格子查詢 --------------------
 const Tile& GridMap::getTile(int x, int y) const {
     if (x < 0 || x >= mapWidth || y < 0 || y >= mapHeight) {
         throw std::out_of_range("座標超出地圖範圍");
     }
-    const int row = mapHeight - 1 - y; // world y -> 檔案 row（CSV 是由上往下）
+    const int row = mapHeight - 1 - y;
     return tilesArray[row * mapWidth + x];
 }
 
-void GridMap::moveCamera(float dx, float dy) {
-    cameraX += dx;
-    cameraY += dy;
-    updateTransforms();
-}
-
-void GridMap::zoomCamera(float zoomDelta) {
-    // 使用乘法來縮放，這會讓縮放感更自然 (例如每次放大 10% 或縮小 10%)
-    // zoomDelta > 0 時放大 (例如 1.1倍)，zoomDelta < 0 時縮小 (例如 0.9倍)
-    float zoomFactor = (zoomDelta > 0.0F) ? 1.05F : 0.95F;
-
-    currentScale *= zoomFactor;
-
-    // 限制縮放範圍，避免縮得太小或放得太大
-    if (currentScale < 0.1F) currentScale = 0.1F;
-    if (currentScale > 3.0F) currentScale = 3.0F;
-
-    updateTransforms();
-}
-
-// 將畫面上的滑鼠座標轉換回格狀座標 (x, y)
-std::pair<int, int> GridMap::ScreenToGrid(float screenX, float screenY) const {
-    const float cellW = baseCellWidth * currentScale;
-    const float cellH = baseCellHeight * currentScale;
-    const float startX = -(mapWidth * cellW) * 0.5F + cellW * 0.5F + cameraX;
-    const float startY = -(mapHeight * cellH) * 0.5F + cellH * 0.5F + cameraY;
-
-    // 四捨五入找出最近的格子中心
-    int gridX = static_cast<int>(std::floor((screenX - startX + cellW * 0.5F) / cellW));
-    int gridY = static_cast<int>(std::floor((screenY - startY + cellH * 0.5F) / cellH));
-    return {gridX, gridY};
-}
-
-// 建立塔的視覺物件，使其隨地圖一起縮放與移動
-// 參數型別改為 std::string_view
-void GridMap::addTowerVisual(int gridX, int gridY, std::string_view spriteId) {
-    auto obj = std::make_shared<Util::GameObject>();
-    obj->SetDrawable(atlasLoader.getImage(spriteId));
-
-    // 修復 "Member is inaccessible" 錯誤：改用 SetZIndex 設值
-    obj->SetZIndex(1);
-
-    mapRoot.AddChild(obj);
-    towerVisuals.push_back({gridX, gridY, obj});
-    updateTransforms();
-}
-
-int GridMap::getMapWidth() const {
-    return mapWidth;
-}
-
-int GridMap::getMapHeight() const {
-    return mapHeight;
-}
+int GridMap::getMapWidth() const { return mapWidth; }
+int GridMap::getMapHeight() const { return mapHeight; }
 
 // -------------------- 規則判斷 --------------------
 bool GridMap::canBuildTower(int x, int y) const {
-    if (x < 0 || x >= mapWidth || y < 0 || y >= mapHeight) {
-        return false;
-    }
-
+    if (x < 0 || x >= mapWidth || y < 0 || y >= mapHeight) return false;
     return getTile(x, y).getType() == Tile::Type::Platform;
 }
 
 bool GridMap::canWalk(int x, int y) const {
-    if (x < 0 || x >= mapWidth || y < 0 || y >= mapHeight) {
-        return false;
-    }
-
+    if (x < 0 || x >= mapWidth || y < 0 || y >= mapHeight) return false;
     const Tile::Type type = getTile(x, y).getType();
     return type == Tile::Type::Road || type == Tile::Type::Spawn || type == Tile::Type::Goal;
 }
@@ -278,7 +175,6 @@ bool GridMap::canWalk(int x, int y) const {
 // -------------------- 起終點座標 --------------------
 std::vector<std::pair<int, int>> GridMap::getSpawnGridPoints() const {
     std::vector<std::pair<int, int>> spawnPoints;
-
     for (int y = 0; y < mapHeight; ++y) {
         for (int x = 0; x < mapWidth; ++x) {
             if (getTile(x, y).getType() == Tile::Type::Spawn) {
@@ -286,7 +182,6 @@ std::vector<std::pair<int, int>> GridMap::getSpawnGridPoints() const {
             }
         }
     }
-
     return spawnPoints;
 }
 
@@ -298,33 +193,54 @@ std::optional<std::pair<int, int>> GridMap::getGoalGridPoint() const {
             }
         }
     }
-
     return std::nullopt;
 }
 
-// -------------------- 滑鼠點擊轉換世界座標 --------------------
+// -------------------- 座標轉換 --------------------
 std::optional<std::pair<int, int>> GridMap::worldToGrid(const glm::vec2& worldPos) const {
-    if (m_CellW <= 0.0F || m_CellH <= 0.0F) {
-        return std::nullopt;
-    }
+    if (m_CellW <= 0.0F || m_CellH <= 0.0F) return std::nullopt;
 
-    // m_StartX / m_StartY 是「(0,0) 格中心」，先退半格得到地圖左下角邊界。
-    const float leftBound = (m_StartX + m_CameraOffsetX) - (m_CellW * 0.5F); // worldPos 是世界座標，先扣掉相機偏移，在扣掉半格寬高，獲取由中心點往外的邊界位置
+    const float leftBound = (m_StartX + m_CameraOffsetX) - (m_CellW * 0.5F);
     const float bottomBound = (m_StartY + m_CameraOffsetY) - (m_CellH * 0.5F);
     const int gridX = static_cast<int>(std::floor((worldPos.x - leftBound) / m_CellW));
     const int gridY = static_cast<int>(std::floor((worldPos.y - bottomBound) / m_CellH));
 
-    // 檢查座標是否在地圖範圍內
     if (gridX < 0 || gridX >= mapWidth || gridY < 0 || gridY >= mapHeight) {
         return std::nullopt;
     }
-
     return std::pair<int, int>{gridX, gridY};
 }
 
-// -------------------- 鏡頭與渲染 --------------------
+std::optional<glm::vec2> GridMap::gridToWorld(int gridX, int gridY) const {
+    return gridToWorld(static_cast<float>(gridX), static_cast<float>(gridY));
+}
+
+std::optional<glm::vec2> GridMap::gridToWorld(float gridX, float gridY) const {
+    if (gridX < 0.0F || gridX >= static_cast<float>(mapWidth) || gridY < 0.0F || gridY >= static_cast<float>(mapHeight)) {
+        return std::nullopt;
+    }
+
+    return glm::vec2{
+        m_StartX + gridX * m_CellW + m_CameraOffsetX,
+        m_StartY + gridY * m_CellH + m_CameraOffsetY
+    };
+}
+
+// -------------------- 鏡頭控制 --------------------
+void GridMap::moveCamera(float dx, float dy) {
+    m_CameraOffsetX += dx;
+    m_CameraOffsetY += dy;
+    updateTransforms();
+}
+
+void GridMap::zoomCamera(float zoomDelta) {
+    float zoomFactor = (zoomDelta > 0.0F) ? 1.05F : 0.95F;
+    currentScale *= zoomFactor;
+    if (currentScale < 0.1F) currentScale = 0.1F;
+    if (currentScale > 3.0F) currentScale = 3.0F;
+    updateTransforms();
+}
 
 void GridMap::displayMap() {
-    // 由 map root 統一提交整張地圖繪製。
     mapRoot.Update();
 }
