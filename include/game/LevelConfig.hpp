@@ -32,10 +32,10 @@ struct WaveConfig {
 // -------------------- 單關配置 --------------------
 // 說明：POC 階段先用靜態資料表，後續可平滑改為讀檔。
 struct LevelConfig {
-    int levelNumber = 1; // 關卡編號
+    int levelNumber = 3; // 關卡編號
     std::string mapPath; // 地圖檔路徑（例如 assets/maps/map_01.csv）
     int baseHp = 20; // 本關基地初始血量
-    int startingGold = 120; // 本關初始金幣
+    int startingGold = 150; // 本關初始金幣
     std::vector<WaveConfig> waves; // 本關全部波次
 };
 
@@ -143,7 +143,60 @@ inline const std::vector<LevelConfig> kLevelConfigs = {
                 }
             }
         }
+
+    },
+    // -------------------- Level 3：飢腸轆轆的貪婪章魚鮑勃 --------------------
+    {//現在你手上只有100元
+        3,
+        "assets/maps/map_03.csv",
+        15,
+        100,
+        {
+            // W1
+                {
+                    1, false, 4.0F, 30,
+                    {
+                        {EnemyTypeId::Armored, 10, 0.0F, 1.00F, {}},
+                        {EnemyTypeId::Regular, 20, 0.5F, 0.70F, {}}
+                    }
+                },
+                // W2
+                {
+                    2, false, 4.0F, 30,
+                    {
+                        {EnemyTypeId::Heli, 4, 0.0F, 1.60F, {}},
+                        {EnemyTypeId::Regular, 10, 0.5F, 0.80F, {}}
+                    }
+                },
+                // W3
+                {
+                    3, false, 4.0F, 35,
+                    {
+                        {EnemyTypeId::Heli, 6, 0.0F, 1.20F, {}},
+                        {EnemyTypeId::Fast, 8, 1.0F, 0.65F, {}}
+                    }
+                },
+                // W4
+                {
+                    4, false, 5.0F, 40,
+                    {
+                        {EnemyTypeId::Strong, 6, 0.0F, 1.10F, {}},
+                        {EnemyTypeId::Heli, 4, 2.0F, 1.35F, {}},
+                        {EnemyTypeId::Regular, 8, 0.5F, 0.75F, {}}
+                    }
+                },
+                // W5
+                {
+                    5, false, 5.0F, 50,
+                    {
+                        {EnemyTypeId::Heli, 6, 0.0F, 1.10F, {}},
+                        {EnemyTypeId::Strong, 6, 2.0F, 1.00F, {}},
+                        {EnemyTypeId::Fast, 6, 0.5F, 0.65F, {}}
+                    }
+                }
+        }
     }
+
 };
 
 // -------------------- 關卡查表介面 --------------------

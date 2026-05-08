@@ -5,6 +5,10 @@
 #include <array>
 #include <string_view>
 
+#include "Enemy.hpp"
+//#include "../../PTSD/lib/sdl2_mixer/src/codecs/stb_vorbis/stb_vorbis.h"
+#include "Util/Keycode.hpp"
+
 // -------------------- 敵人類型識別 --------------------
 // 目前先支援敵人：
 // Regular / Fast / Strong / Heli / Jet
@@ -163,6 +167,23 @@ inline const std::array<EnemyTypeConfig, static_cast<int>(EnemyTypeId::Count)> k
         1.45F,
         1,
         3,
+    },
+
+    EnemyTypeConfig{
+        EnemyTypeId::Armored,
+        "Armored",
+        "eneny-type-armored",
+        Enemy::MoveType::Ground,
+        87,
+        0.9487f,
+        1,
+        3,
+        0,
+        1.0f,
+        true,
+        1.5f,
+        0.5f
+
     }
 }};
 
