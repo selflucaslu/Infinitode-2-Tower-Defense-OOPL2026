@@ -19,8 +19,8 @@ enum class EnemyTypeId {
     Strong,
     Heli,
     Jet,
-    // 預留擴充類型（目前未啟用）
     Armored,
+    // 預留擴充類型（目前未啟用）
     Healer,
     Toxic,
     Icy,
@@ -172,7 +172,7 @@ inline const std::array<EnemyTypeConfig, static_cast<int>(EnemyTypeId::Count)> k
     EnemyTypeConfig{
         EnemyTypeId::Armored,
         "Armored",
-        "eneny-type-armored",
+        "enemy-type-armored",
         Enemy::MoveType::Ground,
         87,
         0.9487f,
