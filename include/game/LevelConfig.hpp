@@ -150,22 +150,22 @@ inline const std::vector<LevelConfig> kLevelConfigs = {
         3,
         "assets/maps/map_03.csv",
         15,
-        100,
+        200,
         {
             // W1
                 {
                     1, false, 4.0F, 30,
                     {
                         {EnemyTypeId::Armored, 10, 0.0F, 1.00F, {}},
-                        {EnemyTypeId::Regular, 20, 0.5F, 0.70F, {}}
+                        {EnemyTypeId::Regular, 20, 0.0F, 0.60F, {}}
                     }
                 },
                 // W2
                 {
                     2, false, 4.0F, 30,
                     {
-                        {EnemyTypeId::Heli, 4, 0.0F, 1.60F, {}},
-                        {EnemyTypeId::Regular, 10, 0.5F, 0.80F, {}}
+                        {EnemyTypeId::Strong, 10, 0.0F, 1.60F, {}},
+                        {EnemyTypeId::Fast, 10, 0.5F, 1.6F, {}}
                     }
                 },
                 // W3
