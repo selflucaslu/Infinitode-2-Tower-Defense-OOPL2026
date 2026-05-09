@@ -62,3 +62,7 @@ target_link_libraries(${PROJECT_NAME}
 # 將專案根目錄的 assets 資料夾複製到編譯輸出的目錄下
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/assets
         DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
+# 將 PTSD 的 assets 資料夾複製到編譯輸出的 PTSD 目錄下
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/PTSD/assets
+        DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/PTSD)
