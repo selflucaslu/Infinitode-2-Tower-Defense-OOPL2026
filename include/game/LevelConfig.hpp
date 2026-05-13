@@ -176,26 +176,34 @@ inline const std::vector<LevelConfig> kLevelConfigs = {
                 {
                     3, false, 4.0F, 35,
                     {
-                        {EnemyTypeId::Heli, 6, 0.0F, 1.20F, {}},
-                        {EnemyTypeId::Fast, 8, 1.0F, 0.65F, {}}
+                        {EnemyTypeId::Strong, 20, 0.0F, 1.60F, {}},
+                        {EnemyTypeId::Fast, 20, 0.5F, 1.6F, {}},
+                        {EnemyTypeId::Heli, 20, 0.0F, 1.20F, {}},
+                        {EnemyTypeId::Regular, 20, 0.5F, 0.75F, {}},
+                        {EnemyTypeId::Armored, 20, 1.0F, 1.00F, {}},
                     }
                 },
                 // W4
                 {
                     4, false, 5.0F, 40,
                     {
-                        {EnemyTypeId::Strong, 6, 0.0F, 1.10F, {}},
-                        {EnemyTypeId::Heli, 4, 2.0F, 1.35F, {}},
-                        {EnemyTypeId::Regular, 8, 0.5F, 0.75F, {}}
+                        {EnemyTypeId::Armored, 100, 0.0F, 0.04F, {}},{EnemyTypeId::Strong, 100, 0.0F, 0.050F, {}},
+                        {EnemyTypeId::Fast, 100, 0.0F, 0.01F, {}},
+                        {EnemyTypeId::Heli, 100, 0.0F, 0.06F, {}},
+                        {EnemyTypeId::Regular, 100, 0.0F, 0.03F, {}},
+                        {EnemyTypeId::Jet, 100, 0.0F, 0.02F, {}}
                     }
                 },
                 // W5
                 {
                     5, false, 5.0F, 50,
                     {
-                        {EnemyTypeId::Heli, 6, 0.0F, 1.10F, {}},
-                        {EnemyTypeId::Strong, 6, 2.0F, 1.00F, {}},
-                        {EnemyTypeId::Fast, 6, 0.5F, 0.65F, {}}
+                        {EnemyTypeId::Armored, 2000, 0.0F, 0.05F, {}},
+                        {EnemyTypeId::Strong, 2000, 0.0F, 0.050F, {}},
+                        {EnemyTypeId::Fast, 2000, 0.0F, 0.005F, {}},
+                        {EnemyTypeId::Heli, 2000, 0.0F, 0.06F, {}},
+                        {EnemyTypeId::Regular, 2000, 0.0F, 0.04F, {}},
+                        {EnemyTypeId::Jet, 2000, 0.0F, 0.025F, {}}
                     }
                 }
         }
