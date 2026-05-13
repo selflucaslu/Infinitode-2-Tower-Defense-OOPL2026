@@ -39,7 +39,7 @@ public:
     int getMaxHealth() const; // 取得最大血量
     int getDamage() const; // 取得到終點造成傷害
     int getRewardGold() const; // 取得被擊殺時給予金幣
-    std::string_view getSpriteId() const; // 取得貼圖 ID
+    std::string getSpriteId() const; // 取得貼圖 ID
 
     // -------------------- 設定 --------------------
     void setPosition(float newX, float newY); // 設定世界座標

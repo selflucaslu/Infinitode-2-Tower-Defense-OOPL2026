@@ -1,13 +1,13 @@
 #pragma once
 
-#include "enemy/EnemyTypeConfig.hpp"
-
+#include <vector>
+#include <string>
+#include <unordered_set>
 #include <filesystem>
 #include <sstream>
 #include <stdexcept>
-#include <string>
-#include <unordered_set>
-#include <vector>
+
+#include "enemy/EnemyTypeConfig.hpp"
 
 // -------------------- 單組生怪配置 --------------------
 // 說明：一個 Wave 內可有多個 SpawnGroup 同時或錯峰出怪。
@@ -156,8 +156,9 @@ inline const std::vector<LevelConfig> kLevelConfigs = {
                 {
                     1, false, 4.0F, 30,
                     {
-                        {EnemyTypeId::Armored, 10, 0.0F, 1.00F, {}},
-                        {EnemyTypeId::Regular, 20, 0.0F, 0.60F, {}}
+                        {EnemyTypeId::Armored, 4, 0.5F, 1.00F, {}},
+                        {EnemyTypeId::Regular, 4, 0.0F, 0.60F, {}},
+                        {EnemyTypeId::Strong, 4, 0.3F, 0.70F, {}},
                     }
                 },
                 // W2
@@ -165,7 +166,10 @@ inline const std::vector<LevelConfig> kLevelConfigs = {
                     2, false, 4.0F, 30,
                     {
                         {EnemyTypeId::Strong, 10, 0.0F, 1.60F, {}},
-                        {EnemyTypeId::Fast, 10, 0.5F, 1.6F, {}}
+                        {EnemyTypeId::Fast, 10, 0.5F, 1.6F, {}},
+                        {EnemyTypeId::Heli, 6, 0.0F, 1.20F, {}},
+                        {EnemyTypeId::Regular, 8, 0.5F, 0.75F, {}},
+                        {EnemyTypeId::Armored, 6, 1.0F, 1.00F, {}},
                     }
                 },
                 // W3

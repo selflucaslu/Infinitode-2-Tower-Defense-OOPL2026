@@ -1,12 +1,10 @@
 #pragma once
 
-#include "enemy/Enemy.hpp"
-
-#include <array>
+#include <string>
 #include <string_view>
+#include <array>
 
 #include "Enemy.hpp"
-//#include "../../PTSD/lib/sdl2_mixer/src/codecs/stb_vorbis/stb_vorbis.h"
 #include "Util/Keycode.hpp"
 
 // -------------------- 敵人類型識別 --------------------
@@ -34,8 +32,8 @@ enum class EnemyTypeId {
 struct EnemyTypeConfig {
     // 識別與顯示
     EnemyTypeId id = EnemyTypeId::Regular; // 敵人類型 ID（程式內主要識別鍵）
-    std::string_view name = "Regular"; // 顯示名稱（UI / 除錯用）
-    std::string_view spriteId = "enemy-type-regular"; // Atlas 裡對應的貼圖 key
+    std::string name = "Regular"; // 顯示名稱（UI / 除錯用）
+    std::string spriteId = "enemy-type-regular"; // Atlas 裡對應的貼圖 key
     Enemy::MoveType moveType = Enemy::MoveType::Ground; // 移動型態（Ground/Air）
 
     // 基礎數值

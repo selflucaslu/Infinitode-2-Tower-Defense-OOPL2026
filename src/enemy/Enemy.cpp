@@ -66,7 +66,7 @@ int Enemy::getRewardGold() const {
     return rewardGold;
 }
 
-std::string_view Enemy::getSpriteId() const {
+std::string Enemy::getSpriteId() const {
     return spriteId;
 }
 
