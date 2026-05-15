@@ -105,6 +105,9 @@ GameSession::GameSession(int levelNumber)
 
     // 背景改為 Infinitode 風格的灰色同色系 #181818。
     glClearColor(24.0F / 255.0F, 24.0F / 255.0F, 24.0F / 255.0F, 1.0F);
+
+    // 建立選塔面板（必須在 atlasLoader 內容完成後）
+    m_SelectionPanel = std::make_unique<TowerSelectionPanel>(*atlasLoader);
 }
 
 // -------------------- 地圖存取 --------------------
@@ -127,6 +130,37 @@ bool GameSession::placeTower(int gridX, int gridY, TowerId towerId) {
     updateTowerDisplay();
     updateHudDisplay();
     return true;
+}
+
+bool GameSession::sellTower(int gridX, int gridY) {
+    auto towerIdOpt = towerManager->getTowerIdAt(gridX, gridY);
+    if (!towerIdOpt.has_value()) return false;
+
+    const TowerDef& def = getTowerDef(towerIdOpt.value());
+    int refund = def.buildCost / 2;
+
+    if (towerManager->removeTower(gridX, gridY)) {
+        addGold(refund);
+        updateTowerDisplay();
+        updateHudDisplay();
+        return true;
+    }
+    return false;
+}
+
+// -------------------- 選塔面板 --------------------
+void GameSession::setSelectedTower(TowerId id) {
+    if (m_SelectionPanel) { m_SelectionPanel->setSelectedTower(id); }
+}
+
+TowerId GameSession::getSelectedTower() const {
+    if (m_SelectionPanel) { return m_SelectionPanel->getSelectedTower(); }
+    return TowerId::Basic;
+}
+
+std::optional<TowerId> GameSession::hitTestSelectionPanel(float screenX, float screenY) const {
+    if (!m_SelectionPanel) return std::nullopt;
+    return m_SelectionPanel->hitTest(screenX, screenY);
 }
 
 // -------------------- 基地血量 --------------------
@@ -204,6 +238,8 @@ void GameSession::display() {
     enemyManager->display();
     updateHudDisplay();
     hudRoot.Update();
+    // 選塔面板（最後繪製，不被地圖或敏人遮擋）
+    if (m_SelectionPanel) { m_SelectionPanel->display(); }
 }
 
 void GameSession::moveCamera(float dx, float dy) const {

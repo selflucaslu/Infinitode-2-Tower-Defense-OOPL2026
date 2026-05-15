@@ -35,10 +35,23 @@ void App::Update() {
   if (Util::Input::IsKeyDown(Util::Keycode::NUM_2)) m_SelectedTower = TowerId::Sniper;
   if (Util::Input::IsKeyDown(Util::Keycode::NUM_3)) m_SelectedTower = TowerId::Cannon;
 
-  // 點擊左鍵建塔邏輯 (使用 GameSession 封裝的方法，具備扣除金幣功能)
+  // 同步選中塔至 GameSession 選塔面板（含數字鍵切換）
+  if (m_GameSession) {
+    m_GameSession->setSelectedTower(m_SelectedTower);
+  }
+
+  // 點擊左鍵：先判斷是否點擊到選塔面板格子，若是則切換選塔；否則建塔
   if (m_GameSession && Util::Input::IsKeyDown(Util::Keycode::MOUSE_LB)) {
-    const glm::vec2 mouseWorld = Util::Input::GetCursorPosition();
-    if (auto grid = m_GameSession->getMap().worldToGrid(mouseWorld)) {
+    const glm::vec2 mousePos = Util::Input::GetCursorPosition();
+
+    // 先做面板 hitTest（選塔面板使用 OpenGL 螢幕座標，與 GetCursorPosition() 相同）
+    if (auto hitTower = m_GameSession->hitTestSelectionPanel(mousePos.x, mousePos.y)) {
+      // 點到面板格子 → 切換選塔，不建塔
+      m_SelectedTower = *hitTower;
+      m_GameSession->setSelectedTower(m_SelectedTower);
+      LOG_INFO("Selected tower: {}", getTowerDef(m_SelectedTower).displayName);
+    } else if (auto grid = m_GameSession->getMap().worldToGrid(mousePos)) {
+      // 點到地圖 → 建塔
       const TowerDef& def = getTowerDef(m_SelectedTower);
       if (const bool placed = m_GameSession->placeTower(
               grid->first, grid->second, m_SelectedTower);
@@ -50,7 +63,17 @@ void App::Update() {
                   def.displayName, grid->first, grid->second);
       }
     } else {
-      LOG_DEBUG("Clicked outside map");
+      LOG_DEBUG("Clicked outside map and panel");
+    }
+  }
+
+  // 按下 X 鍵拆除滑鼠位置的塔
+  if (m_GameSession && Util::Input::IsKeyDown(Util::Keycode::X)) {
+    const glm::vec2 mousePos = Util::Input::GetCursorPosition();
+    if (auto grid = m_GameSession->getMap().worldToGrid(mousePos)) {
+      if (m_GameSession->sellTower(grid->first, grid->second)) {
+        LOG_INFO("Tower removed at grid ({}, {}), refund granted", grid->first, grid->second);
+      }
     }
   }
 

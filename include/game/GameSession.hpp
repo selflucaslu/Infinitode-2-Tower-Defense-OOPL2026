@@ -10,6 +10,7 @@
 #include "Util/Renderer.hpp"
 #include "Util/Text.hpp"
 #include "game/LevelConfig.hpp"
+#include "utils/TowerSelectionPanel.hpp"
 
 #include <memory>
 #include <string_view>
@@ -31,6 +32,13 @@ public:
     TowerManager& getTowerManager();
     const TowerManager& getTowerManager() const;
     bool placeTower(int gridX, int gridY, TowerId towerId = TowerId::Basic);
+    bool sellTower(int gridX, int gridY);
+
+    // -------------------- 選塔面板 --------------------
+    void setSelectedTower(TowerId id);             // 更新選塔面板高亮
+    TowerId getSelectedTower() const;              // 取得目前選中的塔種類
+    // 根據螢幕座標（OpenGL 中心座標）判斷是否點擊到選塔格子
+    std::optional<TowerId> hitTestSelectionPanel(float screenX, float screenY) const;
 
     // -------------------- 基地狀態 --------------------
     int getBaseHp() const;
@@ -92,6 +100,7 @@ private:
     std::shared_ptr<Util::GameObject> waveIconObject;
     std::shared_ptr<Util::GameObject> waveTextObject;
     std::shared_ptr<Util::Text> waveText;
+    std::unique_ptr<TowerSelectionPanel> m_SelectionPanel; // 選塔面板（右下角格子）
     static constexpr float kTowerScale = 0.45F;
     static constexpr float kTowerBaseZIndex = 1.5F;
     static constexpr float kTowerWeaponZIndex = 1.6F;

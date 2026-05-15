@@ -47,6 +47,9 @@ public:
     const std::vector<Tower>& getTowers() const;
     const std::vector<Projectile>& getProjectiles() const;
 
+    // 取得指定座標塔的種類 ID。
+    std::optional<TowerId> getTowerIdAt(int gridX, int gridY) const;
+
 private:
     // 尋找指定塔可攻擊範圍內的最近敵人。
     std::optional<std::size_t> findNearestEnemyIndex(const Tower& tower, const std::vector<Enemy>& enemies) const;

@@ -77,6 +77,12 @@ std::vector<Tower>& TowerManager::getTowers() { return towers; }
 const std::vector<Tower>& TowerManager::getTowers() const { return towers; }
 const std::vector<TowerManager::Projectile>& TowerManager::getProjectiles() const { return projectiles; }
 
+std::optional<TowerId> TowerManager::getTowerIdAt(int gridX, int gridY) const {
+    const std::optional<std::size_t> towerIndexOpt = findTowerIndex(gridX, gridY);
+    if (!towerIndexOpt.has_value()) return std::nullopt;
+    return towerIds[towerIndexOpt.value()];
+}
+
 std::optional<std::size_t> TowerManager::findNearestEnemyIndex(const Tower& tower, const std::vector<Enemy>& enemies) const {
     const float towerX = static_cast<float>(tower.GetGridX());
     const float towerY = static_cast<float>(tower.GetGridY());
