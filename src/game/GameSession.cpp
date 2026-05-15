@@ -37,11 +37,17 @@ GameSession::GameSession(int levelNumber)
         (void)atlasLoader->getImage(config.spriteId);
     }
 
-    static constexpr std::array<std::string_view, 4> preloadTowerSprites = {
-        "tower-basic",
+    static constexpr std::array<std::string_view, 10> preloadTowerSprites = {
         "tower-basic-base",
         "tower-basic-weapon",
-        "projectile-basic"
+        "tower-sniper-base-new",
+        "tower-sniper-weapon-new",
+        "tower-cannon-base-new",
+        "tower-cannon-weapon-new",
+        "projectile-basic",
+        "icon-tower",
+        "icon-tower-top",
+        "aura-range"
     };
     for (std::string_view spriteId : preloadTowerSprites) {
         (void)atlasLoader->getImage(spriteId);
@@ -113,10 +119,11 @@ const EnemyManager& GameSession::getEnemyManager() const { return *enemyManager;
 TowerManager& GameSession::getTowerManager() { return *towerManager; }
 const TowerManager& GameSession::getTowerManager() const { return *towerManager; }
 
-bool GameSession::placeTower(int gridX, int gridY, std::string_view spriteId) {
-    if (gold < kTowerBuildCost) { return false; }
-    if (!towerManager->placeTower(gridX, gridY, spriteId)) { return false; }
-    gold -= kTowerBuildCost;
+bool GameSession::placeTower(int gridX, int gridY, TowerId towerId) {
+    const TowerDef& def = getTowerDef(towerId);
+    if (gold < def.buildCost) { return false; }
+    if (!towerManager->placeTower(gridX, gridY, towerId)) { return false; }
+    gold -= def.buildCost;
     updateTowerDisplay();
     updateHudDisplay();
     return true;
@@ -295,8 +302,18 @@ void GameSession::updateTowerDisplay() {
         const std::shared_ptr<Util::GameObject>& towerBaseObject = towerBaseObjects[i];
         const std::shared_ptr<Util::GameObject>& towerWeaponObject = towerWeaponObjects[i];
 
-        towerBaseObject->SetDrawable(atlasLoader->getImage("tower-basic-base"));
-        towerWeaponObject->SetDrawable(atlasLoader->getImage("tower-basic-weapon"));
+        towerBaseObject->SetDrawable(atlasLoader->getImage(tower.GetspriteId()));
+        // 尋找對應武器：將 base spriteId 轉招 weapon spriteId
+        std::string weaponId = tower.GetspriteId();
+        // 替換 "base" 為 "weapon"
+        const std::string baseSuffix = "-base";
+        const std::string baseNewSuffix = "-base-new";
+        if (auto pos = weaponId.rfind(baseNewSuffix); pos != std::string::npos) {
+            weaponId.replace(pos, baseNewSuffix.size(), "-weapon-new");
+        } else if (auto pos2 = weaponId.rfind(baseSuffix); pos2 != std::string::npos) {
+            weaponId.replace(pos2, baseSuffix.size(), "-weapon");
+        }
+        towerWeaponObject->SetDrawable(atlasLoader->getImage(weaponId));
 
         const std::optional<glm::vec2> worldPos = map->gridToWorld(tower.GetGridX(), tower.GetGridY());
         if (!worldPos.has_value()) continue;

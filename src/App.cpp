@@ -6,6 +6,7 @@
 #include "Util/Time.hpp"
 #include "enemy/EnemyTypeConfig.hpp"
 #include "game/LevelConfig.hpp"
+#include "tower/TowerDef.hpp"
 
 #include <algorithm>
 
@@ -29,23 +30,25 @@ void App::Start() {
 
 // -------------------- 每幀更新 --------------------
 void App::Update() {
+  // 切換塔種類（數字鍵 1 / 2 / 3）
+  if (Util::Input::IsKeyDown(Util::Keycode::NUM_1)) m_SelectedTower = TowerId::Basic;
+  if (Util::Input::IsKeyDown(Util::Keycode::NUM_2)) m_SelectedTower = TowerId::Sniper;
+  if (Util::Input::IsKeyDown(Util::Keycode::NUM_3)) m_SelectedTower = TowerId::Cannon;
+
   // 點擊左鍵建塔邏輯 (使用 GameSession 封裝的方法，具備扣除金幣功能)
   if (m_GameSession && Util::Input::IsKeyDown(Util::Keycode::MOUSE_LB)) {
     const glm::vec2 mouseWorld = Util::Input::GetCursorPosition();
     if (auto grid = m_GameSession->getMap().worldToGrid(mouseWorld)) {
-
-      // 修正 Clang-Tidy 警告：將變數直接初始化在 if 判斷式中
+      const TowerDef& def = getTowerDef(m_SelectedTower);
       if (const bool placed = m_GameSession->placeTower(
-              grid->first, grid->second, "tower-basic");
+              grid->first, grid->second, m_SelectedTower);
           placed) {
-        LOG_INFO("Tower placed at grid ({}, {}), Gold deducted", grid->first,
-                 grid->second);
+        LOG_INFO("Tower '{}' placed at grid ({}, {}), cost={}",
+                 def.displayName, grid->first, grid->second, def.buildCost);
       } else {
-        LOG_DEBUG("Cannot place tower at grid ({}, {}) (Insufficient gold or "
-                  "invalid position)",
-                  grid->first, grid->second);
+        LOG_DEBUG("Cannot place '{}' tower at ({},{}) (gold insufficient or tile invalid)",
+                  def.displayName, grid->first, grid->second);
       }
-
     } else {
       LOG_DEBUG("Clicked outside map");
     }
@@ -92,14 +95,6 @@ void App::Update() {
       if (scrollDelta != 0.0F) {
         m_GameSession->zoomCamera(scrollDelta);
       }
-    }
-
-    // 處理鍵盤按鍵生成測試敵人
-    if (Util::Input::IsKeyDown(Util::Keycode::NUM_1)) {
-      m_GameSession->spawnDebugEnemy(EnemyTypeId::Regular);
-    }
-    if (Util::Input::IsKeyDown(Util::Keycode::NUM_2)) {
-      m_GameSession->spawnDebugEnemy(EnemyTypeId::Fast);
     }
 
     // 每幀順序：先更新邏輯狀態，再將結果渲染到螢幕

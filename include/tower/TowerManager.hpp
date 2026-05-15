@@ -3,6 +3,7 @@
 #include "enemy/Enemy.hpp"
 #include "map/GridMap.hpp"
 #include "tower/Tower.hpp"
+#include "tower/TowerDef.hpp"
 
 #include <cstddef>
 #include <functional>
@@ -21,13 +22,15 @@ public:
         float speed = 8.0F; // 子彈速度（格/秒）
         int damage = 15; // 子彈傷害
         float lifetime = 2.0F; // 最長存活秒數
+        float splashRadius = 0.0F; // 爆炸半徑（0 = 單體）
     };
 
     // 綁定地圖，供建塔檢查與座標範圍判斷使用。
     explicit TowerManager(const GridMap& map);
 
     // 建立/移除/查詢塔。
-    bool placeTower(int gridX, int gridY, std::string_view spriteId = "tower-basic");
+    bool placeTower(int gridX, int gridY, TowerId towerId = TowerId::Basic);
+    bool placeTower(int gridX, int gridY, std::string_view spriteId); // legacy overload
     bool removeTower(int gridX, int gridY);
     bool hasTower(int gridX, int gridY) const;
     void clear();
@@ -56,6 +59,7 @@ private:
     static constexpr float kProjectileSeekRadius = 6.0F;
     const GridMap& map; // 地圖參考（不擁有）
     std::vector<Tower> towers; // 場上塔容器
+    std::vector<TowerId> towerIds; // 各塔的種類（與 towers 一一對應）
     std::vector<float> towerCooldowns; // 各塔剩餘冷卻秒數
     std::vector<Projectile> projectiles; // 場上子彈容器
     bool autoAttackEnabled; // 是否啟用自動攻擊（由 cpp 初始化）

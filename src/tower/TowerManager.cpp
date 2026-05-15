@@ -19,14 +19,23 @@ TowerManager::TowerManager(const GridMap& map)
     : map(map), autoAttackEnabled(true) {
 }
 
-bool TowerManager::placeTower(int gridX, int gridY, std::string_view spriteId) {
+bool TowerManager::placeTower(int gridX, int gridY, TowerId towerId) {
     if (gridX < 0 || gridX >= map.getMapWidth() || gridY < 0 || gridY >= map.getMapHeight()) return false;
     if (!map.canBuildTower(gridX, gridY)) return false;
     if (hasTower(gridX, gridY)) return false;
 
-    towers.emplace_back(std::string(spriteId), gridX, gridY);
+    const TowerDef& def = getTowerDef(towerId);
+    towers.emplace_back(std::string(def.spriteBase), gridX, gridY, def.attackRange);
+    towerIds.push_back(towerId);
     towerCooldowns.push_back(0.0F);
     return true;
+}
+
+bool TowerManager::placeTower(int gridX, int gridY, std::string_view spriteId) {
+    // Legacy overload: maps known spriteIds to TowerId, else places Basic.
+    if (spriteId == "tower-sniper" || spriteId == "tower-sniper-base-new") return placeTower(gridX, gridY, TowerId::Sniper);
+    if (spriteId == "tower-cannon" || spriteId == "tower-cannon-base-new") return placeTower(gridX, gridY, TowerId::Cannon);
+    return placeTower(gridX, gridY, TowerId::Basic);
 }
 
 bool TowerManager::removeTower(int gridX, int gridY) {
@@ -36,6 +45,7 @@ bool TowerManager::removeTower(int gridX, int gridY) {
     // 修正 Clang-Tidy：使用 auto
     auto towerIndex = static_cast<std::ptrdiff_t>(towerIndexOpt.value());
     towers.erase(towers.begin() + towerIndex);
+    towerIds.erase(towerIds.begin() + towerIndex);
     towerCooldowns.erase(towerCooldowns.begin() + towerIndex);
     return true;
 }
@@ -46,6 +56,7 @@ bool TowerManager::hasTower(int gridX, int gridY) const {
 
 void TowerManager::clear() {
     towers.clear();
+    towerIds.clear();
     towerCooldowns.clear();
     projectiles.clear();
 }
@@ -114,6 +125,7 @@ void TowerManager::updateAutoAttack(float deltaTime, std::vector<Enemy>& enemies
             if (towerCooldowns[i] > 0.0F) continue;
 
             const Tower& tower = towers[i];
+            const TowerDef& def = getTowerDef(towerIds[i]);
             const std::optional<std::size_t> enemyIndexOpt = findNearestEnemyIndex(tower, enemies);
             if (!enemyIndexOpt.has_value()) continue;
 
@@ -132,11 +144,12 @@ void TowerManager::updateAutoAttack(float deltaTime, std::vector<Enemy>& enemies
             projectile.y = towerY;
             projectile.dirX = dx / distance;
             projectile.dirY = dy / distance;
-            projectile.speed = 9.0F;
-            projectile.damage = 12;
+            projectile.speed = def.projectileSpeed;
+            projectile.damage = def.damage;
             projectile.lifetime = 2.0F;
+            projectile.splashRadius = def.splashRadius;
             projectiles.push_back(projectile);
-            towerCooldowns[i] = kTowerFireInterval;
+            towerCooldowns[i] = def.fireInterval;
         }
     }
 
@@ -149,6 +162,7 @@ void TowerManager::updateAutoAttack(float deltaTime, std::vector<Enemy>& enemies
             continue;
         }
 
+        // ── 尋向追蹤：朝最近敵人轉向 ──
         std::optional<std::size_t> nearestEnemyIndex = std::nullopt;
         float nearestEnemyDistanceSquared = std::numeric_limits<float>::max();
         for (std::size_t enemyIndex = 0; enemyIndex < enemies.size(); ++enemyIndex) {
@@ -171,7 +185,18 @@ void TowerManager::updateAutoAttack(float deltaTime, std::vector<Enemy>& enemies
             const float distance = std::sqrt(dx * dx + dy * dy);
 
             if (distance <= kProjectileHitRadius) {
-                target.takeDamage(projectile.damage);
+                // 命中目標（在移動前偵測到）
+                if (projectile.splashRadius > 0.0F) {
+                    const float splashSq = projectile.splashRadius * projectile.splashRadius;
+                    for (Enemy& splashEnemy : enemies) {
+                        if (!splashEnemy.isAlive() || splashEnemy.hasReachedGoal()) continue;
+                        if (squaredDistance(projectile.x, projectile.y, splashEnemy.getX(), splashEnemy.getY()) <= splashSq) {
+                            splashEnemy.takeDamage(projectile.damage);
+                        }
+                    }
+                } else {
+                    target.takeDamage(projectile.damage);
+                }
                 projectiles.erase(projectiles.begin() + i);
                 continue;
             }
@@ -182,16 +207,30 @@ void TowerManager::updateAutoAttack(float deltaTime, std::vector<Enemy>& enemies
             }
         }
 
+        // ── 移動 ──
         const float moveDistance = projectile.speed * deltaTime;
         projectile.x += projectile.dirX * moveDistance;
         projectile.y += projectile.dirY * moveDistance;
 
+        // ── 命中偵測（移動後） ──
         bool hasHitEnemy = false;
         for (Enemy& enemy : enemies) {
             if (!enemy.isAlive() || enemy.hasReachedGoal()) continue;
             if (squaredDistance(projectile.x, projectile.y, enemy.getX(), enemy.getY()) <=
                 (kProjectileHitRadius * kProjectileHitRadius)) {
-                enemy.takeDamage(projectile.damage);
+                if (projectile.splashRadius > 0.0F) {
+                    // ★ 爆炸：對範圍內所有敵人造成傷害
+                    const float splashSq = projectile.splashRadius * projectile.splashRadius;
+                    for (Enemy& splashEnemy : enemies) {
+                        if (!splashEnemy.isAlive() || splashEnemy.hasReachedGoal()) continue;
+                        if (squaredDistance(projectile.x, projectile.y, splashEnemy.getX(), splashEnemy.getY()) <= splashSq) {
+                            splashEnemy.takeDamage(projectile.damage);
+                        }
+                    }
+                } else {
+                    // 單體傷害
+                    enemy.takeDamage(projectile.damage);
+                }
                 hasHitEnemy = true;
                 break;
             }
@@ -201,4 +240,4 @@ void TowerManager::updateAutoAttack(float deltaTime, std::vector<Enemy>& enemies
             projectiles.erase(projectiles.begin() + i);
         }
     }
-}
+}

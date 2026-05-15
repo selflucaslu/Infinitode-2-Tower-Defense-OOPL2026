@@ -4,6 +4,7 @@
 #include "enemy/EnemyTypeConfig.hpp"
 #include "map/GridMap.hpp"
 #include "tower/TowerManager.hpp"
+#include "tower/TowerDef.hpp"
 #include "utils/AtlasLoader.hpp"
 #include "Util/GameObject.hpp"
 #include "Util/Renderer.hpp"
@@ -29,7 +30,7 @@ public:
     // -------------------- 塔管理 --------------------
     TowerManager& getTowerManager();
     const TowerManager& getTowerManager() const;
-    bool placeTower(int gridX, int gridY, std::string_view spriteId = "tower-basic");
+    bool placeTower(int gridX, int gridY, TowerId towerId = TowerId::Basic);
 
     // -------------------- 基地狀態 --------------------
     int getBaseHp() const;
@@ -102,7 +103,7 @@ private:
     static constexpr float kHudPadding = 16.0F;
     static constexpr float kHudIconScale = 0.34F;
     static constexpr float kHudGap = 10.0F;
-    static constexpr int kTowerBuildCost = 40;
+    static constexpr int kTowerBuildCost = 40; // fallback only — actual cost from TowerDef
 
     // -------------------- 遊戲狀態 --------------------
     bool isSessionActive;
