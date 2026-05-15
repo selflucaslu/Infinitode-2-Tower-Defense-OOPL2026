@@ -25,7 +25,7 @@ public:
         int damage,
         int rewardGold,
         int startPathIndex,
-        std::string spriteId,
+        std::string_view spriteId,
         std::shared_ptr<const std::vector<std::pair<int, int>>> pathPoints
     );
 

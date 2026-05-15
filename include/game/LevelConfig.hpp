@@ -198,12 +198,12 @@ inline const std::vector<LevelConfig> kLevelConfigs = {
                 {
                     5, false, 5.0F, 50,
                     {
-                        {EnemyTypeId::Armored, 2000, 0.0F, 0.05F, {}},
-                        {EnemyTypeId::Strong, 2000, 0.0F, 0.050F, {}},
-                        {EnemyTypeId::Fast, 2000, 0.0F, 0.005F, {}},
-                        {EnemyTypeId::Heli, 2000, 0.0F, 0.06F, {}},
-                        {EnemyTypeId::Regular, 2000, 0.0F, 0.04F, {}},
-                        {EnemyTypeId::Jet, 2000, 0.0F, 0.025F, {}}
+                        {EnemyTypeId::Armored, 1000, 0.0F, 0.05F, {}},
+                        {EnemyTypeId::Strong, 1000, 0.0F, 0.050F, {}},
+                        {EnemyTypeId::Fast, 1000, 0.0F, 0.005F, {}},
+                        {EnemyTypeId::Heli, 1000, 0.0F, 0.06F, {}},
+                        {EnemyTypeId::Regular, 1000, 0.0F, 0.04F, {}},
+                        {EnemyTypeId::Jet, 1000, 0.0F, 0.025F, {}}
                     }
                 }
         }
