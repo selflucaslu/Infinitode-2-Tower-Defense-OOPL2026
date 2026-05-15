@@ -77,10 +77,24 @@ GameSession::GameSession(int levelNumber)
     goldIconObject->m_Transform.scale = {kHudIconScale, kHudIconScale};
     goldIconObject->SetZIndex(kHudZIndex);
 
+    waveText = std::make_shared<Util::Text>(
+        kHudFontPath, kHudFontSize, "波次: 0", Util::Color::FromRGB(255, 255, 255)
+    );
+    waveTextObject = std::make_shared<Util::GameObject>();
+    waveTextObject->SetDrawable(waveText);
+    waveTextObject->SetZIndex(kHudZIndex);
+
+    waveIconObject = std::make_shared<Util::GameObject>();
+    waveIconObject->SetDrawable(atlasLoader->getImage("icon-flag"));
+    waveIconObject->m_Transform.scale = {kHudIconScale, kHudIconScale};
+    waveIconObject->SetZIndex(kHudZIndex);
+
     hudRoot.AddChild(towerHpIconObject);
     hudRoot.AddChild(towerHpTextObject);
     hudRoot.AddChild(goldIconObject);
     hudRoot.AddChild(goldTextObject);
+    hudRoot.AddChild(waveIconObject);
+    hudRoot.AddChild(waveTextObject);
     updateHudDisplay();
 
     // 背景改為 Infinitode 風格的灰色同色系 #181818。
@@ -334,6 +348,7 @@ void GameSession::updateHudDisplay() {
 
     towerHpText->SetText("基地生命: " + std::to_string(baseHp));
     goldText->SetText("金幣: " + std::to_string(gold));
+    waveText->SetText("波次: " + std::to_string(waveCount + 1));
 
     const std::shared_ptr<Core::Context> context = Core::Context::GetInstance();
     const float halfWindowWidth = static_cast<float>(context->GetWindowWidth()) * 0.5F;
@@ -341,8 +356,10 @@ void GameSession::updateHudDisplay() {
 
     const glm::vec2 towerIconSize = atlasLoader->getImage("icon-heart")->GetSize();
     const glm::vec2 goldIconSize = atlasLoader->getImage("icon-coins")->GetSize();
+    const glm::vec2 waveIconSize = atlasLoader->getImage("icon-flag")->GetSize();
     const glm::vec2 towerTextSize = towerHpText->GetSize();
     const glm::vec2 goldTextSize = goldText->GetSize();
+    const glm::vec2 waveTextSize = waveText->GetSize();
 
     const float topY = halfWindowHeight - kHudPadding;
 
@@ -362,6 +379,16 @@ void GameSession::updateHudDisplay() {
     goldIconObject->m_Transform.translation = {
         goldTextObject->m_Transform.translation.x - goldTextSize.x * 0.5F - kHudGap - goldIconSize.x * kHudIconScale * 0.5F,
         topY - goldIconSize.y * kHudIconScale * 0.5F
+    };
+
+    // 置中顯示波次
+    waveTextObject->m_Transform.translation = {
+        0.0F,
+        topY - waveTextSize.y * 0.5F
+    };
+    waveIconObject->m_Transform.translation = {
+        waveTextObject->m_Transform.translation.x - waveTextSize.x * 0.5F - kHudGap - waveIconSize.x * kHudIconScale * 0.5F,
+        topY - waveIconSize.y * kHudIconScale * 0.5F
     };
 }
 

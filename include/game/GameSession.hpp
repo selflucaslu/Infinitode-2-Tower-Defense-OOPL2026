@@ -88,6 +88,9 @@ private:
     std::shared_ptr<Util::GameObject> goldIconObject;
     std::shared_ptr<Util::GameObject> goldTextObject;
     std::shared_ptr<Util::Text> goldText;
+    std::shared_ptr<Util::GameObject> waveIconObject;
+    std::shared_ptr<Util::GameObject> waveTextObject;
+    std::shared_ptr<Util::Text> waveText;
     static constexpr float kTowerScale = 0.45F;
     static constexpr float kTowerBaseZIndex = 1.5F;
     static constexpr float kTowerWeaponZIndex = 1.6F;
