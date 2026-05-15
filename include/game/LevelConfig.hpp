@@ -165,12 +165,12 @@ inline const std::vector<LevelConfig> kLevelConfigs = {
        false,
        5.0F,
        40,
-       {{EnemyTypeId::Armored, 100, 0.0F, 0.04F, {}},
-        {EnemyTypeId::Strong, 100, 0.0F, 0.050F, {}},
-        {EnemyTypeId::Fast, 100, 0.0F, 0.01F, {}},
-        {EnemyTypeId::Heli, 100, 0.0F, 0.06F, {}},
-        {EnemyTypeId::Regular, 100, 0.0F, 0.03F, {}},
-        {EnemyTypeId::Jet, 100, 0.0F, 0.02F, {}}}},
+       {{EnemyTypeId::Armored, 100, 0.0F, 0.4F, {}},
+        {EnemyTypeId::Strong, 100, 0.0F, 0.50F, {}},
+        {EnemyTypeId::Fast, 100, 0.0F, 0.1F, {}},
+        {EnemyTypeId::Heli, 100, 0.0F, 0.6F, {}},
+        {EnemyTypeId::Regular, 100, 0.0F, 0.3F, {}},
+        {EnemyTypeId::Jet, 100, 0.0F, 0.2F, {}}}},
         // W5
       {5,
        false,
@@ -187,12 +187,12 @@ inline const std::vector<LevelConfig> kLevelConfigs = {
        false,
        5.0F,
        50,
-       {{EnemyTypeId::Armored, 100, 0.0F, 0.05F, {}},
-        {EnemyTypeId::Strong, 100, 0.0F, 0.050F, {}},
-        {EnemyTypeId::Fast, 100, 0.0F, 0.005F, {}},
-        {EnemyTypeId::Heli, 100, 0.0F, 0.06F, {}},
-        {EnemyTypeId::Regular, 100, 0.0F, 0.04F, {}},
-        {EnemyTypeId::Jet, 100, 0.0F, 0.025F, {}}}}}}
+       {{EnemyTypeId::Armored, 200, 0.0F, 0.05F, {0,6,1,5,7}},
+        {EnemyTypeId::Strong, 200, 0.0F, 0.050F, {1,6,2,0,7}},
+        {EnemyTypeId::Fast, 200, 0.0F, 0.005F, {2,6,3,1,7}},
+        {EnemyTypeId::Heli, 200, 0.0F, 0.06F, {3,7,4,2,6}},
+        {EnemyTypeId::Regular, 200, 0.0F, 0.04F, {4,7,5,3,6}},
+        {EnemyTypeId::Jet, 200, 0.0F, 0.025F, {5,7,6,4,0}}}}}}
 
 };
 
