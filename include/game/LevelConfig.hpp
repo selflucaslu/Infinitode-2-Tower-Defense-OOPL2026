@@ -17,6 +17,9 @@ struct SpawnGroup {
   float startDelay = 0.0F;                 // Wave 開始後幾秒才開始生這一組
   float interval = 1.0F;                   // 同組每隻之間的出生間隔（秒）
   std::vector<int> spawnPointIndices;      // 指定起點索引；空陣列 = 所有起點
+  // 無限循環強化倍率（預設 1.0 = 第一輪、不強化）
+  float hpMultiplier  = 1.0F;              // 血量倍率（每循環 ×1.2）
+  float spdMultiplier = 1.0F;              // 移動速度倍率（每循環 ×1.1）
 };
 
 // -------------------- 單波配置 --------------------
@@ -121,7 +124,7 @@ inline const std::vector<LevelConfig> kLevelConfigs = {
 
     },
     // -------------------- Level 3：飢腸轆轆的貪婪章魚鮑勃 --------------------
-    {// 現在你手上只有100元
+    {// 現在你手上只有200元
      3,
      "assets/maps/map_03.csv",
      1,

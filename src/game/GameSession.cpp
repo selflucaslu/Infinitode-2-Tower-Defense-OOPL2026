@@ -11,7 +11,8 @@
 // -------------------- 建立單局 --------------------
 GameSession::GameSession(int levelNumber)
     : isSessionActive(false), timer(0.0F), waveTimer(0.0F), groupTimer(0.0F),
-      baseHp(0), gold(0), waveCount(0), groupIndex(0), groupSpawned(0) {
+      baseHp(0), gold(0), waveCount(0), groupIndex(0), groupSpawned(0),
+      loopCount(0) {
 
     // 先載入圖集，再建立地圖。
     atlasLoader = std::make_unique<AtlasLoader>();
@@ -56,6 +57,7 @@ GameSession::GameSession(int levelNumber)
     // 初始化遊戲狀態
     initBaseHp = level.baseHp;
     initGold = level.startingGold;
+    baseSpawnSchedule = level.waves; // 保存原始配置，供後續循環計算用
     spawnSchedule = level.waves;
     initSession();
 
@@ -225,6 +227,10 @@ void GameSession::update(float deltaTime) {
             groupIndex = 0;
             groupSpawned = 0;
         }
+    } else if (waveCount >= static_cast<int>(spawnSchedule.size()) &&
+               enemyManager->getEnemies().empty()) {
+        // 所有波次完成且場上無敵人 → 開始下一輪循環
+        beginNextLoop();
     }
 }
 
@@ -262,6 +268,8 @@ void GameSession::initSession() {
     waveCount = 0;
     groupIndex = 0;
     groupSpawned = 0;
+    loopCount = 0;
+    spawnSchedule = baseSpawnSchedule; // 重置回第一輪原始配置
     enemyManager->getEnemies().clear();
     towerManager->clear();
     updateTowerDisplay();
@@ -284,15 +292,19 @@ void GameSession::dispatchEnemiesByTimer() {
             const SpawnGroup& spawnGroup = waveConfig.groups[groupIndex];
             const EnemyTypeConfig& config = getEnemyTypeConfig(spawnGroup.type);
 
+            // 套用循環強化倍率
+            const float scaledSpeed  = config.speed     * spawnGroup.spdMultiplier;
+            const int   scaledHp     = static_cast<int>(static_cast<float>(config.maxHealth) * spawnGroup.hpMultiplier);
+
             if (groupSpawned == 0) {
                 if (waveTimer >= waveConfig.prepTime + spawnGroup.startDelay) {
-                    enemyManager->spawnEnemiesAt(spawnGroup.spawnPointIndices, config.speed, config.moveType, config.maxHealth, config.damageToBase, config.rewardGold, config.spriteId);
+                    enemyManager->spawnEnemiesAt(spawnGroup.spawnPointIndices, scaledSpeed, config.moveType, scaledHp, config.damageToBase, config.rewardGold, config.spriteId);
                     groupSpawned += 1;
                     groupTimer = 0.0F;
                 }
             } else {
                 if (spawnGroup.interval <= 0.0F || groupTimer >= spawnGroup.interval) {
-                    enemyManager->spawnEnemiesAt(spawnGroup.spawnPointIndices, config.speed, config.moveType, config.maxHealth, config.damageToBase, config.rewardGold, config.spriteId);
+                    enemyManager->spawnEnemiesAt(spawnGroup.spawnPointIndices, scaledSpeed, config.moveType, scaledHp, config.damageToBase, config.rewardGold, config.spriteId);
                     groupSpawned += 1;
                     groupTimer = 0.0F;
                 }
@@ -401,7 +413,9 @@ void GameSession::updateHudDisplay() {
 
     towerHpText->SetText("基地生命: " + std::to_string(baseHp));
     goldText->SetText("金幣: " + std::to_string(gold));
-    waveText->SetText("波次: " + std::to_string(waveCount + 1));
+    const int displayWave = (waveCount % static_cast<int>(baseSpawnSchedule.size())) + 1;
+    const std::string loopStr = loopCount > 0 ? " (循環 " + std::to_string(loopCount + 1) + ")" : "";
+    waveText->SetText("波次: " + std::to_string(displayWave) + loopStr);
 
     const std::shared_ptr<Core::Context> context = Core::Context::GetInstance();
     const float halfWindowWidth = static_cast<float>(context->GetWindowWidth()) * 0.5F;
@@ -448,4 +462,39 @@ void GameSession::updateHudDisplay() {
 void GameSession::spawnDebugEnemy(EnemyTypeId enemyTypeId, const std::vector<int>& spawnPointIndices) const {
     const EnemyTypeConfig& config = getEnemyTypeConfig(enemyTypeId);
     enemyManager->spawnEnemiesAt(spawnPointIndices, config.speed, config.moveType, config.maxHealth, config.damageToBase, config.rewardGold, config.spriteId);
+}
+
+// -------------------- 無限循環邏輯 --------------------
+void GameSession::beginNextLoop() {
+    loopCount += 1;
+
+    // 強化倍率：每循環一次血量 ×1.2、速度 ×1.1
+    static constexpr float kHpScale   = 1.2F;
+    static constexpr float kSpdScale  = 1.1F;
+
+    // 根據累積循環次數計算倍率（從原始配置重新計算，避免浮點誤差累積）
+    float hpMult  = 1.0F;
+    float spdMult = 1.0F;
+    for (int i = 0; i < loopCount; ++i) {
+        hpMult  *= kHpScale;
+        spdMult *= kSpdScale;
+    }
+
+    // 從 baseSpawnSchedule 重新生成強化後的 spawnSchedule
+    spawnSchedule = baseSpawnSchedule;
+    for (WaveConfig& wave : spawnSchedule) {
+        for (SpawnGroup& group : wave.groups) {
+            group.hpMultiplier  = hpMult;  // 血量 ×1.2^loopCount
+            group.spdMultiplier = spdMult; // 速度 ×1.1^loopCount
+        }
+    }
+
+    // 重置波次計數，開始新一輪
+    waveCount   = 0;
+    groupIndex  = 0;
+    groupSpawned = 0;
+    waveTimer   = 0.0F;
+    groupTimer  = 0.0F;
+
+    LOG_INFO("[Session] 進入第 {} 輪循環：HP ×{:.2f}, SPD ×{:.2f}", loopCount + 1, hpMult, spdMult);
 }

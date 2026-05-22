@@ -126,5 +126,10 @@ private:
     int waveCount;
     int groupIndex;
     int groupSpawned;
-    std::vector<WaveConfig> spawnSchedule;
+    int loopCount;                         // 已完成的循環次數（0 = 第一輪）
+    std::vector<WaveConfig> spawnSchedule; // 當前循環（已套用強化）的配置
+    std::vector<WaveConfig> baseSpawnSchedule; // 第一輪的原始配置（用於重置計算）
+
+    // -------------------- 私有方法 --------------------
+    void beginNextLoop(); // 啟動下一循環（套用血量 ×1.2、速度 ×1.1）
 };
