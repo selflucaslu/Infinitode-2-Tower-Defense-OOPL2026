@@ -40,7 +40,7 @@ GameSession::GameSession(int levelNumber)
     }
 
     // 預載塔、子彈與 HUD 會用到的圖片。
-    static constexpr std::array<std::string_view, 12> preloadTowerSprites = {
+    static constexpr std::array<std::string_view, 14> preloadTowerSprites = {
         "tower-basic-base",
         "tower-basic-weapon",
         "tower-sniper-base-new",
@@ -52,7 +52,9 @@ GameSession::GameSession(int levelNumber)
         "icon-tower-top",
         "aura-range",
         "game-ui-health-icon",
-        "game-ui-coin-icon"
+        "game-ui-coin-icon",
+        "tile-type-platform",
+        "build-selection"
     };
     for (std::string_view spriteId : preloadTowerSprites) {
         (void)atlasLoader->getImage(spriteId);

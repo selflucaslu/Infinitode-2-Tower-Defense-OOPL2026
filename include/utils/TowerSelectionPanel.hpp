@@ -39,24 +39,26 @@ private:
     void layoutCells(float windowWidth, float windowHeight);
 
     // -------------------- 常數 --------------------
-    static constexpr int   kColumns       = 2;          // 每行幾個格子
-    static constexpr float kCellSize      = 72.0F;      // 格子大小（像素）
-    static constexpr float kCellPadding   = 6.0F;       // 格子間距
-    static constexpr float kPanelMarginX  = 16.0F;      // 距視窗右邊緣
-    static constexpr float kPanelMarginY  = 16.0F;      // 距視窗下邊緣
-    static constexpr float kIconScale     = 0.38F;      // 塔圖示縮放
+    static constexpr int   kColumns       = 3;          // 每行幾個格子
+    static constexpr float kCellSize      = 78.0F;      // 格子大小（像素）
+    static constexpr float kCellPadding   = 2.0F;       // 格子間距
+    static constexpr float kPanelMarginX  = 18.0F;      // 距視窗右邊緣
+    static constexpr float kPanelMarginY  = 18.0F;      // 距視窗下邊緣
+    static constexpr float kIconScale     = 0.50F;      // 塔圖示縮放
     static constexpr float kBgZIndex      = 4.5F;       // 背景面板 Z
     static constexpr float kCellZIndex    = 4.6F;       // 格子背景 Z
     static constexpr float kIconZIndex    = 4.7F;       // 塔圖示 Z
     static constexpr float kHighlightZ    = 4.65F;      // 選中高亮框 Z
     static constexpr float kTextZIndex    = 4.8F;       // 費用文字 Z
     static constexpr const char* kFont    = "PTSD/assets/fonts/Inter.ttf";
-    static constexpr int   kFontSize      = 16;
+    static constexpr int   kFontSize      = 18;
 
     // 單個格子的顯示資料
     struct Cell {
         TowerId towerId;
         glm::vec2 centerPos{0.0F, 0.0F}; // 螢幕中心座標（相對整個視窗中心）
+        glm::vec2 normalCostPos{0.0F, 0.0F}; // 未選中時的價格位置
+        glm::vec2 selectedCostPos{0.0F, 0.0F}; // 選中時的價格位置
 
         std::shared_ptr<Util::GameObject> cellBg;       // 格子暗色背景
         std::shared_ptr<Util::GameObject> highlight;    // 選中高亮框（橘/藍色邊框）

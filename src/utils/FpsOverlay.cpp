@@ -44,7 +44,7 @@ void FpsOverlay::display() {
     const glm::vec2 textSize = m_Text->GetSize();
 
     m_TextObject->m_Transform.translation = {
-        halfWindowWidth - textSize.x * 0.5F - kPadding,
+        -halfWindowWidth + textSize.x * 0.5F + kPadding,
         -halfWindowHeight + textSize.y * 0.5F + kPadding
     };
     m_TextObject->Draw();

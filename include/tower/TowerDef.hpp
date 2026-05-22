@@ -35,7 +35,7 @@ inline const std::array<TowerDef, 3> kTowerDefs = {{
         "tower-basic-base",
         "tower-basic-weapon",
         "projectile-basic",
-        40,     // 建造費用
+        39,     // 建造費用
         7.0F,   // 攻擊範圍
         0.35F,  // 射擊間隔
         15,     // 傷害
@@ -48,7 +48,7 @@ inline const std::array<TowerDef, 3> kTowerDefs = {{
         "tower-sniper-base-new",
         "tower-sniper-weapon-new",
         "projectile-sniper",
-        80,     // 建造費用
+        79,     // 建造費用
         14.0F,  // 攻擊範圍（更遠）
         1.20F,  // 射擊間隔（較慢）
         70,     // 傷害（更高）
@@ -61,7 +61,7 @@ inline const std::array<TowerDef, 3> kTowerDefs = {{
         "tower-cannon-base-new",
         "tower-cannon-weapon-new",
         "projectile-cannon",
-        100,    // 建造費用
+        99,     // 建造費用
         6.0F,   // 攻擊範圍（稍近）
         1.50F,  // 射擊間隔（慢）
         45,     // 傷害（中高）

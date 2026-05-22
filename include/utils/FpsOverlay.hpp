@@ -8,7 +8,7 @@
 // -------------------- FPS 疊圖工具 --------------------
 // 最小功能：
 // 1) 吃 rawDeltaTime 計算 FPS（不受 simDeltaTime clamp 影響）
-// 2) 以白色文字顯示在右上角
+// 2) 以白色文字顯示在左下角
 class FpsOverlay {
 public:
     FpsOverlay();
@@ -16,7 +16,7 @@ public:
     // 用原始幀時間更新數字（秒）。
     void update(float rawDeltaTime);
 
-    // 每幀繪製到右上角。
+    // 每幀繪製到左下角。
     void display();
 
 private:
