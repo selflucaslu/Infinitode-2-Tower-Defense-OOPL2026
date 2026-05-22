@@ -107,11 +107,11 @@ private:
     static constexpr float kProjectileScale = 0.22F;
     static constexpr float kProjectileZIndex = 2.3F;
     static constexpr const char* kHudFontPath = "PTSD/assets/fonts/Inter.ttf";
-    static constexpr int kHudFontSize = 24;
+    static constexpr int kHudFontSize = 28;
     static constexpr float kHudZIndex = 4.0F;
     static constexpr float kHudPadding = 16.0F;
-    static constexpr float kHudIconScale = 0.34F;
-    static constexpr float kHudGap = 10.0F;
+    static constexpr float kHudIconScale = 0.52F;
+    static constexpr float kHudGap = 8.0F;
     static constexpr int kTowerBuildCost = 40; // fallback only — actual cost from TowerDef
 
     // -------------------- 遊戲狀態 --------------------

@@ -40,7 +40,7 @@ GameSession::GameSession(int levelNumber)
     }
 
     // 預載塔、子彈與 HUD 會用到的圖片。
-    static constexpr std::array<std::string_view, 10> preloadTowerSprites = {
+    static constexpr std::array<std::string_view, 12> preloadTowerSprites = {
         "tower-basic-base",
         "tower-basic-weapon",
         "tower-sniper-base-new",
@@ -50,7 +50,9 @@ GameSession::GameSession(int levelNumber)
         "projectile-basic",
         "icon-tower",
         "icon-tower-top",
-        "aura-range"
+        "aura-range",
+        "game-ui-health-icon",
+        "game-ui-coin-icon"
     };
     for (std::string_view spriteId : preloadTowerSprites) {
         (void)atlasLoader->getImage(spriteId);
@@ -63,47 +65,46 @@ GameSession::GameSession(int levelNumber)
     spawnSchedule = level.waves;
     initSession();
 
-    // 建立基地血量文字。
+    // 建立基地血量圖示與數字。
+    towerHpIconObject = std::make_shared<Util::GameObject>();
+    towerHpIconObject->SetDrawable(atlasLoader->getImage("game-ui-health-icon"));
+    towerHpIconObject->m_Transform.scale = {kHudIconScale, kHudIconScale};
+    towerHpIconObject->SetZIndex(kHudZIndex);
+
     towerHpText = std::make_shared<Util::Text>(
-        kHudFontPath, kHudFontSize, "基地生命: 0", Util::Color::FromRGB(255, 255, 255)
+        kHudFontPath, kHudFontSize, "0", Util::Color::FromRGB(255, 96, 96)
     );
     towerHpTextObject = std::make_shared<Util::GameObject>();
     towerHpTextObject->SetDrawable(towerHpText);
     towerHpTextObject->SetZIndex(kHudZIndex);
 
-    // 建立金幣文字。
+    // 建立金幣圖示與數字。
+    goldIconObject = std::make_shared<Util::GameObject>();
+    goldIconObject->SetDrawable(atlasLoader->getImage("game-ui-coin-icon"));
+    goldIconObject->m_Transform.scale = {kHudIconScale, kHudIconScale};
+    goldIconObject->SetZIndex(kHudZIndex);
+
     goldText = std::make_shared<Util::Text>(
-        kHudFontPath, kHudFontSize, "金幣: 0", Util::Color::FromRGB(255, 255, 255)
+        kHudFontPath, kHudFontSize, "0", Util::Color::FromRGB(255, 216, 80)
     );
     goldTextObject = std::make_shared<Util::GameObject>();
     goldTextObject->SetDrawable(goldText);
     goldTextObject->SetZIndex(kHudZIndex);
 
-    // 建立基地血量與金幣圖示。
-    towerHpIconObject = std::make_shared<Util::GameObject>();
-    towerHpIconObject->SetDrawable(atlasLoader->getImage("icon-heart"));
-    towerHpIconObject->m_Transform.scale = {kHudIconScale, kHudIconScale};
-    towerHpIconObject->SetZIndex(kHudZIndex);
-
-    goldIconObject = std::make_shared<Util::GameObject>();
-    goldIconObject->SetDrawable(atlasLoader->getImage("icon-coins"));
-    goldIconObject->m_Transform.scale = {kHudIconScale, kHudIconScale};
-    goldIconObject->SetZIndex(kHudZIndex);
-
-    // 建立波次文字與旗幟圖示。
-    waveText = std::make_shared<Util::Text>(
-        kHudFontPath, kHudFontSize, "波次: 0", Util::Color::FromRGB(255, 255, 255)
-    );
-    waveTextObject = std::make_shared<Util::GameObject>();
-    waveTextObject->SetDrawable(waveText);
-    waveTextObject->SetZIndex(kHudZIndex);
-
+    // 建立波次旗幟圖示與數字。
     waveIconObject = std::make_shared<Util::GameObject>();
     waveIconObject->SetDrawable(atlasLoader->getImage("icon-flag"));
     waveIconObject->m_Transform.scale = {kHudIconScale, kHudIconScale};
     waveIconObject->SetZIndex(kHudZIndex);
 
-    // 把 HUD 物件加入 renderer，之後每幀只更新文字與位置。
+    waveText = std::make_shared<Util::Text>(
+        kHudFontPath, kHudFontSize, "0", Util::Color::FromRGB(255, 255, 255)
+    );
+    waveTextObject = std::make_shared<Util::GameObject>();
+    waveTextObject->SetDrawable(waveText);
+    waveTextObject->SetZIndex(kHudZIndex);
+
+    // 把 HUD 物件加入 renderer，之後每幀只更新數字與位置。
     hudRoot.AddChild(towerHpIconObject);
     hudRoot.AddChild(towerHpTextObject);
     hudRoot.AddChild(goldIconObject);
@@ -484,58 +485,68 @@ void GameSession::updateProjectileDisplay() {
 // NOLINTNEXTLINE(readability-make-member-function-const)
 void GameSession::updateHudDisplay() {
     // 1) 如果 HUD 物件尚未建立完成，就先不更新。
-    if (!towerHpText || !goldText || !towerHpIconObject || !goldIconObject || !towerHpTextObject || !goldTextObject) return;
+    if (!towerHpText || !goldText || !waveText ||
+        !towerHpIconObject || !goldIconObject || !waveIconObject ||
+        !towerHpTextObject || !goldTextObject || !waveTextObject) return;
 
-    // 2) 更新基地生命、金幣與波次文字。
-    towerHpText->SetText("基地生命: " + std::to_string(baseHp));
-    goldText->SetText("金幣: " + std::to_string(gold));
+    // 2) 更新 HUD 數字，不顯示中文 label。
+    towerHpText->SetText(std::to_string(baseHp));
+    goldText->SetText(std::to_string(gold));
     const int displayWave = (waveCount % static_cast<int>(baseSpawnSchedule.size())) + 1;
-    const std::string loopStr = loopCount > 0 ? " (循環 " + std::to_string(loopCount + 1) + ")" : "";
-    waveText->SetText("波次: " + std::to_string(displayWave) + loopStr);
+    waveText->SetText(std::to_string(loopCount + 1) + "-" + std::to_string(displayWave));
 
     // 3) 取得目前視窗大小，HUD 使用螢幕中心座標系定位。
     const std::shared_ptr<Core::Context> context = Core::Context::GetInstance();
     const float halfWindowWidth = static_cast<float>(context->GetWindowWidth()) * 0.5F;
     const float halfWindowHeight = static_cast<float>(context->GetWindowHeight()) * 0.5F;
 
-    // 4) 取得圖片與文字尺寸，後面用來讓圖示和文字對齊。
-    const glm::vec2 towerIconSize = atlasLoader->getImage("icon-heart")->GetSize();
-    const glm::vec2 goldIconSize = atlasLoader->getImage("icon-coins")->GetSize();
+    // 4) 取得圖片與文字尺寸，後面用來讓 icon 和數字對齊。
+    const glm::vec2 towerIconSize = atlasLoader->getImage("game-ui-health-icon")->GetSize();
+    const glm::vec2 goldIconSize = atlasLoader->getImage("game-ui-coin-icon")->GetSize();
     const glm::vec2 waveIconSize = atlasLoader->getImage("icon-flag")->GetSize();
     const glm::vec2 towerTextSize = towerHpText->GetSize();
     const glm::vec2 goldTextSize = goldText->GetSize();
     const glm::vec2 waveTextSize = waveText->GetSize();
 
-    const float topY = halfWindowHeight - kHudPadding;
+    const float hudSideMargin = 32.0F;
+    const float hudCenterY = halfWindowHeight - 38.0F;
+    const float towerIconWidth = towerIconSize.x * kHudIconScale;
+    const float goldIconWidth = goldIconSize.x * kHudIconScale;
+    const float waveIconWidth = waveIconSize.x * kHudIconScale;
+    const float waveGroupWidth = waveIconWidth + kHudGap + waveTextSize.x;
+    const float goldGroupWidth = goldIconWidth + kHudGap + goldTextSize.x;
 
-    // 5) 左上角顯示基地生命。
+    // 5) 左上角顯示基地生命 icon + 數字。
+    const float towerGroupLeft = -halfWindowWidth + hudSideMargin;
     towerHpIconObject->m_Transform.translation = {
-        -halfWindowWidth + kHudPadding + towerIconSize.x * kHudIconScale * 0.5F,
-        topY - towerIconSize.y * kHudIconScale * 0.5F
+        towerGroupLeft + towerIconWidth * 0.5F,
+        hudCenterY
     };
     towerHpTextObject->m_Transform.translation = {
-        towerHpIconObject->m_Transform.translation.x + towerIconSize.x * kHudIconScale * 0.5F + kHudGap + towerTextSize.x * 0.5F,
-        topY - towerTextSize.y * 0.5F
+        towerHpIconObject->m_Transform.translation.x + towerIconWidth * 0.5F + kHudGap + towerTextSize.x * 0.5F,
+        hudCenterY
     };
 
-    // 6) 右上角顯示金幣。
-    goldTextObject->m_Transform.translation = {
-        halfWindowWidth - kHudPadding - goldTextSize.x * 0.5F,
-        topY - goldTextSize.y * 0.5F
-    };
-    goldIconObject->m_Transform.translation = {
-        goldTextObject->m_Transform.translation.x - goldTextSize.x * 0.5F - kHudGap - goldIconSize.x * kHudIconScale * 0.5F,
-        topY - goldIconSize.y * kHudIconScale * 0.5F
-    };
-
-    // 7) 上方置中顯示目前波次。
-    waveTextObject->m_Transform.translation = {
-        0.0F,
-        topY - waveTextSize.y * 0.5F
-    };
+    // 6) 上方置中顯示波次 icon + 數字。
+    const float waveGroupLeft = -waveGroupWidth * 0.5F;
     waveIconObject->m_Transform.translation = {
-        waveTextObject->m_Transform.translation.x - waveTextSize.x * 0.5F - kHudGap - waveIconSize.x * kHudIconScale * 0.5F,
-        topY - waveIconSize.y * kHudIconScale * 0.5F
+        waveGroupLeft + waveIconWidth * 0.5F,
+        hudCenterY
+    };
+    waveTextObject->m_Transform.translation = {
+        waveIconObject->m_Transform.translation.x + waveIconWidth * 0.5F + kHudGap + waveTextSize.x * 0.5F,
+        hudCenterY
+    };
+
+    // 7) 右上角顯示金幣 icon + 數字。
+    const float goldGroupLeft = halfWindowWidth - hudSideMargin - goldGroupWidth;
+    goldIconObject->m_Transform.translation = {
+        goldGroupLeft + goldIconWidth * 0.5F,
+        hudCenterY
+    };
+    goldTextObject->m_Transform.translation = {
+        goldIconObject->m_Transform.translation.x + goldIconWidth * 0.5F + kHudGap + goldTextSize.x * 0.5F,
+        hudCenterY
     };
 }
 
