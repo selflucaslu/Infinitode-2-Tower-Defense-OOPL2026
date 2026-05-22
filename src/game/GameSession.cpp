@@ -26,6 +26,7 @@ GameSession::GameSession(int levelNumber)
     enemyManager = std::make_unique<EnemyManager>(*map, *atlasLoader);
     towerManager = std::make_unique<TowerManager>(*map);
 
+    // 預載所有敵人圖片，避免第一次生成敵人時才讀圖造成卡頓。
     static constexpr std::array<EnemyTypeId, 5> preloadEnemyTypes = {
         EnemyTypeId::Regular,
         EnemyTypeId::Fast,
@@ -38,6 +39,7 @@ GameSession::GameSession(int levelNumber)
         (void)atlasLoader->getImage(config.spriteId);
     }
 
+    // 預載塔、子彈與 HUD 會用到的圖片。
     static constexpr std::array<std::string_view, 10> preloadTowerSprites = {
         "tower-basic-base",
         "tower-basic-weapon",
@@ -54,13 +56,14 @@ GameSession::GameSession(int levelNumber)
         (void)atlasLoader->getImage(spriteId);
     }
 
-    // 初始化遊戲狀態
+    // 保存第一輪設定，之後無限循環會從這份原始資料重新計算倍率。
     initBaseHp = level.baseHp;
     initGold = level.startingGold;
     baseSpawnSchedule = level.waves; // 保存原始配置，供後續循環計算用
     spawnSchedule = level.waves;
     initSession();
 
+    // 建立基地血量文字。
     towerHpText = std::make_shared<Util::Text>(
         kHudFontPath, kHudFontSize, "基地生命: 0", Util::Color::FromRGB(255, 255, 255)
     );
@@ -68,6 +71,7 @@ GameSession::GameSession(int levelNumber)
     towerHpTextObject->SetDrawable(towerHpText);
     towerHpTextObject->SetZIndex(kHudZIndex);
 
+    // 建立金幣文字。
     goldText = std::make_shared<Util::Text>(
         kHudFontPath, kHudFontSize, "金幣: 0", Util::Color::FromRGB(255, 255, 255)
     );
@@ -75,6 +79,7 @@ GameSession::GameSession(int levelNumber)
     goldTextObject->SetDrawable(goldText);
     goldTextObject->SetZIndex(kHudZIndex);
 
+    // 建立基地血量與金幣圖示。
     towerHpIconObject = std::make_shared<Util::GameObject>();
     towerHpIconObject->SetDrawable(atlasLoader->getImage("icon-heart"));
     towerHpIconObject->m_Transform.scale = {kHudIconScale, kHudIconScale};
@@ -85,6 +90,7 @@ GameSession::GameSession(int levelNumber)
     goldIconObject->m_Transform.scale = {kHudIconScale, kHudIconScale};
     goldIconObject->SetZIndex(kHudZIndex);
 
+    // 建立波次文字與旗幟圖示。
     waveText = std::make_shared<Util::Text>(
         kHudFontPath, kHudFontSize, "波次: 0", Util::Color::FromRGB(255, 255, 255)
     );
@@ -97,6 +103,7 @@ GameSession::GameSession(int levelNumber)
     waveIconObject->m_Transform.scale = {kHudIconScale, kHudIconScale};
     waveIconObject->SetZIndex(kHudZIndex);
 
+    // 把 HUD 物件加入 renderer，之後每幀只更新文字與位置。
     hudRoot.AddChild(towerHpIconObject);
     hudRoot.AddChild(towerHpTextObject);
     hudRoot.AddChild(goldIconObject);
@@ -125,9 +132,14 @@ TowerManager& GameSession::getTowerManager() { return *towerManager; }
 const TowerManager& GameSession::getTowerManager() const { return *towerManager; }
 
 bool GameSession::placeTower(int gridX, int gridY, TowerId towerId) {
+    // 1) 先取得塔的定義，確認玩家金幣足夠。
     const TowerDef& def = getTowerDef(towerId);
     if (gold < def.buildCost) { return false; }
+
+    // 2) 交給 TowerManager 檢查格子是否合法並實際建塔。
     if (!towerManager->placeTower(gridX, gridY, towerId)) { return false; }
+
+    // 3) 建塔成功後扣錢，並刷新塔與 HUD 顯示。
     gold -= def.buildCost;
     updateTowerDisplay();
     updateHudDisplay();
@@ -135,12 +147,15 @@ bool GameSession::placeTower(int gridX, int gridY, TowerId towerId) {
 }
 
 bool GameSession::sellTower(int gridX, int gridY) {
+    // 1) 先確認指定格子真的有塔。
     auto towerIdOpt = towerManager->getTowerIdAt(gridX, gridY);
     if (!towerIdOpt.has_value()) return false;
 
+    // 2) 根據塔的建造費用計算退還金額。
     const TowerDef& def = getTowerDef(towerIdOpt.value());
     int refund = def.buildCost / 2;
 
+    // 3) 移除成功才加錢，並同步刷新顯示。
     if (towerManager->removeTower(gridX, gridY)) {
         addGold(refund);
         updateTowerDisplay();
@@ -190,6 +205,7 @@ void GameSession::nextWave() { waveCount += 1; }
 
 // -------------------- 每幀流程 --------------------
 void GameSession::update(float deltaTime) {
+    // 1) 暫停時不推進遊戲，只維持畫面物件與 HUD 的位置正確。
     if (!isSessionActive) {
         enemyManager->updateEnemyDisplay(map->getOffsetX(), map->getOffsetY(), map->getCurrentScale());
         updateTowerDisplay();
@@ -197,24 +213,33 @@ void GameSession::update(float deltaTime) {
         updateHudDisplay();
         return;
     }
+
+    // 2) 推進本局總時間、目前波次時間，以及目前 group 的生成間隔時間。
     timer += deltaTime;
     waveTimer += deltaTime;
     groupTimer += deltaTime;
+
+    // 3) 根據波次計時器決定這一幀是否需要生成敵人。
     dispatchEnemiesByTimer();
 
+    // 4) 更新敵人移動、塔自動攻擊，並把敵人顯示座標同步到目前鏡頭。
     enemyManager->update(deltaTime);
     towerManager->updateAutoAttack(deltaTime, enemyManager->getEnemies());
     enemyManager->updateEnemyDisplay(map->getOffsetX(), map->getOffsetY(), map->getCurrentScale());
 
+    // 5) 結算本幀死亡敵人與抵達終點的敵人。
     const EnemyManager::FrameResolveResult frameResult = enemyManager->resolveAndRemoveDeadAndReached();
     applyBaseDamage(frameResult.reachedGoalDamage);
     addGold(frameResult.killedRewardGold);
+
+    // 6) 基地血量歸零就暫停本局。
     if (!isBaseAlive()) {
         pauseSession();
         LOG_INFO("[Session] Game Over");
         return;
     }
 
+    // 7) 若目前波次已出完且場上無敵人，就發放過關獎勵並切到下一波。
     if (waveCount >= 0 && waveCount < static_cast<int>(spawnSchedule.size())) {
         const WaveConfig& waveConfig = spawnSchedule[waveCount];
         const int groupCount = static_cast<int>(waveConfig.groups.size());
@@ -229,49 +254,69 @@ void GameSession::update(float deltaTime) {
         }
     } else if (waveCount >= static_cast<int>(spawnSchedule.size()) &&
                enemyManager->getEnemies().empty()) {
-        // 所有波次完成且場上無敵人 → 開始下一輪循環
+        // 8) 所有波次完成且場上無敵人，就開始下一輪循環。
         beginNextLoop();
     }
 }
 
 // NOLINTNEXTLINE(readability-make-member-function-const)
 void GameSession::display() {
+    // 1) 先畫地圖，作為所有遊戲物件的底層。
     map->displayMap();
+
+    // 2) 更新並繪製塔。
     updateTowerDisplay();
     towerRoot.Update();
+
+    // 3) 更新並繪製子彈。
     updateProjectileDisplay();
     projectileRoot.Update();
+
+    // 4) 繪製敵人。
     enemyManager->display();
+
+    // 5) 最後繪製 HUD，避免被地圖、塔或敵人蓋住。
     updateHudDisplay();
     hudRoot.Update();
-    // 選塔面板（最後繪製，不被地圖或敏人遮擋）
+
+    // 6) 選塔面板最後繪製，確保右下角操作介面永遠在最上層。
     if (m_SelectionPanel) { m_SelectionPanel->display(); }
 }
 
 void GameSession::moveCamera(float dx, float dy) const {
+    // 1) 鏡頭位移只需要交給地圖處理，其他物件會在 display/update 時同步座標。
     map->moveCamera(dx, dy);
-    // ★ 已移除錯誤呼叫：enemyManager->moveCamera(dx, dy);
 }
 
 void GameSession::zoomCamera(float zoomDelta) const {
+    // 1) 縮放倍率由地圖統一管理，塔、敵人與子彈顯示會跟著目前 scale 更新。
     map->zoomCamera(zoomDelta);
 }
 
 // -------------------- 遊戲流程控制 --------------------
 void GameSession::initSession() {
+    // 1) 重置本局流程控制狀態。
     isSessionActive = false;
     timer = 0.0F;
     waveTimer = 0.0F;
     groupTimer = 0.0F;
+
+    // 2) 回復關卡起始生命、金幣與波次索引。
     baseHp = initBaseHp;
     gold = initGold;
     waveCount = 0;
     groupIndex = 0;
     groupSpawned = 0;
+
+    // 3) 回到第一輪，並把 spawnSchedule 還原成原始波次設定。
     loopCount = 0;
     spawnSchedule = baseSpawnSchedule; // 重置回第一輪原始配置
+
+    // 4) 清空場上敵人與塔，避免重新開始時保留上一局狀態。
     enemyManager->getEnemies().clear();
     towerManager->clear();
+
+    // 5) 立即刷新所有畫面物件與 HUD。
     updateTowerDisplay();
     updateProjectileDisplay();
     updateHudDisplay();
@@ -282,34 +327,56 @@ void GameSession::startSession() { isSessionActive = true; }
 void GameSession::pauseSession() { isSessionActive = false; }
 
 void GameSession::dispatchEnemiesByTimer() {
+    // 1) 先確認波次合法。
     if (waveCount < 0 || waveCount >= static_cast<int>(spawnSchedule.size())) return;
 
     const WaveConfig& waveConfig = spawnSchedule[waveCount];
     const int groupCount = static_cast<int>(waveConfig.groups.size());
 
+    // 2) 先等本波 prepTime。
     if (waveTimer >= waveConfig.prepTime) {
+        // 3) 只處理目前 groupIndex 這一組（依序跑，不並行）。
         if (groupIndex < groupCount) {
             const SpawnGroup& spawnGroup = waveConfig.groups[groupIndex];
             const EnemyTypeConfig& config = getEnemyTypeConfig(spawnGroup.type);
 
-            // 套用循環強化倍率
+            // 4) 套用循環強化倍率，讓後續輪次的敵人變快、血量變高。
             const float scaledSpeed  = config.speed     * spawnGroup.spdMultiplier;
             const int   scaledHp     = static_cast<int>(static_cast<float>(config.maxHealth) * spawnGroup.hpMultiplier);
 
+            // 5) 第一隻：等到 prepTime + startDelay。
             if (groupSpawned == 0) {
                 if (waveTimer >= waveConfig.prepTime + spawnGroup.startDelay) {
-                    enemyManager->spawnEnemiesAt(spawnGroup.spawnPointIndices, scaledSpeed, config.moveType, scaledHp, config.damageToBase, config.rewardGold, config.spriteId);
+                    enemyManager->spawnEnemiesAt(
+                        spawnGroup.spawnPointIndices,
+                        scaledSpeed,
+                        config.moveType,
+                        scaledHp,
+                        config.damageToBase,
+                        config.rewardGold,
+                        config.spriteId
+                    );
                     groupSpawned += 1;
                     groupTimer = 0.0F;
                 }
             } else {
+                // 6) 後續：用 groupTimer + interval 控制每次再生一隻。
                 if (spawnGroup.interval <= 0.0F || groupTimer >= spawnGroup.interval) {
-                    enemyManager->spawnEnemiesAt(spawnGroup.spawnPointIndices, scaledSpeed, config.moveType, scaledHp, config.damageToBase, config.rewardGold, config.spriteId);
+                    enemyManager->spawnEnemiesAt(
+                        spawnGroup.spawnPointIndices,
+                        scaledSpeed,
+                        config.moveType,
+                        scaledHp,
+                        config.damageToBase,
+                        config.rewardGold,
+                        config.spriteId
+                    );
                     groupSpawned += 1;
                     groupTimer = 0.0F;
                 }
             }
 
+            // 7) 這組完成就切下一組。
             if (groupSpawned >= spawnGroup.count) {
                 groupIndex += 1;
                 groupSpawned = 0;
@@ -320,9 +387,11 @@ void GameSession::dispatchEnemiesByTimer() {
 }
 
 void GameSession::updateTowerDisplay() {
+    // 1) 取得目前所有塔與地圖縮放倍率。
     const std::vector<Tower>& towers = towerManager->getTowers();
     const float currentScale = map->getCurrentScale();
 
+    // 2) 如果塔變多，就補上對應的底座與武器 GameObject。
     while (towerBaseObjects.size() < towers.size()) {
         std::shared_ptr<Util::GameObject> towerBaseObject = std::make_shared<Util::GameObject>();
         towerBaseObject->SetZIndex(kTowerBaseZIndex);
@@ -337,6 +406,7 @@ void GameSession::updateTowerDisplay() {
         towerWeaponObjects.push_back(towerWeaponObject);
     }
 
+    // 3) 如果塔變少，就移除多出來的顯示物件。
     while (towerBaseObjects.size() > towers.size()) {
         towerRoot.RemoveChild(towerBaseObjects.back());
         towerBaseObjects.pop_back();
@@ -345,15 +415,16 @@ void GameSession::updateTowerDisplay() {
         towerWeaponObjects.pop_back();
     }
 
+    // 4) 逐一同步塔圖片、世界座標、縮放與武器朝向。
     for (std::size_t i = 0; i < towers.size(); ++i) {
         const Tower& tower = towers[i];
         const std::shared_ptr<Util::GameObject>& towerBaseObject = towerBaseObjects[i];
         const std::shared_ptr<Util::GameObject>& towerWeaponObject = towerWeaponObjects[i];
 
         towerBaseObject->SetDrawable(atlasLoader->getImage(tower.GetspriteId()));
-        // 尋找對應武器：將 base spriteId 轉招 weapon spriteId
+
+        // 5) 尋找對應武器：把 base spriteId 轉成 weapon spriteId。
         std::string weaponId = tower.GetspriteId();
-        // 替換 "base" 為 "weapon"
         const std::string baseSuffix = "-base";
         const std::string baseNewSuffix = "-base-new";
         if (auto pos = weaponId.rfind(baseNewSuffix); pos != std::string::npos) {
@@ -376,9 +447,11 @@ void GameSession::updateTowerDisplay() {
 }
 
 void GameSession::updateProjectileDisplay() {
+    // 1) 取得目前所有子彈與地圖縮放倍率。
     const std::vector<TowerManager::Projectile>& projectiles = towerManager->getProjectiles();
     const float currentScale = map->getCurrentScale();
 
+    // 2) 如果子彈變多，就補上顯示物件。
     while (projectileObjects.size() < projectiles.size()) {
         std::shared_ptr<Util::GameObject> projectileObject = std::make_shared<Util::GameObject>();
         projectileObject->SetZIndex(kProjectileZIndex);
@@ -388,11 +461,13 @@ void GameSession::updateProjectileDisplay() {
         projectileObjects.push_back(projectileObject);
     }
 
+    // 3) 如果子彈變少，就移除多出來的顯示物件。
     while (projectileObjects.size() > projectiles.size()) {
         projectileRoot.RemoveChild(projectileObjects.back());
         projectileObjects.pop_back();
     }
 
+    // 4) 逐一同步子彈縮放與世界座標。
     for (std::size_t i = 0; i < projectiles.size(); ++i) {
         const TowerManager::Projectile& projectile = projectiles[i];
         const std::shared_ptr<Util::GameObject>& projectileObject = projectileObjects[i];
@@ -406,21 +481,24 @@ void GameSession::updateProjectileDisplay() {
     }
 }
 
-// ★ 加上 NOLINT 標籤，讓 IDE 忽略 const 轉換警告
 // NOLINTNEXTLINE(readability-make-member-function-const)
 void GameSession::updateHudDisplay() {
+    // 1) 如果 HUD 物件尚未建立完成，就先不更新。
     if (!towerHpText || !goldText || !towerHpIconObject || !goldIconObject || !towerHpTextObject || !goldTextObject) return;
 
+    // 2) 更新基地生命、金幣與波次文字。
     towerHpText->SetText("基地生命: " + std::to_string(baseHp));
     goldText->SetText("金幣: " + std::to_string(gold));
     const int displayWave = (waveCount % static_cast<int>(baseSpawnSchedule.size())) + 1;
     const std::string loopStr = loopCount > 0 ? " (循環 " + std::to_string(loopCount + 1) + ")" : "";
     waveText->SetText("波次: " + std::to_string(displayWave) + loopStr);
 
+    // 3) 取得目前視窗大小，HUD 使用螢幕中心座標系定位。
     const std::shared_ptr<Core::Context> context = Core::Context::GetInstance();
     const float halfWindowWidth = static_cast<float>(context->GetWindowWidth()) * 0.5F;
     const float halfWindowHeight = static_cast<float>(context->GetWindowHeight()) * 0.5F;
 
+    // 4) 取得圖片與文字尺寸，後面用來讓圖示和文字對齊。
     const glm::vec2 towerIconSize = atlasLoader->getImage("icon-heart")->GetSize();
     const glm::vec2 goldIconSize = atlasLoader->getImage("icon-coins")->GetSize();
     const glm::vec2 waveIconSize = atlasLoader->getImage("icon-flag")->GetSize();
@@ -430,6 +508,7 @@ void GameSession::updateHudDisplay() {
 
     const float topY = halfWindowHeight - kHudPadding;
 
+    // 5) 左上角顯示基地生命。
     towerHpIconObject->m_Transform.translation = {
         -halfWindowWidth + kHudPadding + towerIconSize.x * kHudIconScale * 0.5F,
         topY - towerIconSize.y * kHudIconScale * 0.5F
@@ -439,6 +518,7 @@ void GameSession::updateHudDisplay() {
         topY - towerTextSize.y * 0.5F
     };
 
+    // 6) 右上角顯示金幣。
     goldTextObject->m_Transform.translation = {
         halfWindowWidth - kHudPadding - goldTextSize.x * 0.5F,
         topY - goldTextSize.y * 0.5F
@@ -448,7 +528,7 @@ void GameSession::updateHudDisplay() {
         topY - goldIconSize.y * kHudIconScale * 0.5F
     };
 
-    // 置中顯示波次
+    // 7) 上方置中顯示目前波次。
     waveTextObject->m_Transform.translation = {
         0.0F,
         topY - waveTextSize.y * 0.5F
@@ -460,19 +540,31 @@ void GameSession::updateHudDisplay() {
 }
 
 void GameSession::spawnDebugEnemy(EnemyTypeId enemyTypeId, const std::vector<int>& spawnPointIndices) const {
+    // 1) 取得指定敵人類型的設定。
     const EnemyTypeConfig& config = getEnemyTypeConfig(enemyTypeId);
-    enemyManager->spawnEnemiesAt(spawnPointIndices, config.speed, config.moveType, config.maxHealth, config.damageToBase, config.rewardGold, config.spriteId);
+
+    // 2) 直接在指定出生點生成敵人，方便測試地圖路徑與戰鬥。
+    enemyManager->spawnEnemiesAt(
+        spawnPointIndices,
+        config.speed,
+        config.moveType,
+        config.maxHealth,
+        config.damageToBase,
+        config.rewardGold,
+        config.spriteId
+    );
 }
 
 // -------------------- 無限循環邏輯 --------------------
 void GameSession::beginNextLoop() {
+    // 1) 完成一輪後，累加循環次數。
     loopCount += 1;
 
-    // 強化倍率：每循環一次血量 ×1.2、速度 ×1.1
+    // 2) 設定每循環一次的強化倍率：血量 x1.2、速度 x1.1。
     static constexpr float kHpScale   = 1.2F;
     static constexpr float kSpdScale  = 1.1F;
 
-    // 根據累積循環次數計算倍率（從原始配置重新計算，避免浮點誤差累積）
+    // 3) 根據累積循環次數計算倍率，從 1.0 重新乘起避免誤差累積。
     float hpMult  = 1.0F;
     float spdMult = 1.0F;
     for (int i = 0; i < loopCount; ++i) {
@@ -480,7 +572,7 @@ void GameSession::beginNextLoop() {
         spdMult *= kSpdScale;
     }
 
-    // 從 baseSpawnSchedule 重新生成強化後的 spawnSchedule
+    // 4) 從原始波次重新生成本輪 spawnSchedule，並套用本輪倍率。
     spawnSchedule = baseSpawnSchedule;
     for (WaveConfig& wave : spawnSchedule) {
         for (SpawnGroup& group : wave.groups) {
@@ -489,7 +581,7 @@ void GameSession::beginNextLoop() {
         }
     }
 
-    // 重置波次計數，開始新一輪
+    // 5) 重置波次與 group 計時狀態，從新一輪第一波開始。
     waveCount   = 0;
     groupIndex  = 0;
     groupSpawned = 0;
