@@ -27,12 +27,25 @@ GameSession::GameSession(int levelNumber)
     towerManager = std::make_unique<TowerManager>(*map);
 
     // 預載所有敵人圖片，避免第一次生成敵人時才讀圖造成卡頓。
-    static constexpr std::array<EnemyTypeId, 5> preloadEnemyTypes = {
+    static constexpr std::array<EnemyTypeId, 18> preloadEnemyTypes = {
         EnemyTypeId::Regular,
         EnemyTypeId::Fast,
         EnemyTypeId::Strong,
         EnemyTypeId::Heli,
-        EnemyTypeId::Jet
+        EnemyTypeId::Jet,
+        EnemyTypeId::Armored,
+        EnemyTypeId::Healer,
+        EnemyTypeId::Toxic,
+        EnemyTypeId::Icy,
+        EnemyTypeId::Fighter,
+        // EnemyTypeId::Mage,
+        // EnemyTypeId::Camole,
+        // EnemyTypeId::Drone,
+        // EnemyTypeId::Boss,
+        // EnemyTypeId::BossHealer,
+        // EnemyTypeId::BossArmored,
+        // EnemyTypeId::Queen,
+        // EnemyTypeId::Tank
     };
     for (EnemyTypeId enemyTypeId : preloadEnemyTypes) {
         const EnemyTypeConfig& config = getEnemyTypeConfig(enemyTypeId);

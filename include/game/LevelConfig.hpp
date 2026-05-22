@@ -35,7 +35,7 @@ struct WaveConfig {
 // -------------------- 單關配置 --------------------
 // 說明：POC 階段先用靜態資料表，後續可平滑改為讀檔。
 struct LevelConfig {
-  int levelNumber = 3;           // 關卡編號
+  int levelNumber = 1;           // 關卡編號
   std::string mapPath;           // 地圖檔路徑（例如 assets/maps/map_01.csv）
   int baseHp = 20;               // 本關基地初始血量
   int startingGold = 150;        // 本關初始金幣
@@ -138,6 +138,77 @@ inline const std::vector<LevelConfig> kLevelConfigs = {
            {EnemyTypeId::Armored, 4, 0.5F, 1.00F, {}},
            {EnemyTypeId::Regular, 4, 0.0F, 0.60F, {}},
            {EnemyTypeId::Strong, 4, 0.3F, 0.70F, {}},
+       }},
+      // W2
+      {2,
+       false,
+       4.0F,
+       30,
+       {
+           {EnemyTypeId::Strong, 10, 0.0F, 1.60F, {}},
+           {EnemyTypeId::Fast, 10, 0.5F, 1.6F, {}},
+           {EnemyTypeId::Heli, 6, 0.0F, 1.20F, {}},
+           {EnemyTypeId::Regular, 8, 0.5F, 0.75F, {}},
+           {EnemyTypeId::Armored, 6, 1.0F, 1.00F, {}},
+       }},
+      // W3
+      {3,
+       false,
+       4.0F,
+       35,
+       {
+           {EnemyTypeId::Strong, 20, 0.0F, 1.60F, {}},
+           {EnemyTypeId::Fast, 20, 0.5F, 1.6F, {}},
+           {EnemyTypeId::Heli, 20, 0.0F, 1.20F, {}},
+           {EnemyTypeId::Regular, 20, 0.5F, 0.75F, {}},
+           {EnemyTypeId::Armored, 20, 1.0F, 1.00F, {}},
+       }},
+      // W4
+      {4,
+       false,
+       5.0F,
+       40,
+       {{EnemyTypeId::Armored, 100, 0.0F, 0.4F, {}},
+        {EnemyTypeId::Strong, 100, 0.0F, 0.50F, {}},
+        {EnemyTypeId::Fast, 100, 0.0F, 0.1F, {}},
+        {EnemyTypeId::Heli, 100, 0.0F, 0.6F, {}},
+        {EnemyTypeId::Regular, 100, 0.0F, 0.3F, {}},
+        {EnemyTypeId::Jet, 100, 0.0F, 0.2F, {}}}},
+        // W5
+      {5,
+       false,
+       5.0F,
+       40,
+       {{EnemyTypeId::Armored, 100, 0.0F, 0.04F, {}},
+        {EnemyTypeId::Strong, 100, 0.0F, 0.050F, {}},
+        {EnemyTypeId::Fast, 100, 0.0F, 0.01F, {}},
+        {EnemyTypeId::Heli, 100, 0.0F, 0.06F, {}},
+        {EnemyTypeId::Regular, 100, 0.0F, 0.03F, {}},
+        {EnemyTypeId::Jet, 100, 0.0F, 0.02F, {}}}},
+      // W6
+      {6,
+       false,
+       5.0F,
+       50,
+       {{EnemyTypeId::Armored,500, 0.0F, 0.05F, {}},
+        {EnemyTypeId::Strong, 500, 0.0F, 0.050F, {}},
+        {EnemyTypeId::Fast, 500, 0.0F, 0.005F, {}},
+        {EnemyTypeId::Heli, 500, 0.0F, 0.06F, {}},
+        {EnemyTypeId::Regular, 500, 0.0F, 0.04F, {}},
+        {EnemyTypeId::Jet, 500, 0.0F, 0.025F, {}}}}}},
+        // -------------------- Level 3：飢腸轆轆的貪婪章魚鮑勃 --------------------
+    {// 現在你手上只有200元
+     4,
+     "assets/maps/map_04.csv",
+     100,
+     200,
+     {// W1
+      {1,
+       false,
+       4.0F,
+       30,
+       {
+           {EnemyTypeId::Regular,10,0.00f,1.00f,{}}
        }},
       // W2
       {2,

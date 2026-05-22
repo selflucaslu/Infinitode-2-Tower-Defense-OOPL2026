@@ -19,7 +19,7 @@ void App::Start() {
   (void)getAllLevelConfigs();
 
   // 建立最簡單單局（地圖 + 基地血量 + 波次）
-  m_GameSession = std::make_unique<GameSession>(3);
+  m_GameSession = std::make_unique<GameSession>(4);////////////切關卡///////////////
   m_GameSession->startSession();
 
   // 建立 FPS 顯示
