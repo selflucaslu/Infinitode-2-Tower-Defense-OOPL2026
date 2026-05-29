@@ -11,8 +11,8 @@
 // -------------------- 建立單局 --------------------
 GameSession::GameSession(int levelNumber)
     : isSessionActive(false), timer(0.0F), waveTimer(0.0F), groupTimer(0.0F),
-      baseHp(0), gold(0), waveCount(0), groupIndex(0), groupSpawned(0),
-      loopCount(0) {
+      levelNumber(levelNumber), baseHp(0), gold(0), waveCount(0), groupIndex(0),
+      groupSpawned(0), loopCount(0), levelCompleted(false) {
 
     // 先載入圖集，再建立地圖。
     atlasLoader = std::make_unique<AtlasLoader>();
@@ -218,6 +218,8 @@ bool GameSession::isBaseAlive() const { return baseHp > 0; }
 int GameSession::getWave() const { return waveCount; }
 void GameSession::setWave(int newWave) { waveCount = newWave; }
 void GameSession::nextWave() { waveCount += 1; }
+int GameSession::getLevelNumber() const { return levelNumber; }
+bool GameSession::isLevelCompleted() const { return levelCompleted; }
 
 // -------------------- 每幀流程 --------------------
 void GameSession::update(float deltaTime) {
@@ -248,10 +250,15 @@ void GameSession::update(float deltaTime) {
     applyBaseDamage(frameResult.reachedGoalDamage);
     addGold(frameResult.killedRewardGold);
 
-    // 6) 基地血量歸零就暫停本局。
+    // 6) 基地血量歸零就暫停本局；若已進入無限循環，死亡後換下一關。
     if (!isBaseAlive()) {
+        if (loopCount > 0 && hasNextLevel()) {
+            levelCompleted = true;
+            LOG_INFO("[Session] Level {} endless run ended, loading next level", levelNumber);
+        } else {
+            LOG_INFO("[Session] Game Over");
+        }
         pauseSession();
-        LOG_INFO("[Session] Game Over");
         return;
     }
 
@@ -270,8 +277,14 @@ void GameSession::update(float deltaTime) {
         }
     } else if (waveCount >= static_cast<int>(spawnSchedule.size()) &&
                enemyManager->getEnemies().empty()) {
-        // 8) 所有波次完成且場上無敵人，就開始下一輪循環。
-        beginNextLoop();
+        // 8) 第一關沒有無限循環；其他關卡保留原本無限強化倍率流程。
+        if (levelNumber == 1 && hasNextLevel()) {
+            levelCompleted = true;
+            pauseSession();
+            LOG_INFO("[Session] Level {} completed", levelNumber);
+        } else {
+            beginNextLoop();
+        }
     }
 }
 
@@ -323,6 +336,7 @@ void GameSession::initSession() {
     waveCount = 0;
     groupIndex = 0;
     groupSpawned = 0;
+    levelCompleted = false;
 
     // 3) 回到第一輪，並把 spawnSchedule 還原成原始波次設定。
     loopCount = 0;
@@ -579,6 +593,16 @@ void GameSession::spawnDebugEnemy(EnemyTypeId enemyTypeId, const std::vector<int
         config.rewardGold,
         config.spriteId
     );
+}
+
+bool GameSession::hasNextLevel() const {
+    const int nextLevelNumber = levelNumber + 1;
+    for (const LevelConfig& levelConfig : getAllLevelConfigs()) {
+        if (levelConfig.levelNumber == nextLevelNumber) {
+            return true;
+        }
+    }
+    return false;
 }
 
 // -------------------- 無限循環邏輯 --------------------

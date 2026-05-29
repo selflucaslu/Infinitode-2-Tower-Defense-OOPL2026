@@ -147,6 +147,14 @@ void App::Update() {
 
     // 每幀順序：先更新邏輯狀態，再將結果渲染到螢幕
     m_GameSession->update(simDeltaTime);
+    if (m_GameSession->isLevelCompleted()) {
+      const int nextLevelNumber = m_GameSession->getLevelNumber() + 1;
+      LOG_INFO("Loading level {}", nextLevelNumber);
+      m_GameSession = std::make_unique<GameSession>(nextLevelNumber);
+      m_SelectedTower = TowerId::Basic;
+      m_GameSession->setSelectedTower(m_SelectedTower);
+      m_GameSession->startSession();
+    }
     m_GameSession->display();
 
     if (m_FpsOverlay) {
