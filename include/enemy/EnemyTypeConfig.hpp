@@ -18,9 +18,9 @@ enum class EnemyTypeId {
     Heli,
     Jet,
     Armored,
-    // 預留擴充類型（目前未啟用）
     Healer,
     Toxic,
+        // 預留擴充類型（目前未啟用）
     Icy,
     Fighter,
     Light,
@@ -181,6 +181,49 @@ inline const std::array<EnemyTypeConfig, static_cast<int>(EnemyTypeId::Count)> k
         true,
         1.5f,
         0.5f
+
+    },
+    EnemyTypeConfig{
+        EnemyTypeId::Healer,
+        "Healer",
+        "enemy-type-healer",
+        Enemy::MoveType::Ground,
+        60,
+        0.9475F,
+        1,
+        3,
+        0,
+        1.0f,
+        false,
+        1.0f,
+        0.5f,
+        true,
+        1.5f,
+        0.05f
+
+    },
+    {
+        EnemyTypeId::Toxic,
+        "Toxic",
+        "enemy-type-toxic",
+        Enemy::MoveType::Ground,
+        70,
+        1.0001F,
+        1,
+        3,
+        0,
+        1.0f,
+        false,
+        1.0f,
+        0.5f,
+        false,
+        0.0f,
+        0.0f,
+        true,
+        3.0f,
+        0.03f,
+    },
+    {
 
     }
 }};
