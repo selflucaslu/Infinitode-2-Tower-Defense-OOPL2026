@@ -208,7 +208,8 @@ inline const std::vector<LevelConfig> kLevelConfigs = {
        4.0F,
        30,
        {
-           {EnemyTypeId::Regular,10,0.00f,1.00f,{}}
+           {EnemyTypeId::Regular,10,0.00f,1.00f,{}},
+           {EnemyTypeId::Icy,2,0.0f,1.0f,{}}
        }},
        {2,
        false,
@@ -242,6 +243,8 @@ inline const std::vector<LevelConfig> kLevelConfigs = {
           {EnemyTypeId::Fast,5,0.0f,1.00f,{}},
           {EnemyTypeId::Heli,10,0.0f,1.00f,{}},
           {EnemyTypeId::Jet,5,0.0f,1.00f,{}},
+          {EnemyTypeId::Toxic,2,0.0f,1.0f,{}},
+          {EnemyTypeId::Icy,2,0.0f,1.0f,{}}
         }
       },
       {
@@ -259,7 +262,9 @@ inline const std::vector<LevelConfig> kLevelConfigs = {
           {EnemyTypeId::Fighter,5,0.0f,1.0f,{}},
           {EnemyTypeId::Fast,5,0.0f,1.00f,{}},
           {EnemyTypeId::Heli,10,0.0f,1.00f,{}},
-          {EnemyTypeId::Jet,5,0.0f,1.00f,{}}
+          {EnemyTypeId::Jet,5,0.0f,1.00f,{}},
+          {EnemyTypeId::Toxic,5,0.0f,1.0f,{}},
+          {EnemyTypeId::Icy,5,0.0f,1.0f,{}}
         }
       },
       
