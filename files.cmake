@@ -1,6 +1,7 @@
 set(SRC_FILES
     App.cpp
     game/GameSession.cpp
+    ui/Home.cpp
     utils/AtlasLoader.cpp
     utils/FpsOverlay.cpp
     utils/TowerSelectionPanel.cpp
@@ -18,6 +19,7 @@ set(INCLUDE_FILES
     App.hpp
     game/GameSession.hpp
     game/LevelConfig.hpp
+    ui/Home.hpp
     utils/AtlasLoader.hpp
     utils/FpsOverlay.hpp
     utils/TowerSelectionPanel.hpp
