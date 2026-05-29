@@ -67,17 +67,7 @@ inline const std::vector<LevelConfig> kLevelConfigs = {
        4.0F,
        30,
        {{EnemyTypeId::Strong, 6, 0.0F, 1.20F, {}},
-        {EnemyTypeId::Regular, 8, 0.8F, 0.85F, {}}}},
-      // W4
-      {4, false, 4.0F, 35, {{EnemyTypeId::Fast, 14, 0.0F, 0.50F, {}}}},
-      // W5
-      {5,
-       false,
-       5.0F,
-       40,
-       {{EnemyTypeId::Strong, 8, 0.0F, 1.10F, {}},
-        {EnemyTypeId::Regular, 10, 0.8F, 0.75F, {}},
-        {EnemyTypeId::Fast, 6, 3.0F, 0.55F, {}}}}}},
+        {EnemyTypeId::Regular, 8, 0.8F, 0.85F, {}}}}}},
 
     // -------------------- Level 2：對空檢查關 --------------------
     {2,
