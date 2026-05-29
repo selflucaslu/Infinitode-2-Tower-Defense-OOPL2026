@@ -18,18 +18,43 @@ void App::Start() {
   // 若配置有錯，會丟出例外，由 main 的全域 catch 統一記錄並結束。
   (void)getAllLevelConfigs();
 
-  // 建立最簡單單局（地圖 + 基地血量 + 波次）
-  m_GameSession = std::make_unique<GameSession>(4);////////////切關卡///////////////
-  m_GameSession->startSession();
+  // MVP 首頁只負責開始遊戲與離開，真正進入遊戲時才建立 GameSession。
+  m_Home = std::make_unique<Home>();
 
   // 建立 FPS 顯示
   m_FpsOverlay = std::make_unique<FpsOverlay>();
 
-  m_CurrentState = State::UPDATE;
+  m_CurrentState = State::HOME;
 }
 
 // -------------------- 每幀更新 --------------------
 void App::Update() {
+  if (m_CurrentState == State::HOME) {
+    if (m_Home) {
+      const HomeAction action = m_Home->update();
+      m_Home->display();
+
+      if (action == HomeAction::StartGame) {
+        m_GameSession = std::make_unique<GameSession>(1);
+        m_GameSession->startSession();
+        m_CurrentState = State::GAME;
+      } else if (action == HomeAction::Quit) {
+        m_CurrentState = State::END;
+      }
+    }
+
+    if (m_FpsOverlay) {
+      const float rawDeltaTime = Util::Time::GetDeltaTimeMs() * 0.001F;
+      m_FpsOverlay->update(rawDeltaTime);
+      m_FpsOverlay->display();
+    }
+
+    if (Util::Input::IsKeyUp(Util::Keycode::ESCAPE) || Util::Input::IfExit()) {
+      m_CurrentState = State::END;
+    }
+    return;
+  }
+
   // 切換塔種類（數字鍵 1 / 2 / 3）
   if (Util::Input::IsKeyDown(Util::Keycode::NUM_1)) m_SelectedTower = TowerId::Basic;
   if (Util::Input::IsKeyDown(Util::Keycode::NUM_2)) m_SelectedTower = TowerId::Sniper;

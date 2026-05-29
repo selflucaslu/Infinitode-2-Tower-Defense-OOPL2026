@@ -19,7 +19,8 @@ int main(int, char**) {
                     app.Start();
                     break;
 
-                case App::State::UPDATE:
+                case App::State::HOME:
+                case App::State::GAME:
                     app.Update();
                     break;
 
