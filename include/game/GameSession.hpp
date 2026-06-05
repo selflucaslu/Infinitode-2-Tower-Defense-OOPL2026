@@ -10,6 +10,7 @@
 #include "Util/Renderer.hpp"
 #include "Util/Text.hpp"
 #include "game/LevelConfig.hpp"
+#include "utils/FpsOverlay.hpp"
 #include "utils/TowerSelectionPanel.hpp"
 
 #include <memory>
@@ -57,6 +58,7 @@ public:
 
     // -------------------- 每幀流程 --------------------
     void update(float deltaTime);
+    void update(float deltaTime, float rawDeltaTime);
     void display();
 
     // 修正 Clang-Tidy：加上 const
@@ -103,6 +105,7 @@ private:
     std::shared_ptr<Util::GameObject> waveTextObject;
     std::shared_ptr<Util::Text> waveText;
     std::unique_ptr<TowerSelectionPanel> m_SelectionPanel; // 選塔面板（右下角格子）
+    std::unique_ptr<FpsOverlay> m_FpsOverlay; // FPS 顯示工具（只在遊戲畫面顯示）
     static constexpr float kTowerScale = 0.45F;
     static constexpr float kTowerBaseZIndex = 1.5F;
     static constexpr float kTowerWeaponZIndex = 1.6F;
