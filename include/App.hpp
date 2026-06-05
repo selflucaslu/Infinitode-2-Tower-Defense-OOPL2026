@@ -3,7 +3,6 @@
 
 #include "game/GameSession.hpp"
 #include "pch.hpp" // IWYU pragma: export
-#include "utils/FpsOverlay.hpp"
 #include "tower/TowerDef.hpp"
 #include "ui/Home.hpp"
 
@@ -34,7 +33,6 @@ private:
     State m_CurrentState = State::START; // App 流程狀態
     std::unique_ptr<Home> m_Home; // 首頁
     std::unique_ptr<GameSession> m_GameSession; // 本局執行期資料
-    std::unique_ptr<FpsOverlay> m_FpsOverlay; // FPS 顯示工具
     TowerId m_SelectedTower = TowerId::Basic; // 目前選中的塔種類
 };
 

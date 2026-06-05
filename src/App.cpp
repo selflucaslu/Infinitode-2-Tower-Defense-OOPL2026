@@ -21,9 +21,6 @@ void App::Start() {
   // MVP 首頁只負責開始遊戲與離開，真正進入遊戲時才建立 GameSession。
   m_Home = std::make_unique<Home>();
 
-  // 建立 FPS 顯示
-  m_FpsOverlay = std::make_unique<FpsOverlay>();
-
   m_CurrentState = State::HOME;
 }
 
@@ -41,12 +38,6 @@ void App::Update() {
       } else if (action == HomeAction::Quit) {
         m_CurrentState = State::END;
       }
-    }
-
-    if (m_FpsOverlay) {
-      const float rawDeltaTime = Util::Time::GetDeltaTimeMs() * 0.001F;
-      m_FpsOverlay->update(rawDeltaTime);
-      m_FpsOverlay->display();
     }
 
     if (Util::Input::IsKeyUp(Util::Keycode::ESCAPE) || Util::Input::IfExit()) {
@@ -146,7 +137,7 @@ void App::Update() {
     }
 
     // 每幀順序：先更新邏輯狀態，再將結果渲染到螢幕
-    m_GameSession->update(simDeltaTime);
+    m_GameSession->update(simDeltaTime, rawDeltaTime);
     if (m_GameSession->isLevelCompleted()) {
       const int nextLevelNumber = m_GameSession->getLevelNumber() + 1;
       LOG_INFO("Loading level {}", nextLevelNumber);
@@ -156,11 +147,6 @@ void App::Update() {
       m_GameSession->startSession();
     }
     m_GameSession->display();
-
-    if (m_FpsOverlay) {
-      m_FpsOverlay->update(rawDeltaTime);
-      m_FpsOverlay->display();
-    }
   }
 
   // 當按下 ESC 或視窗關閉時進入結束流程

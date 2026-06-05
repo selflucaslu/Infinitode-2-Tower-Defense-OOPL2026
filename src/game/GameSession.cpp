@@ -133,6 +133,9 @@ GameSession::GameSession(int levelNumber)
 
     // 建立選塔面板（必須在 atlasLoader 內容完成後）
     m_SelectionPanel = std::make_unique<TowerSelectionPanel>(*atlasLoader);
+
+    // 建立 FPS 顯示，只由遊戲畫面負責更新與繪製。
+    m_FpsOverlay = std::make_unique<FpsOverlay>();
 }
 
 // -------------------- 地圖存取 --------------------
@@ -223,6 +226,12 @@ bool GameSession::isLevelCompleted() const { return levelCompleted; }
 
 // -------------------- 每幀流程 --------------------
 void GameSession::update(float deltaTime) {
+    update(deltaTime, deltaTime);
+}
+
+void GameSession::update(float deltaTime, float rawDeltaTime) {
+    if (m_FpsOverlay) { m_FpsOverlay->update(rawDeltaTime); }
+
     // 1) 暫停時不推進遊戲，只維持畫面物件與 HUD 的位置正確。
     if (!isSessionActive) {
         enemyManager->updateEnemyDisplay(map->getOffsetX(), map->getOffsetY(), map->getCurrentScale());
@@ -310,6 +319,9 @@ void GameSession::display() {
 
     // 6) 選塔面板最後繪製，確保右下角操作介面永遠在最上層。
     if (m_SelectionPanel) { m_SelectionPanel->display(); }
+
+    // 7) FPS 疊圖只在 GameSession 畫面出現。
+    if (m_FpsOverlay) { m_FpsOverlay->display(); }
 }
 
 void GameSession::moveCamera(float dx, float dy) const {
