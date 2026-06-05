@@ -20,7 +20,7 @@
 class GameSession {
 public:
     // -------------------- 建立與生命週期 --------------------
-    GameSession(int levelNumber = 1);
+    GameSession(int levelNumber = 4);
 
     // -------------------- 地圖與敵人管理 --------------------
     GridMap& getMap();
