@@ -275,7 +275,27 @@ inline const std::vector<LevelConfig> kLevelConfigs = {
              {EnemyTypeId::Regular,1,0.00f,1.00f,{}},
              {EnemyTypeId::Armored,1,0.00f,1.0f,{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99}},
              {EnemyTypeId::Healer,1,0.0f,1.0f,{25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74}}
-         }}
+         }},
+         {
+          2,
+          false,
+          4.0f,
+          30,
+          {
+            {EnemyTypeId::Regular,100,0.0f,1.00f,{0}},
+            {EnemyTypeId::Armored,100,0.0f,1.00f,{1}},
+            {EnemyTypeId::Healer,100,0.0f,1.00f,{2}},
+            {EnemyTypeId::Fast,100,0.0f,1.00f,{3}},
+            {EnemyTypeId::Regular,100,0.0f,1.00f,{4}},
+            {EnemyTypeId::Jet,100,0.0f,1.0f,{}},
+            {EnemyTypeId::Fighter,100,0.0f,1.0f,{}},
+            {EnemyTypeId::Fast,100,0.0f,1.00f,{}},
+            {EnemyTypeId::Heli,100,0.0f,1.00f,{}},
+            {EnemyTypeId::Jet,100,0.0f,1.00f,{}},
+            {EnemyTypeId::Toxic,100,0.0f,1.0f,{}},
+            {EnemyTypeId::Icy,100,0.0f,1.0f,{}}
+          }
+         }
       }
     }
 
