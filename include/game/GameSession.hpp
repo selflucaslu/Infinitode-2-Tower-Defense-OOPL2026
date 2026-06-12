@@ -74,6 +74,7 @@ public:
     void dispatchEnemiesByTimer();
 
     // -------------------- 測試入口 --------------------
+    void showPassedLevelButton();
     // 修正 Clang-Tidy：加上 const
     void spawnDebugEnemy(
         EnemyTypeId enemyTypeId,
