@@ -20,10 +20,10 @@ enum class EnemyTypeId {
     Armored,
     Healer,
     Toxic,
-        // 預留擴充類型（目前未啟用）
     Icy,
     Fighter,
     Light,
+    // 預留擴充類型（目前未啟用）
     Broot,
     Count
 };

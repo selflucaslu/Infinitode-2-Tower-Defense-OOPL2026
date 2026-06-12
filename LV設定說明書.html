@@ -1,0 +1,1571 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Infinitode 2 Tower Defense 關卡設定開發說明書</title>
+    <meta name="description" content="本說明書詳細介紹了 Infinitode 2 Tower Defense 遊戲的關卡配置系統，包含 LevelConfig, WaveConfig, SpawnGroup 等結構的設定方式、地圖起點索引規則以及 C++ 程式碼產生器。">
+    
+    <!-- 引入現代字型 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        /* CSS 變數定義，使用 HSL 精選暗色系與霓虹漸層 */
+        :root {
+            --bg-color: #0b0f19;
+            --panel-bg: #111827;
+            --panel-header: #1f2937;
+            --border-color: #374151;
+            --text-primary: #f3f4f6;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+            
+            --primary: #00f0ff;
+            --primary-glow: rgba(0, 240, 255, 0.15);
+            --secondary: #a855f7;
+            --accent-green: #10b981;
+            --accent-amber: #f59e0b;
+            --accent-red: #ef4444;
+            --accent-pink: #ec4899;
+            
+            --sidebar-width: 280px;
+            --transition-speed: 0.3s;
+        }
+
+        /* 基礎樣式重置與設定 */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            line-height: 1.6;
+            display: flex;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* 側邊導覽列 */
+        aside {
+            width: var(--sidebar-width);
+            background-color: var(--panel-bg);
+            border-right: 1px solid var(--border-color);
+            padding: 2rem 1.5rem;
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .brand-container {
+            margin-bottom: 2.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .brand-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.4rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 0.05em;
+        }
+
+        .brand-subtitle {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            margin-top: 0.25rem;
+        }
+
+        .nav-menu {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .nav-item a {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            border-radius: 8px;
+            transition: all var(--transition-speed) ease;
+            border-left: 3px solid transparent;
+        }
+
+        .nav-item a:hover {
+            background-color: rgba(255, 255, 255, 0.03);
+            color: var(--primary);
+            padding-left: 1.25rem;
+        }
+
+        .nav-item.active a {
+            background-color: var(--primary-glow);
+            color: var(--primary);
+            border-left-color: var(--primary);
+            font-weight: 600;
+        }
+
+        .footer-note {
+            margin-top: auto;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-align: center;
+            padding-top: 2rem;
+        }
+
+        /* 主要內容區域 */
+        main {
+            margin-left: var(--sidebar-width);
+            flex: 1;
+            padding: 3rem 4rem;
+            max-width: 1200px;
+            overflow-y: auto;
+        }
+
+        /* 區塊標題 */
+        header {
+            margin-bottom: 4rem;
+            position: relative;
+        }
+
+        h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.8rem;
+            font-weight: 800;
+            color: #fff;
+            margin-bottom: 1rem;
+            letter-spacing: -0.02em;
+            background: linear-gradient(to right, #ffffff, #9ca3af);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .lead-text {
+            font-size: 1.15rem;
+            color: var(--text-secondary);
+            max-width: 800px;
+        }
+
+        section {
+            margin-bottom: 5rem;
+            scroll-margin-top: 2rem;
+        }
+
+        h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.5rem;
+        }
+
+        h2::before {
+            content: '';
+            display: inline-block;
+            width: 4px;
+            height: 1.8rem;
+            background: linear-gradient(to bottom, var(--primary), var(--secondary));
+            border-radius: 4px;
+        }
+
+        h3 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.3rem;
+            color: var(--primary);
+            margin: 2rem 0 1rem 0;
+        }
+
+        p {
+            color: var(--text-secondary);
+            margin-bottom: 1.25rem;
+            font-size: 1rem;
+        }
+
+        strong {
+            color: #fff;
+        }
+
+        /* 高光標記 */
+        .highlight-badge {
+            background-color: var(--primary-glow);
+            color: var(--primary);
+            padding: 0.1rem 0.4rem;
+            border-radius: 4px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9em;
+        }
+
+        /* 卡片與資訊面板 */
+        .card {
+            background-color: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.75rem;
+            margin-bottom: 1.5rem;
+            transition: transform var(--transition-speed) ease, border-color var(--transition-speed) ease;
+        }
+
+        .card:hover {
+            border-color: rgba(0, 240, 255, 0.4);
+            transform: translateY(-2px);
+        }
+
+        /* 警告與通知框 */
+        .alert-box {
+            border-radius: 10px;
+            padding: 1.25rem 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            gap: 1rem;
+            align-items: flex-start;
+            border-left: 4px solid transparent;
+        }
+
+        .alert-box.info {
+            background-color: rgba(59, 130, 246, 0.08);
+            border-left-color: #3b82f6;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-left-width: 4px;
+        }
+
+        .alert-box.warning {
+            background-color: rgba(245, 158, 11, 0.08);
+            border-left-color: var(--accent-amber);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            border-left-width: 4px;
+        }
+
+        .alert-box.danger {
+            background-color: rgba(239, 68, 68, 0.08);
+            border-left-color: var(--accent-red);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            border-left-width: 4px;
+        }
+
+        .alert-title {
+            font-weight: 700;
+            font-size: 0.95rem;
+            margin-bottom: 0.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .alert-box.info .alert-title { color: #60a5fa; }
+        .alert-box.warning .alert-title { color: #fbbf24; }
+        .alert-box.danger .alert-title { color: #f87171; }
+
+        .alert-content {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        /* 表格樣式 */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            background-color: var(--panel-bg);
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        th {
+            background-color: var(--panel-header);
+            color: #fff;
+            text-align: left;
+            padding: 1rem 1.25rem;
+            font-weight: 600;
+            font-size: 0.95rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        td {
+            padding: 1rem 1.25rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background-color: rgba(255, 255, 255, 0.01);
+            color: #fff;
+        }
+
+        /* 程式碼區塊樣式 */
+        pre {
+            background-color: #030712;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.25rem;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+        }
+
+        code {
+            font-family: 'Fira Code', 'Courier New', Courier, monospace;
+            font-size: 0.9rem;
+            color: #e5e7eb;
+        }
+
+        /* 程式碼關鍵字高亮 */
+        .code-keyword { color: #ff7b72; font-weight: bold; }
+        .code-type { color: #79c0ff; }
+        .code-string { color: #a5d6ff; }
+        .code-number { color: #d2a8ff; }
+        .code-comment { color: #8b949e; font-style: italic; }
+
+        /* 起點索引說明特製圖形 */
+        .spawn-demo-container {
+            display: flex;
+            gap: 2rem;
+            margin: 2rem 0;
+            flex-wrap: wrap;
+        }
+
+        .spawn-grid {
+            background-color: #1f2937;
+            border: 2px solid var(--border-color);
+            padding: 1rem;
+            border-radius: 10px;
+            display: grid;
+            grid-template-columns: repeat(5, 50px);
+            grid-template-rows: repeat(4, 50px);
+            gap: 5px;
+            justify-content: center;
+            align-content: center;
+            width: fit-content;
+        }
+
+        .grid-cell {
+            background-color: #374151;
+            border-radius: 4px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: #9ca3af;
+            position: relative;
+        }
+
+        .grid-cell.spawn {
+            background: linear-gradient(135deg, var(--primary), #0284c7);
+            color: #000;
+            box-shadow: 0 0 10px var(--primary-glow);
+            border: 1px solid var(--primary);
+        }
+
+        .grid-cell.goal {
+            background: linear-gradient(135deg, var(--secondary), #7c3aed);
+            color: #fff;
+            border: 1px solid var(--secondary);
+        }
+
+        .grid-cell.road {
+            background-color: #4b5563;
+            color: #d1d5db;
+        }
+
+        .grid-cell .coords {
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            font-size: 0.55rem;
+            color: rgba(255, 255, 255, 0.4);
+            font-weight: normal;
+        }
+
+        .spawn-explain {
+            flex: 1;
+            min-width: 300px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .step-list {
+            margin-left: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .step-list li {
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+        }
+
+        /* 互動式產生器 UI */
+        .generator-container {
+            background-color: var(--panel-bg);
+            border: 2px solid var(--primary);
+            border-radius: 16px;
+            padding: 2.5rem;
+            margin-top: 3rem;
+            box-shadow: 0 10px 30px rgba(0, 240, 255, 0.05);
+        }
+
+        .generator-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        @media (max-width: 1024px) {
+            .generator-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .form-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            max-height: 700px;
+            overflow-y: auto;
+            padding-right: 0.5rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        select {
+            background-color: #1f2937;
+            border: 1px solid var(--border-color);
+            color: #fff;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            outline: none;
+            transition: all var(--transition-speed);
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px var(--primary-glow);
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--primary);
+            cursor: pointer;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, var(--primary), #0284c7);
+            color: #000;
+            border: none;
+            padding: 0.75rem 1.25rem;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all var(--transition-speed);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-size: 0.85rem;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px var(--primary-glow);
+            filter: brightness(1.1);
+        }
+
+        .btn-secondary {
+            background: #374151;
+            color: #fff;
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: #4b5563;
+            box-shadow: none;
+        }
+
+        .btn-danger {
+            background: var(--accent-red);
+            color: #fff;
+        }
+
+        .btn-danger:hover {
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+        }
+
+        .wave-item {
+            border: 1px solid var(--border-color);
+            background-color: rgba(255, 255, 255, 0.02);
+            border-radius: 10px;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+            position: relative;
+        }
+
+        .wave-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 0.5rem;
+        }
+
+        .wave-title {
+            font-weight: 700;
+            color: var(--secondary);
+            font-size: 1.1rem;
+        }
+
+        .spawngroup-list {
+            margin-top: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .spawngroup-item {
+            background-color: rgba(0, 0, 0, 0.25);
+            border: 1px dashed var(--border-color);
+            border-radius: 8px;
+            padding: 1rem;
+            position: relative;
+        }
+
+        .spawngroup-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .output-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .code-output-container {
+            position: relative;
+            flex: 1;
+            min-height: 450px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .code-output {
+            background-color: #030712;
+            border: 1px solid var(--border-color);
+            color: #e5e7eb;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85rem;
+            padding: 1.5rem;
+            border-radius: 12px;
+            width: 100%;
+            flex: 1;
+            resize: none;
+            outline: none;
+            overflow-y: auto;
+            box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.5);
+        }
+
+        .code-output:focus {
+            border-color: var(--primary);
+        }
+
+        .copy-success-msg {
+            position: absolute;
+            top: 10px;
+            right: 120px;
+            background-color: var(--accent-green);
+            color: #fff;
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            font-weight: 600;
+        }
+
+        .btn-copy {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 10;
+        }
+
+        /* 滾動條美化 */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-color);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 側邊導覽列 -->
+    <aside id="main-sidebar">
+        <div class="brand-container">
+            <div class="brand-title">INFINITODE 2</div>
+            <div class="brand-subtitle">關卡設定說明書</div>
+        </div>
+        <ul class="nav-menu">
+            <li class="nav-item active" id="nav-intro"><a href="#intro">系統導覽</a></li>
+            <li class="nav-item" id="nav-structs"><a href="#structs">核心結構解析</a></li>
+            <li class="nav-item" id="nav-spawns"><a href="#spawns">起點索引機制</a></li>
+            <li class="nav-item" id="nav-enemies"><a href="#enemies">敵人類型參考表</a></li>
+            <li class="nav-item" id="nav-methods"><a href="#methods">關卡定義實作</a></li>
+            <li class="nav-item" id="nav-generator"><a href="#generator">C++ 程式碼產生器</a></li>
+        </ul>
+        <div class="footer-note">
+            Tower Defense Project © 2026<br>
+            Level Config Guide v1.2
+        </div>
+    </aside>
+
+    <!-- 主要內容區 -->
+    <main>
+        <!-- 頂部 Header -->
+        <header id="intro">
+            <h1>關卡設定開發說明書</h1>
+            <p class="lead-text">
+                本文件旨在指導開發人員如何於 C++ 專案中新增、修改及優化塔防遊戲關卡設定。
+                關卡的配置資料儲存於 <a href="file:///c:/Users/ChengYu/Desktop/wusantafun/Infinitode-2-Tower-Defense-OOPL2026/src/game/LevelConfig.cpp" class="highlight-badge">LevelConfig.cpp</a>，
+                並由頭文件 <a href="file:///c:/Users/ChengYu/Desktop/wusantafun/Infinitode-2-Tower-Defense-OOPL2026/include/game/LevelConfig.hpp" class="highlight-badge">LevelConfig.hpp</a> 定義相關的資料結構。
+            </p>
+        </header>
+
+        <!-- 區塊一：核心結構解析 -->
+        <section id="structs">
+            <h2>核心結構解析</h2>
+            <p>關卡設定採用三層式的巢狀結構：<strong>LevelConfig (關卡) ➔ WaveConfig (波次) ➔ SpawnGroup (刷怪組)</strong>。以下為其詳細的變數屬性說明與設計準則。</p>
+            
+            <!-- LevelConfig -->
+            <div class="card">
+                <h3>1. LevelConfig (關卡配置)</h3>
+                <p>定義單一關卡的全域基本屬性，如關卡編號、地圖檔案路徑、生命值與初始資金等。</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>屬性變數 (型態)</th>
+                            <th>預設值</th>
+                            <th>校驗規則 / 限制條件</th>
+                            <th>功能說明</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong class="highlight-badge">levelNumber</strong> (int)</td>
+                            <td>1</td>
+                            <td>必須大於 0 且在全域中唯一</td>
+                            <td>關卡 ID，UI 上顯示與讀取識別用。</td>
+                        </tr>
+                        <tr>
+                            <td><strong class="highlight-badge">mapPath</strong> (string)</td>
+                            <td>""</td>
+                            <td>路徑不可為空，且 CSV 檔案必須存在</td>
+                            <td>對應的 CSV 地圖檔案路徑，例如 <code class="highlight-badge">"assets/maps/map_01.csv"</code>。</td>
+                        </tr>
+                        <tr>
+                            <td><strong class="highlight-badge">baseHp</strong> (int)</td>
+                            <td>20</td>
+                            <td>必須大於 0</td>
+                            <td>本關玩家基地生命值 (抵達終點的敵人扣減生命值)。</td>
+                        </tr>
+                        <tr>
+                            <td><strong class="highlight-badge">startingGold</strong> (int)</td>
+                            <td>150</td>
+                            <td>無特別限制 (一般大於 0)</td>
+                            <td>開局時玩家所擁有的初始金幣。</td>
+                        </tr>
+                        <tr>
+                            <td><strong class="highlight-badge">waves</strong> (vector)</td>
+                            <td>空</td>
+                            <td>陣列不可為空</td>
+                            <td>該關卡所包含的所有波次列表。</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- WaveConfig -->
+            <div class="card">
+                <h3>2. WaveConfig (波次配置)</h3>
+                <p>定義每個獨立波次的屬性，控制波次倒數時間、獎勵金幣，以及其內包含的多個敵人刷怪組。</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>屬性變數 (型態)</th>
+                            <th>預設值</th>
+                            <th>校驗規則 / 限制條件</th>
+                            <th>功能說明</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong class="highlight-badge">waveNumber</strong> (int)</td>
+                            <td>1</td>
+                            <td>必須大於 0</td>
+                            <td>波次編號 (以 1 開始，作為 UI 上顯示的序號)。</td>
+                        </tr>
+                        <tr>
+                            <td><strong class="highlight-badge">isBossWave</strong> (bool)</td>
+                            <td>false</td>
+                            <td>無</td>
+                            <td>是否為 Boss 波次。可用於觸發特殊的 Boss 關卡警告與 UI 顯示。</td>
+                        </tr>
+                        <tr>
+                            <td><strong class="highlight-badge">prepTime</strong> (float)</td>
+                            <td>3.0F</td>
+                            <td>必須大於或等於 0.0F</td>
+                            <td>波次開始前的準備倒數時間（單位：秒）。倒數完畢後開始出怪。</td>
+                        </tr>
+                        <tr>
+                            <td><strong class="highlight-badge">clearRewardGold</strong> (int)</td>
+                            <td>0</td>
+                            <td>無</td>
+                            <td>完成清空該波所有怪後，額外獎勵給玩家的金幣。</td>
+                        </tr>
+                        <tr>
+                            <td><strong class="highlight-badge">groups</strong> (vector)</td>
+                            <td>空</td>
+                            <td>陣列不可為空</td>
+                            <td>該波次所包含的 SpawnGroup 列表。會依序進行生成。</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- SpawnGroup -->
+            <div class="card">
+                <h3>3. SpawnGroup (刷怪群組)</h3>
+                <p>定義最細緻的生成設定，包含單一種類敵人的數量、刷怪頻率、特定起點以及血量/速度強化倍率。</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>屬性變數 (型態)</th>
+                            <th>預設值</th>
+                            <th>校驗規則 / 限制條件</th>
+                            <th>功能說明</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong class="highlight-badge">type</strong> (EnemyTypeId)</td>
+                            <td>Regular</td>
+                            <td>須為合法的 EnemyTypeId 列舉</td>
+                            <td>生成的敵人種類 (請參考第三節的敵人類型對照表)。</td>
+                        </tr>
+                        <tr>
+                            <td><strong class="highlight-badge">count</strong> (int)</td>
+                            <td>0</td>
+                            <td>必須大於 0</td>
+                            <td>本組敵人的生成個數。</td>
+                        </tr>
+                        <tr>
+                            <td><strong class="highlight-badge">startDelay</strong> (float)</td>
+                            <td>0.0F</td>
+                            <td>必須大於或等於 0.0F</td>
+                            <td>本組第一隻敵人開始生成的延遲時間（單位：秒，相對於波次倒數結束）。</td>
+                        </tr>
+                        <tr>
+                            <td><strong class="highlight-badge">interval</strong> (float)</td>
+                            <td>1.0F</td>
+                            <td>必須大於或等於 0.0F</td>
+                            <td>組內敵人與敵人之間的生成間隔時間（單位：秒）。</td>
+                        </tr>
+                        <tr>
+                            <td><strong class="highlight-badge">spawnPointIndices</strong> (vector&lt;int&gt;)</td>
+                            <td>空</td>
+                            <td>索引值必須在合理的地圖起點數量內</td>
+                            <td>
+                                <strong>核心機制：</strong><br>
+                                1. 若為<strong>空陣列</strong>：敵人將會在<strong>所有</strong>起點同時生成一隻。<br>
+                                2. 若<strong>指定索引</strong> (例如 <code class="highlight-badge">{0}</code> 或 <code class="highlight-badge">{0, 2}</code>)：則會在指定的起點生成。<br>
+                                ⚠️ <em>請注意：若指定多個索引，每次生成間隔會同時在所有指定起點各生成一隻敵人。</em>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong class="highlight-badge">hpMultiplier</strong> (float)</td>
+                            <td>1.0F</td>
+                            <td>無</td>
+                            <td>該組敵人的血量倍率 (一般為 1.0F，高於 1.0F 會更難擊殺)。</td>
+                        </tr>
+                        <tr>
+                            <td><strong class="highlight-badge">spdMultiplier</strong> (float)</td>
+                            <td>1.0F</td>
+                            <td>無</td>
+                            <td>該組敵人的移動速度倍率 (一般為 1.0F，會影響實際格速)。</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card">
+                <h3>LevelConfig.hpp 標頭檔定義參考</h3>
+                <p>以下為專案中 <a href="file:///c:/Users/ChengYu/Desktop/wusantafun/Infinitode-2-Tower-Defense-OOPL2026/include/game/LevelConfig.hpp" class="highlight-badge">LevelConfig.hpp</a> 的完整宣告與防呆校驗函式實作，開發時可對照參考變數型態與校驗邏輯：</p>
+                <pre><code><span class="code-keyword">#pragma once</span>
+
+<span class="code-keyword">#include</span> <span class="code-string">&lt;filesystem&gt;</span>
+<span class="code-keyword">#include</span> <span class="code-string">&lt;sstream&gt;</span>
+<span class="code-keyword">#include</span> <span class="code-string">&lt;stdexcept&gt;</span>
+<span class="code-keyword">#include</span> <span class="code-string">&lt;string&gt;</span>
+<span class="code-keyword">#include</span> <span class="code-string">&lt;unordered_set&gt;</span>
+<span class="code-keyword">#include</span> <span class="code-string">&lt;vector&gt;</span>
+
+<span class="code-keyword">#include</span> <span class="code-string">"enemy/EnemyTypeConfig.hpp"</span>
+
+<span class="code-comment">// -------------------- 刷怪群組配置 --------------------</span>
+<span class="code-keyword">struct</span> <span class="code-type">SpawnGroup</span> {
+  <span class="code-type">EnemyTypeId</span> type = EnemyTypeId::Regular; <span class="code-comment">// 生成的敵人類型</span>
+  <span class="code-type">int</span> count = <span class="code-number">0</span>;                           <span class="code-comment">// 該組生成的敵人數量</span>
+  <span class="code-type">float</span> startDelay = <span class="code-number">0.0F</span>;                 <span class="code-comment">// 第一隻敵人的延遲生成時間（秒）</span>
+  <span class="code-type">float</span> interval = <span class="code-number">1.0F</span>;                   <span class="code-comment">// 敵人間隔生成時間（秒）</span>
+  <span class="code-type">std::vector</span>&lt;<span class="code-type">int</span>&gt; spawnPointIndices;      <span class="code-comment">// 生成起點的索引列表（為空時在所有起點生成）</span>
+  
+  <span class="code-type">float</span> hpMultiplier  = <span class="code-number">1.0F</span>;              <span class="code-comment">// 血量強化倍率（例如 1.2）</span>
+  <span class="code-type">float</span> spdMultiplier = <span class="code-number">1.0F</span>;              <span class="code-comment">// 速度強化倍率（例如 1.1）</span>
+};
+
+<span class="code-comment">// -------------------- 波次配置 --------------------</span>
+<span class="code-keyword">struct</span> <span class="code-type">WaveConfig</span> {
+  <span class="code-type">int</span> waveNumber = <span class="code-number">1</span>;             <span class="code-comment">// 波次編號（用於 UI / 統計）</span>
+  <span class="code-type">bool</span> isBossWave = <span class="code-keyword">false</span>;        <span class="code-comment">// 是否為 Boss 波次</span>
+  <span class="code-type">float</span> prepTime = <span class="code-number">3.0F</span>;          <span class="code-comment">// 該波開始前的準備倒數計時（秒）</span>
+  <span class="code-type">int</span> clearRewardGold = <span class="code-number">0</span>;        <span class="code-comment">// 清空此波怪物後的獎勵金幣</span>
+  <span class="code-type">std::vector</span>&lt;<span class="code-type">SpawnGroup</span>&gt; groups; <span class="code-comment">// 該波包含的所有刷怪群組</span>
+};
+
+<span class="code-comment">// -------------------- 關卡配置 --------------------</span>
+<span class="code-keyword">struct</span> <span class="code-type">LevelConfig</span> {
+  <span class="code-type">int</span> levelNumber = <span class="code-number">1</span>;           <span class="code-comment">// 關卡編號</span>
+  <span class="code-type">std::string</span> mapPath;           <span class="code-comment">// 地圖 CSV 檔案路徑</span>
+  <span class="code-type">int</span> baseHp = <span class="code-number">20</span>;               <span class="code-comment">// 基地初始生命值</span>
+  <span class="code-type">int</span> startingGold = <span class="code-number">150</span>;        <span class="code-comment">// 初始金幣</span>
+  <span class="code-type">std::vector</span>&lt;<span class="code-type">WaveConfig</span>&gt; waves; <span class="code-comment">// 關卡的所有波次列表</span>
+};
+
+<span class="code-keyword">extern const</span> <span class="code-type">std::vector</span>&lt;<span class="code-type">LevelConfig</span>&gt; kLevelConfigs;
+
+<span class="code-keyword">inline void</span> validateLevelConfigs() {
+  <span class="code-type">std::vector</span>&lt;<span class="code-type">std::string</span>&gt; errors;
+  <span class="code-type">std::unordered_set</span>&lt;<span class="code-type">int</span>&gt; seenLevelNumbers;
+
+  <span class="code-keyword">for</span> (<span class="code-keyword">const</span> <span class="code-type">LevelConfig</span> &levelConfig : kLevelConfigs) {
+    <span class="code-keyword">if</span> (!seenLevelNumbers.insert(levelConfig.levelNumber).second) {
+      errors.push_back(<span class="code-string">"重複的關卡編號: "</span> + std::to_string(levelConfig.levelNumber));
+    }
+    <span class="code-keyword">if</span> (levelConfig.levelNumber &lt;= <span class="code-number">0</span>) {
+      errors.push_back(<span class="code-string">"無效的關卡編號: "</span> + std::to_string(levelConfig.levelNumber));
+    }
+    <span class="code-keyword">if</span> (levelConfig.baseHp &lt;= <span class="code-number">0</span>) {
+      errors.push_back(<span class="code-string">"關卡 "</span> + std::to_string(levelConfig.levelNumber) + <span class="code-string">" 的 baseHp 必須大於 0"</span>);
+    }
+    <span class="code-keyword">if</span> (levelConfig.mapPath.empty()) {
+      errors.push_back(<span class="code-string">"關卡 "</span> + std::to_string(levelConfig.levelNumber) + <span class="code-string">" 未設定 mapPath"</span>);
+    } <span class="code-keyword">else if</span> (!std::filesystem::exists(levelConfig.mapPath)) {
+      errors.push_back(<span class="code-string">"關卡 "</span> + std::to_string(levelConfig.levelNumber) + <span class="code-string">" 的地圖檔案不存在: "</span> + levelConfig.mapPath);
+    }
+    <span class="code-keyword">if</span> (levelConfig.waves.empty()) {
+      errors.push_back(<span class="code-string">"關卡 "</span> + std::to_string(levelConfig.levelNumber) + <span class="code-string">" 沒有配置任何 wave"</span>);
+    }
+
+    <span class="code-keyword">for</span> (<span class="code-keyword">const</span> <span class="code-type">WaveConfig</span> &waveConfig : levelConfig.waves) {
+      <span class="code-keyword">if</span> (waveConfig.waveNumber &lt;= <span class="code-number">0</span>) {
+        errors.push_back(<span class="code-string">"關卡 "</span> + std::to_string(levelConfig.levelNumber) + <span class="code-string">" 的無效 waveNumber: "</span> + std::to_string(waveConfig.waveNumber));
+      }
+      <span class="code-keyword">if</span> (waveConfig.prepTime &lt; <span class="code-number">0.0F</span>) {
+        errors.push_back(<span class="code-string">"關卡 "</span> + std::to_string(levelConfig.levelNumber) + <span class="code-string">" wave "</span> + std::to_string(waveConfig.waveNumber) + <span class="code-string">" 的 prepTime 不能小於 0"</span>);
+      }
+      <span class="code-keyword">if</span> (waveConfig.groups.empty()) {
+        errors.push_back(<span class="code-string">"關卡 "</span> + std::to_string(levelConfig.levelNumber) + <span class="code-string">" wave "</span> + std::to_string(waveConfig.waveNumber) + <span class="code-string">" 沒有配置 any spawn group"</span>);
+      }
+
+      <span class="code-keyword">for</span> (<span class="code-keyword">const</span> <span class="code-type">SpawnGroup</span> &spawnGroup : waveConfig.groups) {
+        <span class="code-keyword">if</span> (spawnGroup.count &lt;= <span class="code-number">0</span>) {
+          errors.push_back(<span class="code-string">"關卡 "</span> + std::to_string(levelConfig.levelNumber) + <span class="code-string">" wave "</span> + std::to_string(waveConfig.waveNumber) + <span class="code-string">" 的 group count 必須大於 0"</span>);
+        }
+        <span class="code-keyword">if</span> (spawnGroup.startDelay &lt; <span class="code-number">0.0F</span>) {
+          errors.push_back(<span class="code-string">"關卡 "</span> + std::to_string(levelConfig.levelNumber) + <span class="code-string">" wave "</span> + std::to_string(waveConfig.waveNumber) + <span class="code-string">" 的 group startDelay 不能小於 0"</span>);
+        }
+        <span class="code-keyword">if</span> (spawnGroup.interval &lt; <span class="code-number">0.0F</span>) {
+          errors.push_back(<span class="code-string">"關卡 "</span> + std::to_string(levelConfig.levelNumber) + <span class="code-string">" wave "</span> + std::to_string(waveConfig.waveNumber) + <span class="code-string">" 的 group interval 不能小於 0"</span>);
+        }
+      }
+    }
+  }
+
+  <span class="code-keyword">if</span> (!errors.empty()) {
+    <span class="code-type">std::ostringstream</span> oss;
+    oss &lt;&lt; <span class="code-string">"LevelConfig validation failed ("</span> &lt;&lt; errors.size() &lt;&lt; <span class="code-string">"):"</span>;
+    <span class="code-keyword">for</span> (<span class="code-keyword">const</span> <span class="code-type">std::string</span> &error : errors) {
+      oss &lt;&lt; <span class="code-string">"\n - "</span> &lt;&lt; error;
+    }
+    <span class="code-keyword">throw</span> <span class="code-type">std::runtime_error</span>(oss.str());
+  }
+}
+</code></pre>
+            </div>
+
+            <!-- 自動校验機制說明 -->
+            <div class="alert-box warning">
+                <div>
+                    <div class="alert-title">⚠️ 嚴格的防呆校驗機制 (validateLevelConfigs)</div>
+                    <div class="alert-content">
+                        在遊戲啟動載入配置時，系統會自動對全域 <code class="highlight-badge">kLevelConfigs</code> 執行 <code class="highlight-badge">validateLevelConfigs()</code> 校驗。
+                        若發生<strong>關卡 ID 重複、地圖檔案不存在、生命值 &le; 0、無出怪波次、出怪時間/間隔 &lt; 0、刷怪數量 &le; 0</strong> 等情況，
+                        系統將會主動拋出 <strong style="color: var(--accent-amber);">runtime_error</strong> 導致程式崩潰。請務必在新增設定時遵循以上規則。
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 區塊二：起點索引機制 -->
+        <section id="spawns">
+            <h2>起點索引機制</h2>
+            <p>
+                在設計複雜地圖時，往往需要在不同的起點分批次派怪。每個關卡的 CSV 地圖檔中，
+                被標記為代表起點的格子將被動態轉化為<strong>起點索引 (Spawn Point Index)</strong>。
+            </p>
+            
+            <div class="spawn-demo-container">
+                <!-- 視覺化網格示意圖 -->
+                <div class="spawn-grid" id="spawn-grid-visual">
+                    <!-- Row 4 (y=3) -->
+                    <div class="grid-cell" title="Row 0, Col 0">Empty<span class="coords">0,3</span></div>
+                    <div class="grid-cell spawn" title="起點 2 (CSV Row 0, Col 1)">Spawn 2<span class="coords">1,3</span></div>
+                    <div class="grid-cell" title="Row 0, Col 2">Empty<span class="coords">2,3</span></div>
+                    <div class="grid-cell spawn" title="起點 3 (CSV Row 0, Col 3)">Spawn 3<span class="coords">3,3</span></div>
+                    <div class="grid-cell" title="Row 0, Col 4">Empty<span class="coords">4,3</span></div>
+
+                    <!-- Row 3 (y=2) -->
+                    <div class="grid-cell road">Road<span class="coords">0,2</span></div>
+                    <div class="grid-cell road">Road<span class="coords">1,2</span></div>
+                    <div class="grid-cell road">Road<span class="coords">2,2</span></div>
+                    <div class="grid-cell road">Road<span class="coords">3,2</span></div>
+                    <div class="grid-cell road">Road<span class="coords">4,2</span></div>
+
+                    <!-- Row 2 (y=1) -->
+                    <div class="grid-cell spawn" title="起點 0 (CSV Row 2, Col 0)">Spawn 0<span class="coords">0,1</span></div>
+                    <div class="grid-cell road">Road<span class="coords">1,1</span></div>
+                    <div class="grid-cell goal">Goal<span class="coords">2,1</span></div>
+                    <div class="grid-cell road">Road<span class="coords">3,1</span></div>
+                    <div class="grid-cell spawn" title="起點 1 (CSV Row 2, Col 4)">Spawn 1<span class="coords">4,1</span></div>
+
+                    <!-- Row 1 (y=0) -->
+                    <div class="grid-cell">Empty<span class="coords">0,0</span></div>
+                    <div class="grid-cell">Empty<span class="coords">1,0</span></div>
+                    <div class="grid-cell">Empty<span class="coords">2,0</span></div>
+                    <div class="grid-cell">Empty<span class="coords">3,0</span></div>
+                    <div class="grid-cell">Empty<span class="coords">4,0</span></div>
+                </div>
+
+                <div class="spawn-explain">
+                    <h3>起點順序計算規則</h3>
+                    <p>起點索引的排序是由地圖引擎讀取 CSV 時所決定的。它嚴格遵循以下順序：</p>
+                    <ol class="step-list">
+                        <li><strong>由下至上 (y 軸遞增)</strong>：從地圖的最底層 row (即 <code class="highlight-badge">y = 0</code>) 開始，掃描至最頂層。</li>
+                        <li><strong>由左至右 (x 軸遞增)</strong>：在同一列 (Row) 中，由最左側格往最右側格掃描。</li>
+                        <li><strong>累加標記</strong>：第一個掃描到的 <code class="highlight-badge">Spawn</code> 點為索引 <code class="highlight-badge">0</code>，第二個為 <code class="highlight-badge">1</code>，以此類推。</li>
+                    </ol>
+                    <div class="alert-box info">
+                        <div>
+                            <div class="alert-title">💡 索引範例說明：</div>
+                            <div class="alert-content">
+                                如左圖所示，當地圖底部 (y=0) 無起點時，最先掃描到的是中間行 (y=1) 的左起點 <code class="highlight-badge">(0,1)</code> ➔ 標記為 <strong>Spawn 0</strong>；
+                                接著掃描到右邊的起點 <code class="highlight-badge">(4,1)</code> ➔ 標記為 <strong>Spawn 1</strong>；
+                                最後在頂部行 (y=3) 依序掃描到 <code class="highlight-badge">(1,3)</code> ➔ <strong>Spawn 2</strong>，與 <code class="highlight-badge">(3,3)</code> ➔ <strong>Spawn 3</strong>。
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 區塊三：敵人類型參考表 -->
+        <section id="enemies">
+            <h2>敵人類型參考表</h2>
+            <p>以下為專案中目前已定義的敵人類型，於 <code class="highlight-badge">EnemyTypeConfig.hpp</code> 設定其實體預設血量與移動型式：</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>EnemyTypeId 列舉名稱</th>
+                        <th>顯示名稱</th>
+                        <th>移動方式</th>
+                        <th>基礎血量</th>
+                        <th>基礎速度</th>
+                        <th>漏怪扣血</th>
+                        <th>擊殺金幣</th>
+                        <th>類型特色與備註</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong class="highlight-badge">EnemyTypeId::Regular</strong></td>
+                        <td>Regular</td>
+                        <td style="color: var(--accent-green);">陸行 (Ground)</td>
+                        <td>40</td>
+                        <td>1.00</td>
+                        <td>1</td>
+                        <td>2</td>
+                        <td>基礎平衡型敵人，初期用於建立節奏。</td>
+                    </tr>
+                    <tr>
+                        <td><strong class="highlight-badge">EnemyTypeId::Fast</strong></td>
+                        <td>Fast</td>
+                        <td style="color: var(--accent-green);">陸行 (Ground)</td>
+                        <td>25</td>
+                        <td style="color: var(--primary);">1.25 (快)</td>
+                        <td>1</td>
+                        <td>2</td>
+                        <td>快但脆，考驗玩家防守的反應與減速塔。</td>
+                    </tr>
+                    <tr>
+                        <td><strong class="highlight-badge">EnemyTypeId::Strong</strong></td>
+                        <td>Strong</td>
+                        <td style="color: var(--accent-green);">陸行 (Ground)</td>
+                        <td style="color: var(--accent-amber);">85 (高)</td>
+                        <td style="color: var(--accent-red);">0.82 (慢)</td>
+                        <td style="color: var(--accent-red);">2</td>
+                        <td>3</td>
+                        <td>血量較高，抵達終點會扣減 2 點生命。</td>
+                    </tr>
+                    <tr>
+                        <td><strong class="highlight-badge">EnemyTypeId::Heli</strong></td>
+                        <td>Heli</td>
+                        <td style="color: var(--accent-pink);">飛行 (Air)</td>
+                        <td>55</td>
+                        <td>1.00</td>
+                        <td>1</td>
+                        <td>3</td>
+                        <td>飛行單位，無視地圖阻礙，僅對空塔可射擊。</td>
+                    </tr>
+                    <tr>
+                        <td><strong class="highlight-badge">EnemyTypeId::Jet</strong></td>
+                        <td>Jet</td>
+                        <td style="color: var(--accent-pink);">飛行 (Air)</td>
+                        <td>35</td>
+                        <td style="color: var(--primary);">1.45 (極快)</td>
+                        <td>1</td>
+                        <td>3</td>
+                        <td>高速飛行單位，高漏怪威脅，須優先對空擊殺。</td>
+                    </tr>
+                    <tr>
+                        <td><strong class="highlight-badge">EnemyTypeId::Armored</strong></td>
+                        <td>Armored</td>
+                        <td style="color: var(--accent-green);">陸行 (Ground)</td>
+                        <td>87</td>
+                        <td>0.95</td>
+                        <td>1</td>
+                        <td>3</td>
+                        <td>具有<strong>減傷護甲 Aura</strong>，會減少周圍 35% 傷害。</td>
+                    </tr>
+                    <tr>
+                        <td><strong class="highlight-badge">EnemyTypeId::Healer</strong></td>
+                        <td>Healer</td>
+                        <td style="color: var(--accent-green);">陸行 (Ground)</td>
+                        <td>60</td>
+                        <td>0.95</td>
+                        <td>1</td>
+                        <td>3</td>
+                        <td>具有<strong>治療 Aura</strong>，每秒對半徑 1.5 內盟友回血 5%。</td>
+                    </tr>
+                    <tr>
+                        <td><strong class="highlight-badge">EnemyTypeId::Toxic</strong></td>
+                        <td>Toxic</td>
+                        <td style="color: var(--accent-green);">陸行 (Ground)</td>
+                        <td>70</td>
+                        <td>1.00</td>
+                        <td>1</td>
+                        <td>3</td>
+                        <td>未受傷 3 秒後，每秒自回 3% 血量。</td>
+                    </tr>
+                    <tr>
+                        <td><strong class="highlight-badge">EnemyTypeId::Icy</strong></td>
+                        <td>Icy</td>
+                        <td style="color: var(--accent-green);">陸行 (Ground)</td>
+                        <td>100</td>
+                        <td>1.00</td>
+                        <td>1</td>
+                        <td>3</td>
+                        <td>自帶額外 25 點<strong>可破壞護盾</strong>，且免疫中毒/緩速/暈眩。</td>
+                    </tr>
+                    <tr>
+                        <td><strong class="highlight-badge">EnemyTypeId::Fighter</strong></td>
+                        <td>Fighter</td>
+                        <td style="color: var(--accent-green);">陸行 (Ground)</td>
+                        <td>70</td>
+                        <td>1.00</td>
+                        <td>1</td>
+                        <td>3</td>
+                        <td><strong>死亡分裂</strong>：死後分裂出 5 隻 40% 血量的 Regular。</td>
+                    </tr>
+                    <tr>
+                        <td><strong class="highlight-badge">EnemyTypeId::Light</strong></td>
+                        <td>Light</td>
+                        <td style="color: var(--accent-green);">陸行 (Ground)</td>
+                        <td>70</td>
+                        <td>1.00</td>
+                        <td>1</td>
+                        <td>3</td>
+                        <td><strong>適應抗性</strong>：受擊後產生 50% 該屬性抗性，維持 2.5 秒。</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- 區塊四：關卡定義實作方式 -->
+        <section id="methods">
+            <h2>關卡定義實作</h2>
+            <p>專案提供兩種主要的方式來建立波次資料：<strong>靜態結構宣告</strong> 與 <strong>動態程式碼生成</strong>。</p>
+            
+            <h3>方式 A：靜態初始化（適用於前中期波次少、規則固定）</h3>
+            <p>利用 C++ 大括號 initializer list 直觀地寫死每一個波次。例如 Level 1 與 4：</p>
+            <pre><code><span class="code-comment">// 宣告 Level 4</span>
+{
+    <span class="code-type">LevelConfig</span> lvl;
+    lvl.levelNumber = <span class="code-number">4</span>;
+    lvl.mapPath = <span class="code-string">"assets/maps/map_04.csv"</span>;
+    lvl.baseHp = <span class="code-number">100</span>;
+    lvl.startingGold = <span class="code-number">200</span>;
+    lvl.waves = {
+        <span class="code-comment">// Wave 1: 延遲 0 秒派 10 隻普通怪，延遲 0 秒派 2 隻冰怪</span>
+        {<span class="code-number">1</span>, <span class="code-keyword">false</span>, <span class="code-number">4.0F</span>, <span class="code-number">30</span>, {
+            {EnemyTypeId::Regular, <span class="code-number">10</span>, <span class="code-number">0.00F</span>, <span class="code-number">1.00F</span>, {}},
+            {EnemyTypeId::Icy, <span class="code-number">2</span>, <span class="code-number">0.0F</span>, <span class="code-number">1.0F</span>, {}}
+        }},
+        <span class="code-comment">// Wave 2</span>
+        {<span class="code-number">2</span>, <span class="code-keyword">false</span>, <span class="code-number">4.0F</span>, <span class="code-number">30</span>, {
+            {EnemyTypeId::Regular, <span class="code-number">12</span>, <span class="code-number">0.00F</span>, <span class="code-number">1.00F</span>, {}}
+        }}
+    };
+    configs.push_back(lvl);
+}</code></pre>
+
+            <h3>方式 B：動態程式化生成（適用於後期怪量極大、具備規律公式的波次）</h3>
+            <p>使用迴圈演算法在執行期（Run-time）將 <code class="highlight-badge">SpawnGroup</code> 推入 waves。以 Level 5 的 Wave 2 為例：</p>
+            <pre><code>{
+    <span class="code-type">WaveConfig</span> w2;
+    w2.waveNumber = <span class="code-number">2</span>;
+    w2.isBossWave = <span class="code-keyword">false</span>;
+    w2.prepTime = <span class="code-number">4.0F</span>;
+    w2.clearRewardGold = <span class="code-number">30</span>;
+
+    <span class="code-comment">// 敵人生成類型輪流表</span>
+    <span class="code-keyword">static const</span> <span class="code-type">EnemyTypeId</span> pattern[] = {
+        EnemyTypeId::Regular, EnemyTypeId::Armored, EnemyTypeId::Healer, EnemyTypeId::Fast,
+        EnemyTypeId::Regular, EnemyTypeId::Jet, EnemyTypeId::Fighter, EnemyTypeId::Fast,
+        EnemyTypeId::Heli, EnemyTypeId::Jet, EnemyTypeId::Toxic, EnemyTypeId::Icy
+    };
+
+    <span class="code-comment">// 程式化產生 300 組生成指令</span>
+    <span class="code-keyword">for</span> (<span class="code-type">int</span> i = <span class="code-number">0</span>; i &lt; <span class="code-number">300</span>; ++i) {
+        <span class="code-type">SpawnGroup</span> g;
+        g.type = pattern[i % <span class="code-number">12</span>];
+        g.count = <span class="code-number">1</span>;
+        g.startDelay = i * <span class="code-number">0.1f</span>; <span class="code-comment">// 遞增延遲，實現一個接一個的刷怪效果</span>
+        g.interval = <span class="code-number">1.0f</span>;
+        
+        <span class="code-comment">// 演算法計算決定出生點 (例如在 0~99 之間震盪折返)</span>
+        <span class="code-type">int</span> subStep = i % <span class="code-number">100</span>;
+        <span class="code-type">int</span> spIdx = <span class="code-number">0</span>;
+        <span class="code-keyword">if</span> (subStep &lt; <span class="code-number">25</span>) spIdx = subStep;
+        <span class="code-keyword">else if</span> (subStep &lt; <span class="code-number">50</span>) spIdx = <span class="code-number">26</span> + (subStep - <span class="code-number">25</span>) * <span class="code-number">2</span>;
+        <span class="code-keyword">else if</span> (subStep &lt; <span class="code-number">75</span>) spIdx = <span class="code-number">99</span> - (subStep - <span class="code-number">50</span>);
+        <span class="code-keyword">else</span> spIdx = <span class="code-number">73</span> - (subStep - <span class="code-number">75</span>) * <span class="code-number">2</span>;
+        
+        g.spawnPointIndices = { spIdx };
+        w2.groups.push_back(g);
+    }
+    lvl.waves.push_back(w2);
+}</code></pre>
+
+            <div class="alert-box info">
+                <div>
+                    <div class="alert-title">🔄 無限循環機制 (Endless Loop Mode)</div>
+                    <div class="alert-content">
+                        <strong>除了 Level 1</strong> 以外，當關卡的所有波次被清空後，遊戲將會開啟無限循環模式：
+                        <ul>
+                            <li>每開啟新的一輪，怪物屬性以指數級別強化：<strong>血量 &times; 1.2<sup>loopCount</sup></strong>，<strong>速度 &times; 1.1<sup>loopCount</sup></strong>。</li>
+                            <li>自第二關起，進入第 2 輪 (loopCount = 1) 時，遊戲介面會顯示<strong>前進下一關</strong>的快捷按鈕。</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 互動式產生器區塊 -->
+        <section id="generator">
+            <h2>C++ 關卡設定產生器</h2>
+            <p>使用下方的表單工具來可視化地建立您的關卡與波次，並即時複製產生的 C++ 程式碼直接貼入 <code class="highlight-badge">LevelConfig.cpp</code> 中使用！</p>
+            
+            <div class="generator-container">
+                <div class="generator-grid">
+                    <!-- 表單輸入 -->
+                    <div class="form-panel" id="editor-form-panel">
+                        <h3 style="margin-top:0;">1. 關卡基本資訊</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="input-lv-num">關卡編號 (levelNumber)</label>
+                                <input type="number" id="input-lv-num" value="6" min="1">
+                            </div>
+                            <div class="form-group">
+                                <label for="input-lv-map">地圖檔案 (mapPath)</label>
+                                <input type="text" id="input-lv-map" value="assets/maps/map_06.csv">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="input-lv-hp">生命值 (baseHp)</label>
+                                <input type="number" id="input-lv-hp" value="20" min="1">
+                            </div>
+                            <div class="form-group">
+                                <label for="input-lv-gold">初始金幣 (startingGold)</label>
+                                <input type="number" id="input-lv-gold" value="200" min="0">
+                            </div>
+                        </div>
+
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:1.5rem; border-top:1px solid var(--border-color); padding-top:1.5rem;">
+                            <h3 style="margin:0;">2. 波次與出怪設定</h3>
+                            <button type="button" class="btn" id="btn-add-wave" onclick="addWaveUI()">＋ 新增波次</button>
+                        </div>
+
+                        <!-- 波次列表容器 -->
+                        <div id="waves-container"></div>
+                    </div>
+
+                    <!-- 程式碼輸出 -->
+                    <div class="output-panel">
+                        <h3 style="margin-top:0;">3. 即時產生的 C++ 程式碼</h3>
+                        <div class="code-output-container">
+                            <span class="copy-success-msg" id="copy-toast">複製成功！</span>
+                            <button class="btn btn-copy" onclick="copyGeneratedCode()">複製程式碼</button>
+                            <textarea class="code-output" id="output-cpp-code" readonly></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // 側邊欄高亮邏輯
+        const sections = document.querySelectorAll("section, header");
+        const navItems = {
+            'intro': document.getElementById('nav-intro'),
+            'structs': document.getElementById('nav-structs'),
+            'spawns': document.getElementById('nav-spawns'),
+            'enemies': document.getElementById('nav-enemies'),
+            'methods': document.getElementById('nav-methods'),
+            'generator': document.getElementById('nav-generator')
+        };
+
+        window.addEventListener("scroll", () => {
+            let current = "";
+            sections.forEach((section) => {
+                const sectionTop = section.offsetTop;
+                if (window.scrollY >= sectionTop - 150) {
+                    current = section.getAttribute("id");
+                }
+            });
+
+            Object.values(navItems).forEach((item) => item.classList.remove("active"));
+            if (navItems[current]) {
+                navItems[current].classList.add("active");
+            }
+        });
+
+        // 關卡產生器邏輯
+        let waveCounter = 0;
+        let groupCounters = {}; // waveId -> groupCount
+
+        const enemyOptions = [
+            { id: 'Regular', name: 'Regular (普通怪)' },
+            { id: 'Fast', name: 'Fast (速行怪)' },
+            { id: 'Strong', name: 'Strong (坦怪)' },
+            { id: 'Heli', name: 'Heli (直升機/空軍)' },
+            { id: 'Jet', name: 'Jet (噴射機/空軍)' },
+            { id: 'Armored', name: 'Armored (護甲怪)' },
+            { id: 'Healer', name: 'Healer (治療怪)' },
+            { id: 'Toxic', name: 'Toxic (自回怪)' },
+            { id: 'Icy', name: 'Icy (護盾盾牌怪)' },
+            { id: 'Fighter', name: 'Fighter (死亡分裂怪)' },
+            { id: 'Light', name: 'Light (抗性適應怪)' }
+        ];
+
+        // 初始化一筆資料
+        document.addEventListener("DOMContentLoaded", () => {
+            // 新增第一波
+            addWaveUI();
+            // 新增第一波的出怪組
+            addSpawnGroupUI(0);
+            
+            // 監聽基本屬性的輸入變化
+            document.getElementById('input-lv-num').addEventListener('input', updateCode);
+            document.getElementById('input-lv-map').addEventListener('input', updateCode);
+            document.getElementById('input-lv-hp').addEventListener('input', updateCode);
+            document.getElementById('input-lv-gold').addEventListener('input', updateCode);
+        });
+
+        function addWaveUI() {
+            const container = document.getElementById('waves-container');
+            const waveId = waveCounter++;
+            groupCounters[waveId] = 0;
+
+            const nextWaveNumber = container.children.length + 1;
+
+            const waveHtml = `
+                <div class="wave-item" id="wave-card-${waveId}" data-wave-id="${waveId}">
+                    <div class="wave-header">
+                        <span class="wave-title">第 ${nextWaveNumber} 波</span>
+                        <button type="button" class="btn btn-danger btn-secondary" style="padding:0.25rem 0.5rem; font-size:0.75rem;" onclick="removeWaveUI(${waveId})">刪除波次</button>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>準備倒計時 (prepTime 秒)</label>
+                            <input type="number" class="wave-preptime" value="4.0" step="0.5" min="0" oninput="updateCode()">
+                        </div>
+                        <div class="form-group">
+                            <label>過關獎勵金幣</label>
+                            <input type="number" class="wave-reward" value="30" min="0" oninput="updateCode()">
+                        </div>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" class="wave-isboss" onchange="updateCode()">
+                        <label style="cursor:pointer; text-transform:none;">此波為 Boss 波 (isBossWave)</label>
+                    </div>
+                    
+                    <div class="spawngroup-list" id="spawngroups-container-${waveId}">
+                        <!-- 刷怪組列表 -->
+                    </div>
+                    <button type="button" class="btn btn-secondary" style="margin-top:1rem; width:100%; font-size:0.8rem;" onclick="addSpawnGroupUI(${waveId})">＋ 新增刷怪群組</button>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', waveHtml);
+            updateWaveTitles();
+            updateCode();
+        }
+
+        function removeWaveUI(waveId) {
+            const item = document.getElementById(`wave-card-${waveId}`);
+            if (item) {
+                item.remove();
+                delete groupCounters[waveId];
+                updateWaveTitles();
+                updateCode();
+            }
+        }
+
+        function updateWaveTitles() {
+            const container = document.getElementById('waves-container');
+            const waves = container.querySelectorAll('.wave-item');
+            waves.forEach((wave, idx) => {
+                wave.querySelector('.wave-title').innerText = `第 ${idx + 1} 波`;
+            });
+        }
+
+        function addSpawnGroupUI(waveId) {
+            const container = document.getElementById(`spawngroups-container-${waveId}`);
+            const groupId = groupCounters[waveId]++;
+            
+            const optionsHtml = enemyOptions.map(opt => `<option value="${opt.id}">${opt.name}</option>`).join('');
+
+            const groupHtml = `
+                <div class="spawngroup-item" id="group-card-${waveId}-${groupId}">
+                    <div class="spawngroup-header">
+                        <span>出怪組設定</span>
+                        <button type="button" class="btn btn-danger" style="padding:0.15rem 0.4rem; font-size:0.7rem; border-radius:4px;" onclick="removeSpawnGroupUI(${waveId}, ${groupId})">移除</button>
+                    </div>
+                    <div class="form-row" style="margin-bottom:0.5rem;">
+                        <div class="form-group">
+                            <label>怪物種類</label>
+                            <select class="group-type" onchange="updateCode()">
+                                ${optionsHtml}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>怪物數量 (count)</label>
+                            <input type="number" class="group-count" value="5" min="1" oninput="updateCode()">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>刷怪間隔 (interval 秒)</label>
+                            <input type="number" class="group-interval" value="1.0" step="0.1" min="0" oninput="updateCode()">
+                        </div>
+                        <div class="form-group">
+                            <label>第一隻延遲 (delay 秒)</label>
+                            <input type="number" class="group-delay" value="0.0" step="0.1" min="0" oninput="updateCode()">
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-top:0.5rem;">
+                        <label>起點索引 (spawnPointIndices, 空代表全部，多個用逗號分隔，如 0,2)</label>
+                        <input type="text" class="group-spawns" placeholder="例如: 0" oninput="updateCode()">
+                    </div>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', groupHtml);
+            updateCode();
+        }
+
+        function removeSpawnGroupUI(waveId, groupId) {
+            const item = document.getElementById(`group-card-${waveId}-${groupId}`);
+            if (item) {
+                item.remove();
+                updateCode();
+            }
+        }
+
+        function updateCode() {
+            const lvNum = document.getElementById('input-lv-num').value || '1';
+            const mapPath = document.getElementById('input-lv-map').value || 'assets/maps/map_01.csv';
+            const baseHp = document.getElementById('input-lv-hp').value || '20';
+            const startingGold = document.getElementById('input-lv-gold').value || '150';
+
+            let cpp = `    // --- Level ${lvNum} ---\n`;
+            cpp += `    {\n`;
+            cpp += `        LevelConfig lvl;\n`;
+            cpp += `        lvl.levelNumber = ${lvNum};\n`;
+            cpp += `        lvl.mapPath = "${mapPath}";\n`;
+            cpp += `        lvl.baseHp = ${baseHp};\n`;
+            cpp += `        lvl.startingGold = ${startingGold};\n`;
+            cpp += `        lvl.waves = {\n`;
+
+            const waveCards = document.querySelectorAll('#waves-container .wave-item');
+            waveCards.forEach((waveCard, wIdx) => {
+                const waveId = waveCard.getAttribute('data-wave-id');
+                const prepTime = parseFloat(waveCard.querySelector('.wave-preptime').value) || 0.0;
+                const reward = parseInt(waveCard.querySelector('.wave-reward').value) || 0;
+                const isBoss = waveCard.querySelector('.wave-isboss').checked ? 'true' : 'false';
+
+                cpp += `            {${wIdx + 1}, ${isBoss}, ${prepTime.toFixed(1)}F, ${reward}, {\n`;
+
+                const groupCards = waveCard.querySelectorAll('.spawngroup-item');
+                groupCards.forEach((groupCard, gIdx) => {
+                    const type = groupCard.querySelector('.group-type').value;
+                    const count = parseInt(groupCard.querySelector('.group-count').value) || 1;
+                    const interval = parseFloat(groupCard.querySelector('.group-interval').value) || 1.0;
+                    const delay = parseFloat(groupCard.querySelector('.group-delay').value) || 0.0;
+                    const spawnsVal = groupCard.querySelector('.group-spawns').value.trim();
+
+                    let spawnsCpp = '';
+                    if (spawnsVal) {
+                        const parsedSpawns = spawnsVal.split(',')
+                            .map(s => s.trim())
+                            .filter(s => s !== '' && !isNaN(s))
+                            .map(s => parseInt(s));
+                        spawnsCpp = `{${parsedSpawns.join(', ')}}`;
+                    } else {
+                        spawnsCpp = '{}';
+                    }
+
+                    const comma = (gIdx === groupCards.length - 1) ? '' : ',';
+                    cpp += `                {EnemyTypeId::${type}, ${count}, ${delay.toFixed(2)}F, ${interval.toFixed(2)}F, ${spawnsCpp}}${comma}\n`;
+                });
+
+                const waveComma = (wIdx === waveCards.length - 1) ? '' : ',';
+                cpp += `            }}${waveComma}\n`;
+            });
+
+            cpp += `        };\n`;
+            cpp += `        configs.push_back(lvl);\n`;
+            cpp += `    }\n`;
+
+            document.getElementById('output-cpp-code').value = cpp;
+        }
+
+        function copyGeneratedCode() {
+            const textarea = document.getElementById('output-cpp-code');
+            textarea.select();
+            textarea.setSelectionRange(0, 99999); /* 適用於行動裝置 */
+
+            navigator.clipboard.writeText(textarea.value).then(() => {
+                const toast = document.getElementById('copy-toast');
+                toast.style.opacity = '1';
+                setTimeout(() => {
+                    toast.style.opacity = '0';
+                }, 2000);
+            }).catch(err => {
+                console.error('複製失敗: ', err);
+            });
+        }
+    </script>
+</body>
+</html>
