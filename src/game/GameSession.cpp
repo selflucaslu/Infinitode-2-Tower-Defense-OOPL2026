@@ -53,7 +53,7 @@ GameSession::GameSession(int levelNumber)
     }
 
     // 預載塔、子彈與 HUD 會用到的圖片。
-    static constexpr std::array<std::string_view, 14> preloadTowerSprites = {
+    static constexpr std::array<std::string_view, 15> preloadTowerSprites = {
         "tower-basic-base",
         "tower-basic-weapon",
         "tower-sniper-base-new",
@@ -67,7 +67,8 @@ GameSession::GameSession(int levelNumber)
         "game-ui-health-icon",
         "game-ui-coin-icon",
         "tile-type-platform",
-        "build-selection"
+        "build-selection",
+        "icon-step-forward"
     };
     for (std::string_view spriteId : preloadTowerSprites) {
         (void)atlasLoader->getImage(spriteId);
@@ -127,6 +128,13 @@ GameSession::GameSession(int levelNumber)
     hudRoot.AddChild(waveIconObject);
     hudRoot.AddChild(waveTextObject);
     updateHudDisplay();
+
+    // 第二關以後完成第一輪時顯示的跳關按鈕。
+    nextLevelButtonObject = std::make_shared<Util::GameObject>();
+    nextLevelButtonObject->SetDrawable(atlasLoader->getImage("icon-step-forward"));
+    nextLevelButtonObject->SetZIndex(kHudZIndex + 1.0F);
+    nextLevelButtonRoot.AddChild(nextLevelButtonObject);
+    updateNextLevelButtonDisplay();
 
     // 背景改為 Infinitode 風格的灰色同色系 #181818。
     glClearColor(24.0F / 255.0F, 24.0F / 255.0F, 24.0F / 255.0F, 1.0F);
@@ -224,6 +232,22 @@ void GameSession::nextWave() { waveCount += 1; }
 int GameSession::getLevelNumber() const { return levelNumber; }
 bool GameSession::isLevelCompleted() const { return levelCompleted; }
 
+bool GameSession::hitTestNextLevelButton(float screenX, float screenY) const {
+    if (!canAdvanceToNextLevel || !nextLevelButtonObject) return false;
+
+    const glm::vec2 center = nextLevelButtonObject->m_Transform.translation;
+    const float halfSize = kNextLevelButtonSize * 0.5F;
+    return screenX >= center.x - halfSize && screenX <= center.x + halfSize &&
+           screenY >= center.y - halfSize && screenY <= center.y + halfSize;
+}
+
+void GameSession::advanceToNextLevel() {
+    if (canAdvanceToNextLevel) {
+        levelCompleted = true;
+        canAdvanceToNextLevel = false;
+    }
+}
+
 // -------------------- 每幀流程 --------------------
 void GameSession::update(float deltaTime) {
     update(deltaTime, deltaTime);
@@ -261,12 +285,7 @@ void GameSession::update(float deltaTime, float rawDeltaTime) {
 
     // 6) 基地血量歸零就暫停本局；若已進入無限循環，死亡後換下一關。
     if (!isBaseAlive()) {
-        if (loopCount > 0 && hasNextLevel()) {
-            levelCompleted = true;
-            LOG_INFO("[Session] Level {} endless run ended, loading next level", levelNumber);
-        } else {
-            LOG_INFO("[Session] Game Over");
-        }
+        LOG_INFO("[Session] Game Over");
         pauseSession();
         return;
     }
@@ -322,6 +341,12 @@ void GameSession::display() {
 
     // 7) FPS 疊圖只在 GameSession 畫面出現。
     if (m_FpsOverlay) { m_FpsOverlay->display(); }
+
+    // 8) 進入無限循環後，顯示可手動前往下一關的按鈕。
+    if (canAdvanceToNextLevel) {
+        updateNextLevelButtonDisplay();
+        nextLevelButtonRoot.Update();
+    }
 }
 
 void GameSession::moveCamera(float dx, float dy) const {
@@ -349,6 +374,7 @@ void GameSession::initSession() {
     groupIndex = 0;
     groupSpawned = 0;
     levelCompleted = false;
+    canAdvanceToNextLevel = false;
 
     // 3) 回到第一輪，並把 spawnSchedule 還原成原始波次設定。
     loopCount = 0;
@@ -591,6 +617,24 @@ void GameSession::updateHudDisplay() {
     };
 }
 
+void GameSession::updateNextLevelButtonDisplay() {
+    if (!nextLevelButtonObject) return;
+
+    const std::shared_ptr<Core::Context> context = Core::Context::GetInstance();
+    const float halfWindowWidth = static_cast<float>(context->GetWindowWidth()) * 0.5F;
+    const float halfWindowHeight = static_cast<float>(context->GetWindowHeight()) * 0.5F;
+    const glm::vec2 iconSize = atlasLoader->getImage("icon-step-forward")->GetSize();
+
+    nextLevelButtonObject->m_Transform.translation = {
+        halfWindowWidth - kNextLevelButtonMargin - kNextLevelButtonSize * 0.5F,
+        -halfWindowHeight + kNextLevelButtonBottomOffset + kNextLevelButtonSize * 0.5F
+    };
+    nextLevelButtonObject->m_Transform.scale = {
+        kNextLevelButtonSize / iconSize.x,
+        kNextLevelButtonSize / iconSize.y
+    };
+}
+
 void GameSession::spawnDebugEnemy(EnemyTypeId enemyTypeId, const std::vector<int>& spawnPointIndices) const {
     // 1) 取得指定敵人類型的設定。
     const EnemyTypeConfig& config = getEnemyTypeConfig(enemyTypeId);
@@ -621,6 +665,11 @@ bool GameSession::hasNextLevel() const {
 void GameSession::beginNextLoop() {
     // 1) 完成一輪後，累加循環次數。
     loopCount += 1;
+
+    // 判斷是否達成完跳關條件，達成就顯示跳關按鈕。
+    if (loopCount == 1 && hasNextLevel()) {
+        canAdvanceToNextLevel = true;
+    }
 
     // 2) 設定每循環一次的強化倍率：血量 x1.2、速度 x1.1。
     static constexpr float kHpScale   = 1.2F;
