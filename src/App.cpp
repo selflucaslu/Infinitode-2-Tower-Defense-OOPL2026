@@ -32,7 +32,7 @@ void App::Update() {
       m_Home->display();
 
       if (action == HomeAction::StartGame) {
-        m_GameSession = std::make_unique<GameSession>(1);//更改起點
+        m_GameSession = std::make_unique<GameSession>(5);//更改起點
         m_GameSession->startSession();
         m_CurrentState = State::GAME;
       } else if (action == HomeAction::Quit) {

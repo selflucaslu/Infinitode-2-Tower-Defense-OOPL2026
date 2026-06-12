@@ -1,6 +1,7 @@
 set(SRC_FILES
     App.cpp
     game/GameSession.cpp
+    game/LevelConfig.cpp
     ui/Home.cpp
     utils/AtlasLoader.cpp
     utils/FpsOverlay.cpp
