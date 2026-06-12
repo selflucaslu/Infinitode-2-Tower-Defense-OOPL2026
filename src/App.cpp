@@ -46,6 +46,9 @@ void App::Update() {
     return;
   }
 
+  // 顯示跳關按鈕（測試用，正式版可刪除）
+  if (Util::Input::IsKeyDown(Util::Keycode::P)) m_GameSession->showPassedLevelButton();
+
   // 切換塔種類（數字鍵 1 / 2 / 3）
   if (Util::Input::IsKeyDown(Util::Keycode::NUM_1)) m_SelectedTower = TowerId::Basic;
   if (Util::Input::IsKeyDown(Util::Keycode::NUM_2)) m_SelectedTower = TowerId::Sniper;

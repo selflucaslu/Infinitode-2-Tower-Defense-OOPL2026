@@ -661,6 +661,12 @@ bool GameSession::hasNextLevel() const {
     return false;
 }
 
+void GameSession::showPassedLevelButton() {
+    if (hasNextLevel()) {
+        canAdvanceToNextLevel = true;
+    }
+}
+
 // -------------------- 無限循環邏輯 --------------------
 void GameSession::beginNextLoop() {
     // 1) 完成一輪後，累加循環次數。
