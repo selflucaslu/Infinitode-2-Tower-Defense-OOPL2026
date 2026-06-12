@@ -32,7 +32,7 @@ void App::Update() {
       m_Home->display();
 
       if (action == HomeAction::StartGame) {
-        m_GameSession = std::make_unique<GameSession>(5);//更改起點
+        m_GameSession = std::make_unique<GameSession>(1);//更改起點
         m_GameSession->startSession();
         m_CurrentState = State::GAME;
       } else if (action == HomeAction::Quit) {
@@ -61,7 +61,10 @@ void App::Update() {
     const glm::vec2 mousePos = Util::Input::GetCursorPosition();
 
     // 先做面板 hitTest（選塔面板使用 OpenGL 螢幕座標，與 GetCursorPosition() 相同）
-    if (auto hitTower = m_GameSession->hitTestSelectionPanel(mousePos.x, mousePos.y)) {
+    if (m_GameSession->hitTestNextLevelButton(mousePos.x, mousePos.y)) {
+      m_GameSession->advanceToNextLevel();
+      LOG_INFO("Advancing to next level");
+    } else if (auto hitTower = m_GameSession->hitTestSelectionPanel(mousePos.x, mousePos.y)) {
       // 點到面板格子 → 切換選塔，不建塔
       m_SelectedTower = *hitTower;
       m_GameSession->setSelectedTower(m_SelectedTower);

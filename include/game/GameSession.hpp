@@ -21,7 +21,7 @@
 class GameSession {
 public:
     // -------------------- 建立與生命週期 --------------------
-    GameSession(int levelNumber = 4);
+    GameSession(int levelNumber = 1);
 
     // -------------------- 地圖與敵人管理 --------------------
     GridMap& getMap();
@@ -55,6 +55,8 @@ public:
     void nextWave();
     int getLevelNumber() const;
     bool isLevelCompleted() const;
+    bool hitTestNextLevelButton(float screenX, float screenY) const;
+    void advanceToNextLevel();
 
     // -------------------- 每幀流程 --------------------
     void update(float deltaTime);
@@ -82,8 +84,8 @@ private:
     void updateTowerDisplay();
     void updateProjectileDisplay();
     void updateHudDisplay();
+    void updateNextLevelButtonDisplay();
 
-private:
     // -------------------- 資源與核心物件 --------------------
     std::unique_ptr<AtlasLoader> atlasLoader;
     std::unique_ptr<GridMap> map;
@@ -104,6 +106,8 @@ private:
     std::shared_ptr<Util::GameObject> waveIconObject;
     std::shared_ptr<Util::GameObject> waveTextObject;
     std::shared_ptr<Util::Text> waveText;
+    Util::Renderer nextLevelButtonRoot;
+    std::shared_ptr<Util::GameObject> nextLevelButtonObject;
     std::unique_ptr<TowerSelectionPanel> m_SelectionPanel; // 選塔面板（右下角格子）
     std::unique_ptr<FpsOverlay> m_FpsOverlay; // FPS 顯示工具（只在遊戲畫面顯示）
     static constexpr float kTowerScale = 0.45F;
@@ -117,6 +121,9 @@ private:
     static constexpr float kHudPadding = 16.0F;
     static constexpr float kHudIconScale = 0.52F;
     static constexpr float kHudGap = 8.0F;
+    static constexpr float kNextLevelButtonSize = 72.0F;
+    static constexpr float kNextLevelButtonMargin = 18.0F;
+    static constexpr float kNextLevelButtonBottomOffset = 112.0F;
     static constexpr int kTowerBuildCost = 40; // fallback only — actual cost from TowerDef
 
     // -------------------- 遊戲狀態 --------------------
@@ -134,6 +141,7 @@ private:
     int groupSpawned;
     int loopCount;                         // 已完成的循環次數（0 = 第一輪）
     bool levelCompleted;                   // 本關已達成換到下一關的條件
+    bool canAdvanceToNextLevel = false;    // 完成基本關卡後進入無限關卡時顯示跳關按鈕
     std::vector<WaveConfig> spawnSchedule; // 當前循環（已套用強化）的配置
     std::vector<WaveConfig> baseSpawnSchedule; // 第一輪的原始配置（用於重置計算）
 
