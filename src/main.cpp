@@ -21,6 +21,7 @@ int main(int, char**) {
 
                 case App::State::HOME:
                 case App::State::GAME:
+                case App::State::RESULT:
                     app.Update();
                     break;
 

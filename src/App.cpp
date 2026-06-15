@@ -20,7 +20,6 @@ void App::Start() {
 
   // MVP 首頁只負責開始遊戲與離開，真正進入遊戲時才建立 GameSession。
   m_Home = std::make_unique<Home>();
-
   m_CurrentState = State::HOME;
 }
 
@@ -52,7 +51,11 @@ void App::Update() {
       m_Result->display();
 
       if (action == ResultAction::BackToHome) {
+        m_Result.reset();
+        m_GameSession.reset();
+        m_Home = std::make_unique<Home>();
         m_CurrentState = State::HOME;
+        return;
       }
     }
 

@@ -1,3 +1,5 @@
+#include "Util/Input.hpp"
+#include "Util/Keycode.hpp"
 #include "game/GameSession.hpp"
 #include "game/LevelConfig.hpp"
 #include "Core/Context.hpp"

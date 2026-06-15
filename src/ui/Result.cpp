@@ -92,14 +92,14 @@ void Result::layout(float windowWidth, float windowHeight) {
     for (Button& button : m_Buttons) {
         button.center = {0.0F, -80.0F};
 
-        const glm::vec2 bgSize = button.background->GetDrawable()->GetSize();
+        const glm::vec2 bgSize = m_Atlas.getImage("ui-money-screen-button-edge")->GetSize();
         button.background->m_Transform.translation = button.center;
         button.background->m_Transform.scale = {
             button.size.x / bgSize.x,
             button.size.y / bgSize.y,
         };
 
-        const glm::vec2 highlightSize = button.highlight->GetDrawable()->GetSize();
+        const glm::vec2 highlightSize = m_Atlas.getImage("build-selection")->GetSize();
         button.highlight->m_Transform.translation = button.center;
         button.highlight->m_Transform.scale = {
             (button.size.x + 8.0F) / highlightSize.x,
