@@ -10,6 +10,40 @@
 
 #include <algorithm>
 
+// -------------------- 分數計算輔助 --------------------
+// levelNumber：本關關卡編號（1~5）
+// loopCount  ：已完成的循環次數（0 = 第一輪）
+// remainHp   ：本關結束時剩餘血量
+// remainGold ：本關結束時剩餘金幣
+int App::calcLevelScore(int levelNumber, int loopCount,
+                        int remainHp, int remainGold) const {
+  // 1) 剩餘血量 & 金幣獎勵（每關通用）
+  const int hpBonus   = remainHp;
+  const int goldBonus = remainGold / 1000;
+
+  // 2) 過關固定獎勵 + 循環加成
+  //    { baseBonus, loopBonus } per level
+  struct LevelBonus { int base; int loop; };
+  static constexpr LevelBonus kTable[5] = {
+    {10,  0},   // Level 1
+    {15,  5},   // Level 2
+    {50, 25},   // Level 3
+    {25, 10},   // Level 4
+    {60, 20},   // Level 5
+  };
+
+  int clearBonus = 0;
+  if (levelNumber >= 1 && levelNumber <= 5) {
+    const LevelBonus& lb = kTable[levelNumber - 1];
+    clearBonus = lb.base + loopCount * lb.loop;
+  }
+
+  const int total = hpBonus + goldBonus + clearBonus;
+  LOG_INFO("[Score] Level {} loop {} → hp={} gold={} clear={} total={}",
+           levelNumber, loopCount, hpBonus, goldBonus, clearBonus, total);
+  return total;
+}
+
 // -------------------- 初始化 --------------------
 void App::Start() {
   LOG_TRACE("Start");
@@ -53,6 +87,7 @@ void App::Update() {
       if (action == ResultAction::BackToHome) {
         m_Result.reset();
         m_GameSession.reset();
+        m_Score = 0;  // 回首頁時重置分數
         m_Home = std::make_unique<Home>();
         m_CurrentState = State::HOME;
         return;
@@ -172,12 +207,25 @@ void App::Update() {
     // 每幀順序：先更新邏輯狀態，再將結果渲染到螢幕
     m_GameSession->update(simDeltaTime, rawDeltaTime);
     if (!m_GameSession->isBaseAlive()) {
-      LOG_INFO("Game Over. Reached wave {}", m_GameSession->getWave());
-      m_Result = std::make_unique<Result>(m_GameSession->getWave());
+      // 遊戲結束：計入當局（含金幣殘值，血量為 0）
+      m_Score += calcLevelScore(
+          m_GameSession->getLevelNumber(),
+          m_GameSession->getLoopCount(),
+          0,  // 基地已被摧毀，血量貢獻為 0
+          m_GameSession->getGold());
+      LOG_INFO("Game Over. Total score={}, wave={}", m_Score, m_GameSession->getWave());
+      m_Result = std::make_unique<Result>(m_GameSession->getWave(), m_Score);
       m_CurrentState = State::RESULT;
     } else if (m_GameSession->isLevelCompleted()) {
+      // 關卡通關：計入本關完整分數（hp + gold + 過關獎勵）
+      m_Score += calcLevelScore(
+          m_GameSession->getLevelNumber(),
+          m_GameSession->getLoopCount(),
+          m_GameSession->getBaseHp(),
+          m_GameSession->getGold());
       const int nextLevelNumber = m_GameSession->getLevelNumber() + 1;
-      LOG_INFO("Loading level {}", nextLevelNumber);
+      LOG_INFO("Level completed. Score so far={}, loading level {}",
+               m_Score, nextLevelNumber);
       m_GameSession = std::make_unique<GameSession>(nextLevelNumber);
       m_SelectedTower = TowerId::Basic;
       m_GameSession->setSelectedTower(m_SelectedTower);

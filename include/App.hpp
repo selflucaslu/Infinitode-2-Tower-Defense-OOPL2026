@@ -33,10 +33,14 @@ public:
 private:
     // -------------------- App 成員 --------------------
     State m_CurrentState = State::START; // App 流程狀態
-    std::unique_ptr<Home> m_Home; // 首頁
-    std::unique_ptr<Result> m_Result; // 結算畫面
+    std::unique_ptr<Home> m_Home;        // 首頁
+    std::unique_ptr<Result> m_Result;    // 結算畫面
     std::unique_ptr<GameSession> m_GameSession; // 本局執行期資料
-    TowerId m_SelectedTower = TowerId::Basic; // 目前選中的塔種類
+    TowerId m_SelectedTower = TowerId::Basic;   // 目前選中的塔種類
+    int m_Score = 0;                            // 跨關卡累積分數
+
+    // 計算並累加本關分數（關卡完成或遊戲結束時呼叫）
+    int calcLevelScore(int levelNumber, int loopCount, int remainHp, int remainGold) const;
 };
 
 #endif

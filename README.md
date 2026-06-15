@@ -40,23 +40,53 @@
 
 ## 塔臺列表
 
-|        主塔名稱        | 外型分類 | 攻擊類型 |
-|:------------------:|:----:| :---:| 
-|    Basic (基礎塔)     | Ammo |
-|    Sniper (狙擊塔)    | Ammo |
-|    Cannon (加農塔)    | Ammo |
-|   Freezing (冰凍塔)   | Around_Skill |
-|    Venom (毒液塔)     | Ammo |
-|    Splash (濺射塔)    | Ammo |
-|    Blast (爆破塔)     | Around_Skill |
-|  Multishot (多重塔)   | Ammo |
-|   Minigun (機槍塔)    | Ammo |
-|     Air (對空塔)      | Ammo |
-|    Tesla (特斯拉塔)    | Ammo |
-|   Missile (導彈塔)    | Ammo |
-| Flamethrower (火焰塔) | Ammo |
-|    Laser (雷射塔)     | Ammo |
-|    Gauss (高斯塔)     | Ammo |
-|    Crusher(粉碎塔)    | Ammo |
+|       主塔名稱       |   外型分類   | 攻擊類型 |
+| :-------------------: | :----------: | :------: |
+|    Basic (基礎塔)    |     Ammo     |          |
+|    Sniper (狙擊塔)    |     Ammo     |          |
+|    Cannon (加農塔)    |     Ammo     |          |
+|   Freezing (冰凍塔)   | Around_Skill |          |
+|    Venom (毒液塔)    |     Ammo     |          |
+|    Splash (濺射塔)    |     Ammo     |          |
+|    Blast (爆破塔)    | Around_Skill |          |
+|  Multishot (多重塔)  |     Ammo     |          |
+|   Minigun (機槍塔)   |     Ammo     |          |
+|     Air (對空塔)     |     Ammo     |          |
+|   Tesla (特斯拉塔)   |     Ammo     |          |
+|   Missile (導彈塔)   |     Ammo     |          |
+| Flamethrower (火焰塔) |     Ammo     |          |
+|    Laser (雷射塔)    |     Ammo     |          |
+|    Gauss (高斯塔)    |     Ammo     |          |
+|    Crusher(粉碎塔)    |     Ammo     |          |
 
 [wiki](https://infinitode-2.fandom.com/wiki/Infinitode_2_Wiki)
+
+## 遊戲結算畫面
+
+新增分數
+每關每剩餘一命就加1 分
+每關每剩餘1000關卡貨幣就加1分
+通過第一關加10分
+通過第二關加15分，每過一次循環加5分
+通過第三關加50分，每過一次循環加25分
+通過第四關加25分，每過一次循環加10分
+通過第五關加60分，每過一次循環加20分
+
+分數達到330分為一星
+分數達到660分為二星
+分數達到1000分為三星
+
+遊戲結算畫面
+
+新增分數
+每關每剩餘一命就加1 分
+每關每剩餘1000關卡貨幣就加1分
+通過第一關加10分
+通過第二關加15分，每過一次循環加5分
+通過第三關加50分，每過一次循環加25分
+通過第四關加25分，每過一次循環加10分
+通過第五關加60分，每過一次循環加20分
+
+分數達到330分為一星
+分數達到660分為二星
+分數達到1000分為三星

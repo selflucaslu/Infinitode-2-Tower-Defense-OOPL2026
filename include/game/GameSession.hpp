@@ -54,6 +54,7 @@ public:
     void setWave(int newWave);
     void nextWave();
     int getLevelNumber() const;
+    int getLoopCount() const;   // 已完成的循環次數（0 = 第一輪）
     bool isLevelCompleted() const;
     bool hitTestNextLevelButton(float screenX, float screenY) const;
     void advanceToNextLevel();
