@@ -5,6 +5,7 @@
 #include "pch.hpp" // IWYU pragma: export
 #include "tower/TowerDef.hpp"
 #include "ui/Home.hpp"
+#include "ui/Result.hpp"
 
 #include <memory>
 
@@ -16,6 +17,7 @@ public:
         START,
         HOME,
         GAME,
+        RESULT,
         END,
     };
 
@@ -32,6 +34,7 @@ private:
     // -------------------- App 成員 --------------------
     State m_CurrentState = State::START; // App 流程狀態
     std::unique_ptr<Home> m_Home; // 首頁
+    std::unique_ptr<Result> m_Result; // 結算畫面
     std::unique_ptr<GameSession> m_GameSession; // 本局執行期資料
     TowerId m_SelectedTower = TowerId::Basic; // 目前選中的塔種類
 };

@@ -5,8 +5,8 @@
 #include "Util/Logger.hpp"
 #include "Util/Time.hpp"
 #include "enemy/EnemyTypeConfig.hpp"
-#include "game/LevelConfig.hpp"
 #include "tower/TowerDef.hpp"
+#include "ui/Result.hpp"
 
 #include <algorithm>
 
@@ -37,6 +37,22 @@ void App::Update() {
         m_CurrentState = State::GAME;
       } else if (action == HomeAction::Quit) {
         m_CurrentState = State::END;
+      }
+    }
+
+    if (Util::Input::IsKeyUp(Util::Keycode::ESCAPE) || Util::Input::IfExit()) {
+      m_CurrentState = State::END;
+    }
+    return;
+  }
+
+  if (m_CurrentState == State::RESULT) {
+    if (m_Result) {
+      const ResultAction action = m_Result->update();
+      m_Result->display();
+
+      if (action == ResultAction::BackToHome) {
+        m_CurrentState = State::HOME;
       }
     }
 
@@ -152,7 +168,11 @@ void App::Update() {
 
     // 每幀順序：先更新邏輯狀態，再將結果渲染到螢幕
     m_GameSession->update(simDeltaTime, rawDeltaTime);
-    if (m_GameSession->isLevelCompleted()) {
+    if (!m_GameSession->isBaseAlive()) {
+      LOG_INFO("Game Over. Reached wave {}", m_GameSession->getWave());
+      m_Result = std::make_unique<Result>(m_GameSession->getWave());
+      m_CurrentState = State::RESULT;
+    } else if (m_GameSession->isLevelCompleted()) {
       const int nextLevelNumber = m_GameSession->getLevelNumber() + 1;
       LOG_INFO("Loading level {}", nextLevelNumber);
       m_GameSession = std::make_unique<GameSession>(nextLevelNumber);
@@ -160,7 +180,10 @@ void App::Update() {
       m_GameSession->setSelectedTower(m_SelectedTower);
       m_GameSession->startSession();
     }
-    m_GameSession->display();
+    
+    if (m_CurrentState == State::GAME) {
+      m_GameSession->display();
+    }
   }
 
   // 當按下 ESC 或視窗關閉時進入結束流程
