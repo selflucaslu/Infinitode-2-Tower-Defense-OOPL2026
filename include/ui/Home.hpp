@@ -15,6 +15,7 @@ enum class HomeAction {
     None,
     StartGame,
     Quit,
+    ShowAbout,
 };
 
 class Home {
@@ -23,6 +24,8 @@ public:
 
     HomeAction update();
     void display();
+
+    bool isShowingAbout() const { return m_ShowAbout; }
 
 private:
     struct Button {
@@ -45,6 +48,8 @@ private:
 
     void createTextObjects();
     void createButtons();
+    void createAboutPopup();
+    void setAboutVisible(bool visible);
     void layout(float windowWidth, float windowHeight);
     bool isInsideButton(const Button& button, const glm::vec2& mousePos) const;
     std::shared_ptr<Util::GameObject> addIcon(
@@ -75,4 +80,17 @@ private:
     std::vector<std::shared_ptr<Util::Text>> m_StaticTexts;
     std::vector<std::shared_ptr<Util::GameObject>> m_StaticObjects;
     std::vector<Button> m_Buttons;
+
+    // About Popup
+    bool m_ShowAbout = false;
+    std::shared_ptr<Util::GameObject> m_AboutDim;
+    std::shared_ptr<Util::GameObject> m_AboutBorder;
+    std::shared_ptr<Util::GameObject> m_AboutDialog;
+    std::shared_ptr<Util::GameObject> m_AboutTitle;
+    std::vector<std::shared_ptr<Util::GameObject>> m_AboutContentObjects;
+    std::shared_ptr<Util::GameObject> m_AboutCloseBtn;
+    std::shared_ptr<Util::GameObject> m_AboutCloseBtnHighlight;
+    std::shared_ptr<Util::GameObject> m_AboutCloseBtnTextObj;
+    std::shared_ptr<Util::Text> m_AboutCloseBtnText;
 };
+

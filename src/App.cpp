@@ -60,6 +60,7 @@ void App::Start() {
 // -------------------- 每幀更新 --------------------
 void App::Update() {
   if (m_CurrentState == State::HOME) {
+    const bool wasShowingAbout = m_Home && m_Home->isShowingAbout();
     if (m_Home) {
       const HomeAction action = m_Home->update();
       m_Home->display();
@@ -73,8 +74,10 @@ void App::Update() {
       }
     }
 
-    if (Util::Input::IsKeyUp(Util::Keycode::ESCAPE) || Util::Input::IfExit()) {
-      m_CurrentState = State::END;
+    if (!wasShowingAbout) {
+      if (Util::Input::IsKeyUp(Util::Keycode::ESCAPE) || Util::Input::IfExit()) {
+        m_CurrentState = State::END;
+      }
     }
     return;
   }

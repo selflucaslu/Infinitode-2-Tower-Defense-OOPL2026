@@ -15,6 +15,7 @@ Home::Home() {
 
     createTextObjects();
     createButtons();
+    createAboutPopup();
 }
 
 HomeAction Home::update() {
@@ -25,11 +26,44 @@ HomeAction Home::update() {
     const glm::vec2 mousePos = Util::Input::GetCursorPosition();
     HomeAction action = HomeAction::None;
 
+    if (m_ShowAbout) {
+        const glm::vec2 closeBtnCenter = {0.0F, -180.0F};
+        const glm::vec2 closeBtnSize = {160.0F, 44.0F};
+        const glm::vec2 halfSize = closeBtnSize * 0.5F;
+        const bool closeHovered = mousePos.x >= closeBtnCenter.x - halfSize.x &&
+                                  mousePos.x <= closeBtnCenter.x + halfSize.x &&
+                                  mousePos.y >= closeBtnCenter.y - halfSize.y &&
+                                  mousePos.y <= closeBtnCenter.y + halfSize.y;
+
+        m_AboutCloseBtnHighlight->SetVisible(closeHovered);
+
+        if (closeHovered && Util::Input::IsKeyDown(Util::Keycode::MOUSE_LB)) {
+            m_ShowAbout = false;
+            setAboutVisible(false);
+        }
+
+        if (Util::Input::IsKeyUp(Util::Keycode::ESCAPE)) {
+            m_ShowAbout = false;
+            setAboutVisible(false);
+        }
+
+        for (Button& button : m_Buttons) {
+            button.highlight->SetVisible(false);
+        }
+
+        return HomeAction::None;
+    }
+
     for (Button& button : m_Buttons) {
         const bool hovered = isInsideButton(button, mousePos);
         button.highlight->SetVisible(hovered && !button.disabled);
         if (!button.disabled && hovered && Util::Input::IsKeyDown(Util::Keycode::MOUSE_LB)) {
-            action = button.action;
+            if (button.action == HomeAction::ShowAbout) {
+                m_ShowAbout = true;
+                setAboutVisible(true);
+            } else {
+                action = button.action;
+            }
         }
     }
 
@@ -86,8 +120,8 @@ void Home::createButtons() {
          "home_handbook", Util::Color::FromRGB(22, 104, 136), HomeAction::None,
          {84.0F, 64.0F}, true},
         {"About", "icon-info", "ui-money-screen-button-small-bottom-edge",
-         "home_about", Util::Color::FromRGB(23, 101, 134), HomeAction::None,
-         {84.0F, 64.0F}, true},
+         "home_about", Util::Color::FromRGB(23, 101, 134), HomeAction::ShowAbout,
+         {84.0F, 64.0F}, false},
         {"Continue", "icon-double-triangle-right", "ui-money-screen-button-small-top-edge",
          "home_continue", Util::Color::FromRGB(63, 68, 74), HomeAction::None,
          {92.0F, 80.0F}, true},
@@ -228,6 +262,39 @@ void Home::layout(float windowWidth, float windowHeight) {
         button.iconObject->m_Transform.translation = button.center + button.iconOffset;
         button.labelObject->m_Transform.translation = button.center + button.labelOffset;
     }
+
+    if (m_AboutDim) {
+        m_AboutDim->m_Transform.translation = {0.0F, 0.0F};
+        m_AboutDim->m_Transform.scale = {windowWidth / 2000.0F, windowHeight / 2000.0F};
+    }
+    if (m_AboutBorder) {
+        m_AboutBorder->m_Transform.translation = {0.0F, 0.0F};
+    }
+    if (m_AboutDialog) {
+        m_AboutDialog->m_Transform.translation = {0.0F, 0.0F};
+    }
+    if (m_AboutTitle) {
+        m_AboutTitle->m_Transform.translation = {0.0F, 180.0F};
+    }
+    float startY = 110.0F;
+    const float lineSpacing = 32.0F;
+    for (std::size_t i = 0; i < m_AboutContentObjects.size(); ++i) {
+        m_AboutContentObjects[i]->m_Transform.translation = {0.0F, startY - static_cast<float>(i) * lineSpacing};
+    }
+    if (m_AboutCloseBtn) {
+        m_AboutCloseBtn->m_Transform.translation = {0.0F, -180.0F};
+    }
+    if (m_AboutCloseBtnHighlight) {
+        m_AboutCloseBtnHighlight->m_Transform.translation = {0.0F, -180.0F};
+        const glm::vec2 hlSize = m_Atlas.getImage("build-selection")->GetSize();
+        m_AboutCloseBtnHighlight->m_Transform.scale = {
+            (160.0F + 8.0F) / hlSize.x,
+            (44.0F + 8.0F) / hlSize.y,
+        };
+    }
+    if (m_AboutCloseBtnTextObj) {
+        m_AboutCloseBtnTextObj->m_Transform.translation = {0.0F, -180.0F};
+    }
 }
 
 bool Home::isInsideButton(const Button& button, const glm::vec2& mousePos) const {
@@ -301,4 +368,54 @@ std::shared_ptr<Util::GameObject> Home::addSolidPanel(
     object->SetZIndex(zIndex);
     m_Renderer.AddChild(object);
     return object;
+}
+
+void Home::createAboutPopup() {
+    m_AboutDim = addSolidPanel("about_dim", {2000, 2000}, Util::Color::FromRGB(10, 10, 10, 180), 5.0F);
+    m_AboutBorder = addSolidPanel("about_dialog_border", {654, 484}, Util::Color::FromRGB(255, 208, 92), 5.1F);
+    m_AboutDialog = addSolidPanel("about_dialog", {650, 480}, Util::Color::FromRGB(30, 45, 54), 5.2F);
+    m_AboutTitle = addText(24, "GAME CONTROLS & INSTRUCTIONS", Util::Color::FromRGB(255, 255, 255), 5.3F);
+
+    const std::vector<std::string> instructions = {
+        "WASD / Right-Mouse Drag   - Move Camera",
+        "Mouse Scroll Wheel        - Zoom Camera (0.1x to 3.0x)",
+        "Keys 1, 2, 3              - Select Tower Type (Basic, Sniper, Cannon)",
+        "Left-Click on Platform    - Build Selected Tower",
+        "Left-Click on UI Panel    - Choose Selected Tower Type",
+        "Key X                    - Sell Tower at cursor (50% Gold refund)",
+        "Key P                    - Show 'Pass Level' button (Testing)",
+        "Key ESC                  - Close Menu / Exit Game"
+    };
+
+    for (const auto& line : instructions) {
+        auto obj = addText(14, line, Util::Color::FromRGB(200, 220, 220), 5.3F);
+        m_AboutContentObjects.push_back(obj);
+    }
+
+    m_AboutCloseBtn = addSolidPanel("about_close_btn", {160, 44}, Util::Color::FromRGB(92, 133, 61), 5.3F);
+
+    m_AboutCloseBtnHighlight = std::make_shared<Util::GameObject>();
+    m_AboutCloseBtnHighlight->SetDrawable(m_Atlas.getImage("build-selection"));
+    m_AboutCloseBtnHighlight->SetZIndex(5.35F);
+    m_AboutCloseBtnHighlight->SetVisible(false);
+    m_Renderer.AddChild(m_AboutCloseBtnHighlight);
+
+    m_AboutCloseBtnTextObj = addText(16, "Close", Util::Color::FromRGB(255, 255, 255), 5.4F, &m_AboutCloseBtnText);
+
+    setAboutVisible(false);
+}
+
+void Home::setAboutVisible(bool visible) {
+    m_AboutDim->SetVisible(visible);
+    m_AboutBorder->SetVisible(visible);
+    m_AboutDialog->SetVisible(visible);
+    m_AboutTitle->SetVisible(visible);
+    for (auto& obj : m_AboutContentObjects) {
+        obj->SetVisible(visible);
+    }
+    m_AboutCloseBtn->SetVisible(visible);
+    m_AboutCloseBtnTextObj->SetVisible(visible);
+    if (!visible) {
+        m_AboutCloseBtnHighlight->SetVisible(false);
+    }
 }
