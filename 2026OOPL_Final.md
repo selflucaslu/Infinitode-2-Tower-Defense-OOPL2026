@@ -204,9 +204,13 @@ classDiagram
 - Debug build 下遇到未知 tile 類型會丟出例外，避免錯誤地圖資料被靜默處理。
 
 ### 使用到 AI/AI Agent 的部分
+盧沛源：
+- OpenAI Codex 協助專案架構設計構想
+- 撰寫時開啟 GitHub Copilot inline auto-completion
 
-OpenAI Codex 協助專案架構設計構想
-撰寫時開啟 GitHub Copilot inline auto-completion
+楊承諭：
+- Gemini 3 Pro 協助程式碼生成與除錯(主要是負責生成程式碼的雛形與重構，開發前期使用)
+- Antigravity AI IDE 協助程式碼生成、除錯與優化(主要是提供自動生成完整程式碼與commit訊息，開發後期幾乎都用它)
 
 ## 結語
 
