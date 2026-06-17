@@ -9,17 +9,16 @@
 1. 複製專案：
 
    ```bash
-   git clone https://github.com/selflucaslu/Infinitode-2-Tower-Defense-OOPL2026.git --recursive
+   git clone https://github.com/selflucaslu/Infinitode-2-Tower-Defense-OOPL2026.git
    ```
 2. 使用 `Debug` 模式設定專案：
 
    > [!WARNING]
    > 請使用 `Debug` 模式建置專案，因為目前 `Release` 模式仍有問題。
-   > 此外，請加入 `-DCMAKE_POLICY_VERSION_MINIMUM=3.5`，以避免舊版 CMake 政策造成的相容性問題。
    >
 
    ```bash
-   cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+   cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
    ```
 3. 建置專案：
 
@@ -35,7 +34,7 @@
 4. 執行專案：
 
    ```bash
-   ./build/Infinitode-2-Tower-Defense-OOPL2026
+   ./build/Infinitode-2
    ```
 
 ## 塔臺列表
