@@ -10,6 +10,11 @@
 #include <filesystem>
 #include <string>
 
+std::unique_ptr<Util::BGM> Home::s_Bgm = nullptr;
+int Home::s_CurrentPlayingIndex = -1;
+bool Home::s_IsPlaying = false;
+int Home::s_MusicVolume = 64;
+
 Home::Home() {
     m_Atlas.loadAtlas("assets/combined.atlas");
 
@@ -17,6 +22,7 @@ Home::Home() {
     createButtons();
     createAboutPopup();
     createHandbookPopup();
+    createMusicPlayerPopup();
 }
 
 HomeAction Home::update() {
@@ -96,6 +102,57 @@ HomeAction Home::update() {
         return HomeAction::None;
     }
 
+    if (m_ShowMusicPlayer) {
+        const bool closeHovered = mousePos.x >= m_MusicCloseBtnCenter.x - m_MusicCloseBtnSize.x * 0.5F &&
+                                  mousePos.x <= m_MusicCloseBtnCenter.x + m_MusicCloseBtnSize.x * 0.5F &&
+                                  mousePos.y >= m_MusicCloseBtnCenter.y - m_MusicCloseBtnSize.y * 0.5F &&
+                                  mousePos.y <= m_MusicCloseBtnCenter.y + m_MusicCloseBtnSize.y * 0.5F;
+
+        m_MusicCloseBtnHighlight->SetVisible(closeHovered);
+
+        if (closeHovered && Util::Input::IsKeyDown(Util::Keycode::MOUSE_LB)) {
+            m_ShowMusicPlayer = false;
+            setMusicPlayerVisible(false);
+            stopMusic();
+        }
+
+        if (Util::Input::IsKeyUp(Util::Keycode::ESCAPE)) {
+            m_ShowMusicPlayer = false;
+            setMusicPlayerVisible(false);
+            stopMusic();
+        }
+
+        for (std::size_t i = 0; i < m_MusicTracks.size(); ++i) {
+            auto& track = m_MusicTracks[i];
+            const bool hovered = mousePos.x >= track.center.x - track.size.x * 0.5F &&
+                                 mousePos.x <= track.center.x + track.size.x * 0.5F &&
+                                 mousePos.y >= track.center.y - track.size.y * 0.5F &&
+                                 mousePos.y <= track.center.y + track.size.y * 0.5F;
+            track.highlight->SetVisible(hovered);
+            if (hovered && Util::Input::IsKeyDown(Util::Keycode::MOUSE_LB)) {
+                playTrack(static_cast<int>(i));
+            }
+        }
+
+        for (std::size_t i = 0; i < m_ControlButtons.size(); ++i) {
+            auto& btn = m_ControlButtons[i];
+            const bool hovered = mousePos.x >= btn.center.x - btn.size.x * 0.5F &&
+                                 mousePos.x <= btn.center.x + btn.size.x * 0.5F &&
+                                 mousePos.y >= btn.center.y - btn.size.y * 0.5F &&
+                                 mousePos.y <= btn.center.y + btn.size.y * 0.5F;
+            btn.highlight->SetVisible(hovered);
+            if (hovered && Util::Input::IsKeyDown(Util::Keycode::MOUSE_LB)) {
+                btn.action();
+            }
+        }
+
+        for (Button& button : m_Buttons) {
+            button.highlight->SetVisible(false);
+        }
+
+        return HomeAction::None;
+    }
+
     for (Button& button : m_Buttons) {
         const bool hovered = isInsideButton(button, mousePos);
         button.highlight->SetVisible(hovered && !button.disabled);
@@ -107,6 +164,9 @@ HomeAction Home::update() {
                 m_ShowHandbook = true;
                 setHandbookVisible(true);
                 switchHandbookTab(0);
+            } else if (button.action == HomeAction::ShowMusicPlayer) {
+                m_ShowMusicPlayer = true;
+                setMusicPlayerVisible(true);
             } else {
                 action = button.action;
             }
@@ -157,8 +217,8 @@ void Home::createButtons() {
         bool disabled;
     } configs[] = {
         {"Music player", "icon-music-player", "ui-money-screen-button-small-top-edge",
-         "home_music", Util::Color::FromRGB(26, 99, 130), HomeAction::None,
-         {92.0F, 76.0F}, true},
+         "home_music", Util::Color::FromRGB(26, 99, 130), HomeAction::ShowMusicPlayer,
+         {92.0F, 76.0F}, false},
         {"Settings", "icon-tools", "ui-money-screen-button-small-bottom-edge",
          "home_settings", Util::Color::FromRGB(23, 100, 132), HomeAction::None,
          {84.0F, 64.0F}, true},
@@ -422,6 +482,76 @@ void Home::layout(float windowWidth, float windowHeight) {
     }
     if (m_HandbookCloseBtnTextObj) {
         m_HandbookCloseBtnTextObj->m_Transform.translation = {0.0F, -210.0F};
+    }
+
+    // Music Player Popup Layout
+    if (m_MusicDim) {
+        m_MusicDim->m_Transform.translation = {0.0F, 0.0F};
+        m_MusicDim->m_Transform.scale = {windowWidth / 2000.0F, windowHeight / 2000.0F};
+    }
+    if (m_MusicBorder) {
+        m_MusicBorder->m_Transform.translation = {0.0F, 0.0F};
+    }
+    if (m_MusicDialog) {
+        m_MusicDialog->m_Transform.translation = {0.0F, 0.0F};
+    }
+    if (m_MusicTitle) {
+        m_MusicTitle->m_Transform.translation = {0.0F, 215.0F};
+    }
+
+    // Tracks layout
+    for (std::size_t i = 0; i < m_MusicTracks.size(); ++i) {
+        auto& track = m_MusicTracks[i];
+        track.center = {0.0F, 140.0F - static_cast<float>(i) * 50.0F};
+        track.rowPanel->m_Transform.translation = track.center;
+        track.textObj->m_Transform.translation = track.center;
+
+        const glm::vec2 hlSize = m_Atlas.getImage("build-selection")->GetSize();
+        track.highlight->m_Transform.translation = track.center;
+        track.highlight->m_Transform.scale = {
+            (track.size.x + 8.0F) / hlSize.x,
+            (track.size.y + 8.0F) / hlSize.y,
+        };
+    }
+
+    // Status Texts layout
+    if (m_CurrentTrackTextDrawable) {
+        float tw = m_CurrentTrackTextDrawable->GetSize().x;
+        m_CurrentTrackTextObj->m_Transform.translation = {-240.0F + tw * 0.5F, -110.0F};
+    }
+    if (m_VolumeTextDrawable) {
+        float vw = m_VolumeTextDrawable->GetSize().x;
+        m_VolumeTextObj->m_Transform.translation = {240.0F - vw * 0.5F, -110.0F};
+    }
+
+    // Control buttons layout
+    for (std::size_t i = 0; i < m_ControlButtons.size(); ++i) {
+        auto& btn = m_ControlButtons[i];
+        btn.center = {-165.0F + static_cast<float>(i) * 110.0F, -160.0F};
+        btn.btnPanel->m_Transform.translation = btn.center;
+        btn.textObj->m_Transform.translation = btn.center;
+
+        const glm::vec2 hlSize = m_Atlas.getImage("build-selection")->GetSize();
+        btn.highlight->m_Transform.translation = btn.center;
+        btn.highlight->m_Transform.scale = {
+            (btn.size.x + 8.0F) / hlSize.x,
+            (btn.size.y + 8.0F) / hlSize.y,
+        };
+    }
+
+    if (m_MusicCloseBtn) {
+        m_MusicCloseBtn->m_Transform.translation = m_MusicCloseBtnCenter;
+    }
+    if (m_MusicCloseBtnHighlight) {
+        m_MusicCloseBtnHighlight->m_Transform.translation = m_MusicCloseBtnCenter;
+        const glm::vec2 hlSize = m_Atlas.getImage("build-selection")->GetSize();
+        m_MusicCloseBtnHighlight->m_Transform.scale = {
+            (m_MusicCloseBtnSize.x + 8.0F) / hlSize.x,
+            (m_MusicCloseBtnSize.y + 8.0F) / hlSize.y,
+        };
+    }
+    if (m_MusicCloseBtnTextObj) {
+        m_MusicCloseBtnTextObj->m_Transform.translation = m_MusicCloseBtnCenter;
     }
 }
 
@@ -763,4 +893,229 @@ void Home::switchHandbookTab(int tabIndex) {
             obj->SetVisible(pageVisible);
         }
     }
+}
+
+void Home::createMusicPlayerPopup() {
+    // 1. Pre-create active, inactive and button panel backgrounds
+    auto activeBg = addSolidPanel("music_row_active", {480, 38}, Util::Color::FromRGB(92, 133, 61), 5.8F);
+    m_Renderer.RemoveChild(activeBg);
+    auto inactiveBg = addSolidPanel("music_row_inactive", {480, 38}, Util::Color::FromRGB(45, 60, 72), 5.8F);
+    m_Renderer.RemoveChild(inactiveBg);
+
+    auto btnActiveBg = addSolidPanel("music_ctrl_active", {100, 36}, Util::Color::FromRGB(92, 133, 61), 5.8F);
+    m_Renderer.RemoveChild(btnActiveBg);
+    auto btnInactiveBg = addSolidPanel("music_ctrl_inactive", {100, 36}, Util::Color::FromRGB(45, 60, 72), 5.8F);
+    m_Renderer.RemoveChild(btnInactiveBg);
+
+    // 2. Dim background
+    m_MusicDim = addSolidPanel("music_dim", {2000, 2000}, Util::Color::FromRGB(10, 10, 10, 180), 5.5F);
+
+    // 3. Dialog Border (Golden Border)
+    m_MusicBorder = addSolidPanel("music_border", {754, 524}, Util::Color::FromRGB(255, 208, 92), 5.6F);
+
+    // 4. Dialog Box (Dark Blue-Grey)
+    m_MusicDialog = addSolidPanel("music_dialog", {750, 520}, Util::Color::FromRGB(30, 45, 54), 5.7F);
+
+    // 5. Header Title
+    m_MusicTitle = addText(24, "MUSIC PLAYER", Util::Color::FromRGB(255, 255, 255), 5.8F);
+
+    // 6. Tracks setup
+    struct TrackConfig {
+        std::string filename;
+        std::string displayName;
+    } trackConfigs[] = {
+        {"assets/music/Panic_At_The_Ramparts.mp3", "1. Panic At The Ramparts"},
+        {"assets/music/Smili_1.mp3",               "2. Smili 1"},
+        {"assets/music/cionape_3.mp3",             "3. Cionape 3"},
+        {"assets/music/fiosion_2.mp3",             "4. Fiosion 2"},
+        {"assets/music/havido_4.mp3",              "5. Havido 4"}
+    };
+
+    m_MusicTracks.resize(5);
+    for (int i = 0; i < 5; ++i) {
+        MusicTrack track;
+        track.filename = trackConfigs[i].filename;
+        track.displayName = trackConfigs[i].displayName;
+        track.size = {480.0F, 38.0F};
+
+        track.rowPanel = addSolidPanel("music_track_fill_" + std::to_string(i), {480, 38},
+            Util::Color::FromRGB(45, 60, 72), 5.8F);
+        track.textObj = addText(14, track.displayName,
+            Util::Color::FromRGB(170, 190, 200), 5.9F, &track.textDrawable);
+
+        track.highlight = std::make_shared<Util::GameObject>();
+        track.highlight->SetDrawable(m_Atlas.getImage("build-selection"));
+        track.highlight->SetZIndex(5.85F);
+        track.highlight->SetVisible(false);
+        m_Renderer.AddChild(track.highlight);
+
+        m_MusicTracks[i] = track;
+    }
+
+    // 7. Status texts setup
+    m_CurrentTrackTextObj = addText(14, "Now Playing: None", Util::Color::FromRGB(236, 255, 255), 5.8F, &m_CurrentTrackTextDrawable);
+    m_VolumeTextObj = addText(14, "Volume: 50%", Util::Color::FromRGB(236, 255, 255), 5.8F, &m_VolumeTextDrawable);
+
+    // 8. Control Buttons setup
+    struct ControlBtnConfig {
+        std::string label;
+        std::function<void()> action;
+    } ctrlConfigs[] = {
+        {"Pause", [this]() {
+            if (s_Bgm && s_IsPlaying) {
+                s_Bgm->Pause();
+                s_IsPlaying = false;
+                updateMusicPlayerUIState();
+            }
+        }},
+        {"Resume", [this]() {
+            if (s_Bgm && !s_IsPlaying) {
+                s_Bgm->Resume();
+                s_IsPlaying = true;
+                updateMusicPlayerUIState();
+            } else if (!s_Bgm && !m_MusicTracks.empty()) {
+                playTrack(0);
+            }
+        }},
+        {"Vol -", [this]() {
+            s_MusicVolume = std::max(0, s_MusicVolume - 16);
+            if (s_Bgm) {
+                s_Bgm->SetVolume(s_MusicVolume);
+            }
+            updateMusicPlayerUIState();
+        }},
+        {"Vol +", [this]() {
+            s_MusicVolume = std::min(128, s_MusicVolume + 16);
+            if (s_Bgm) {
+                s_Bgm->SetVolume(s_MusicVolume);
+            }
+            updateMusicPlayerUIState();
+        }}
+    };
+
+    m_ControlButtons.resize(4);
+    for (int i = 0; i < 4; ++i) {
+        ControlButton btn;
+        btn.label = ctrlConfigs[i].label;
+        btn.size = {100.0F, 36.0F};
+        btn.action = ctrlConfigs[i].action;
+
+        btn.btnPanel = addSolidPanel("music_ctrl_fill_" + std::to_string(i), {100, 36},
+            Util::Color::FromRGB(45, 60, 72), 5.8F);
+        btn.textObj = addText(13, btn.label, Util::Color::FromRGB(255, 255, 255), 5.9F, &btn.textDrawable);
+
+        btn.highlight = std::make_shared<Util::GameObject>();
+        btn.highlight->SetDrawable(m_Atlas.getImage("build-selection"));
+        btn.highlight->SetZIndex(5.85F);
+        btn.highlight->SetVisible(false);
+        m_Renderer.AddChild(btn.highlight);
+
+        m_ControlButtons[i] = btn;
+    }
+
+    // 9. Close button
+    m_MusicCloseBtn = addSolidPanel("music_close_btn", {160, 44}, Util::Color::FromRGB(92, 133, 61), 5.8F);
+
+    m_MusicCloseBtnHighlight = std::make_shared<Util::GameObject>();
+    m_MusicCloseBtnHighlight->SetDrawable(m_Atlas.getImage("build-selection"));
+    m_MusicCloseBtnHighlight->SetZIndex(5.85F);
+    m_MusicCloseBtnHighlight->SetVisible(false);
+    m_Renderer.AddChild(m_MusicCloseBtnHighlight);
+
+    m_MusicCloseBtnTextObj = addText(16, "Close", Util::Color::FromRGB(255, 255, 255), 5.9F, &m_MusicCloseBtnText);
+
+    setMusicPlayerVisible(false);
+    updateMusicPlayerUIState();
+}
+
+void Home::setMusicPlayerVisible(bool visible) {
+    m_MusicDim->SetVisible(visible);
+    m_MusicBorder->SetVisible(visible);
+    m_MusicDialog->SetVisible(visible);
+    m_MusicTitle->SetVisible(visible);
+    for (auto& track : m_MusicTracks) {
+        track.rowPanel->SetVisible(visible);
+        track.textObj->SetVisible(visible);
+        if (!visible) {
+            track.highlight->SetVisible(false);
+        }
+    }
+    m_CurrentTrackTextObj->SetVisible(visible);
+    m_VolumeTextObj->SetVisible(visible);
+    for (auto& btn : m_ControlButtons) {
+        btn.btnPanel->SetVisible(visible);
+        btn.textObj->SetVisible(visible);
+        if (!visible) {
+            btn.highlight->SetVisible(false);
+        }
+    }
+    m_MusicCloseBtn->SetVisible(visible);
+    m_MusicCloseBtnTextObj->SetVisible(visible);
+    if (!visible) {
+        m_MusicCloseBtnHighlight->SetVisible(false);
+    }
+}
+
+void Home::updateMusicPlayerUIState() {
+    namespace fs = std::filesystem;
+    const fs::path cacheDir = fs::temp_directory_path() / "home_ui_cache";
+
+    for (int i = 0; i < static_cast<int>(m_MusicTracks.size()); ++i) {
+        auto& track = m_MusicTracks[i];
+        if (i == s_CurrentPlayingIndex && s_IsPlaying) {
+            track.textDrawable->SetColor(Util::Color::FromRGB(255, 255, 255));
+            fs::path activePath = cacheDir / "music_row_active.bmp";
+            track.rowPanel->SetDrawable(std::make_shared<Util::Image>(activePath.string()));
+        } else {
+            track.textDrawable->SetColor(Util::Color::FromRGB(170, 190, 200));
+            fs::path inactivePath = cacheDir / "music_row_inactive.bmp";
+            track.rowPanel->SetDrawable(std::make_shared<Util::Image>(inactivePath.string()));
+        }
+    }
+
+    std::string nowPlaying = "Now Playing: None";
+    if (s_CurrentPlayingIndex >= 0 && s_CurrentPlayingIndex < static_cast<int>(m_MusicTracks.size())) {
+        nowPlaying = "Now Playing: " + m_MusicTracks[s_CurrentPlayingIndex].displayName;
+        if (!s_IsPlaying) {
+            nowPlaying += " (Paused)";
+        }
+    }
+    m_CurrentTrackTextDrawable->SetText(nowPlaying);
+
+    int volPercent = s_MusicVolume * 100 / 128;
+    m_VolumeTextDrawable->SetText("Volume: " + std::to_string(volPercent) + "%");
+}
+
+void Home::playTrack(int index) {
+    if (index < 0 || index >= static_cast<int>(m_MusicTracks.size())) return;
+
+    if (s_CurrentPlayingIndex != index) {
+        s_CurrentPlayingIndex = index;
+        s_IsPlaying = true;
+        s_Bgm = std::make_unique<Util::BGM>(m_MusicTracks[index].filename);
+        s_Bgm->SetVolume(s_MusicVolume);
+        s_Bgm->Play(-1);
+    } else {
+        // Toggle pause/play
+        if (s_IsPlaying) {
+            if (s_Bgm) s_Bgm->Pause();
+            s_IsPlaying = false;
+        } else {
+            if (s_Bgm) s_Bgm->Resume();
+            s_IsPlaying = true;
+        }
+    }
+
+    updateMusicPlayerUIState();
+}
+
+Home::~Home() {
+    stopMusic();
+}
+
+void Home::stopMusic() {
+    Mix_HaltMusic();
+    s_IsPlaying = false;
+    s_CurrentPlayingIndex = -1;
+    s_Bgm.reset();
 }

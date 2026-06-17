@@ -60,7 +60,9 @@ void App::Start() {
 // -------------------- 每幀更新 --------------------
 void App::Update() {
   if (m_CurrentState == State::HOME) {
-    const bool wasPopupShowing = m_Home && (m_Home->isShowingAbout() || m_Home->isShowingHandbook());
+    const bool wasPopupShowing = m_Home && (m_Home->isShowingAbout() || 
+                                            m_Home->isShowingHandbook() || 
+                                            m_Home->isShowingMusicPlayer());
     if (m_Home) {
       const HomeAction action = m_Home->update();
       m_Home->display();
