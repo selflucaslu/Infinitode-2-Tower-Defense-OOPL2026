@@ -106,8 +106,34 @@ void App::Update() {
     return;
   }
 
+  // 顯示和關閉設定頁面 (Key M)
+  if (m_GameSession && Util::Input::IsKeyDown(Util::Keycode::M)) {
+    m_GameSession->toggleSettings();
+  }
+
+  if (m_GameSession && m_GameSession->isShowingSettings()) {
+    m_GameSession->updateSettingsInput();
+
+    if (Util::Input::IfExit()) {
+      m_CurrentState = State::END;
+      return;
+    }
+
+    // 依然渲染，但 simulation deltaTime 為 0 以暫停遊戲
+    const float rawDeltaTime = Util::Time::GetDeltaTimeMs() * 0.001F;
+    m_GameSession->update(0.0F, rawDeltaTime);
+    m_GameSession->display();
+    return;
+  }
+
+  // 切換作弊模式 (Key F1)
+  if (Util::Input::IsKeyDown(Util::Keycode::F1)) {
+    m_CheatModeEnabled = !m_CheatModeEnabled;
+    LOG_INFO("Cheat Mode toggled: {}", m_CheatModeEnabled ? "ENABLED" : "DISABLED");
+  }
+
   // 顯示跳關按鈕（測試用，正式版可刪除）
-  if (Util::Input::IsKeyDown(Util::Keycode::P))
+  if (m_CheatModeEnabled && m_GameSession && Util::Input::IsKeyDown(Util::Keycode::P))
     m_GameSession->showPassedLevelButton();
 
   // 切換塔種類（數字鍵 1 / 2 / 3）
@@ -173,6 +199,20 @@ void App::Update() {
     const float simDeltaTime =
         std::clamp(rawDeltaTime, 0.0F, 0.05F); // 過濾極端值
 
+    // 處理作弊按鍵
+    if (m_CheatModeEnabled) {
+      // H: 加 1 條命
+      if (Util::Input::IsKeyDown(Util::Keycode::H)) {
+        m_GameSession->setBaseHp(m_GameSession->getBaseHp() + 1);
+        LOG_INFO("Cheat: HP increased to {}", m_GameSession->getBaseHp());
+      }
+      // G: 加 100 金幣
+      if (Util::Input::IsKeyDown(Util::Keycode::G)) {
+        m_GameSession->addGold(100);
+        LOG_INFO("Cheat: Gold increased to {}", m_GameSession->getGold());
+      }
+    }
+
     constexpr float cameraSpeedPerSecond =
         480.0F;      // 相機速度定義（每秒多少單位）
     float dx = 0.0F; // 本幀 x 位移量
@@ -188,12 +228,35 @@ void App::Update() {
     if (Util::Input::IsKeyPressed(Util::Keycode::D))
       dx -= cameraSpeedPerSecond * simDeltaTime;
 
-    // 處理滑鼠右鍵拖曳移動地圖
+    // 處理滑鼠右鍵拖曳與單擊拆塔
     glm::vec2 currentMousePos = Util::Input::GetCursorPosition();
     static glm::vec2 lastMousePos = currentMousePos;
+    static bool isRightClickPressed = false;
+    static glm::vec2 rightClickStartPos = {0.0F, 0.0F};
+
+    if (Util::Input::IsKeyDown(Util::Keycode::MOUSE_RB)) {
+      isRightClickPressed = true;
+      rightClickStartPos = currentMousePos;
+    }
+
     if (Util::Input::IsKeyPressed(Util::Keycode::MOUSE_RB)) {
       dx += (currentMousePos.x - lastMousePos.x);
       dy += (currentMousePos.y - lastMousePos.y);
+    }
+
+    if (isRightClickPressed && Util::Input::IsKeyUp(Util::Keycode::MOUSE_RB)) {
+      float dist = glm::distance(currentMousePos, rightClickStartPos);
+      if (dist < 8.0F) {
+        if (!m_GameSession->hitTestSelectionPanel(currentMousePos.x, currentMousePos.y) &&
+            !m_GameSession->hitTestNextLevelButton(currentMousePos.x, currentMousePos.y)) {
+          if (auto grid = m_GameSession->getMap().worldToGrid(currentMousePos)) {
+            if (m_GameSession->sellTower(grid->first, grid->second)) {
+              LOG_INFO("Tower removed at grid ({}, {}), refund granted via right click", grid->first, grid->second);
+            }
+          }
+        }
+      }
+      isRightClickPressed = false;
     }
     lastMousePos = currentMousePos;
 
@@ -207,6 +270,19 @@ void App::Update() {
       float scrollDelta = Util::Input::GetScrollDistance().y;
       if (scrollDelta != 0.0F) {
         m_GameSession->zoomCamera(scrollDelta);
+      }
+    }
+
+    // 處理鍵盤 Q/E 縮放 (E: 放大, Q: 縮小)
+    static float zoomTimer = 0.0f;
+    zoomTimer += simDeltaTime;
+    if (zoomTimer >= 0.03F) {
+      if (Util::Input::IsKeyPressed(Util::Keycode::E)) {
+        m_GameSession->zoomCamera(1.0F);
+        zoomTimer = 0.0F;
+      } else if (Util::Input::IsKeyPressed(Util::Keycode::Q)) {
+        m_GameSession->zoomCamera(-1.0F);
+        zoomTimer = 0.0F;
       }
     }
 

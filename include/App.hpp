@@ -38,6 +38,7 @@ private:
     std::unique_ptr<GameSession> m_GameSession; // 本局執行期資料
     TowerId m_SelectedTower = TowerId::Basic;   // 目前選中的塔種類
     int m_Score = 0;                            // 跨關卡累積分數
+    bool m_CheatModeEnabled = false;            // 是否啟用作弊模式
 
     // 計算並累加本關分數（關卡完成或遊戲結束時呼叫）
     int calcLevelScore(int levelNumber, int loopCount, int remainHp, int remainGold) const;

@@ -10,6 +10,7 @@
 #include <array>
 #include <cstddef>
 #include <string>
+#include <filesystem>
 
 // -------------------- 建立單局 --------------------
 GameSession::GameSession(int levelNumber)
@@ -131,6 +132,9 @@ GameSession::GameSession(int levelNumber)
 
   // 建立 FPS 顯示，只由遊戲畫面負責更新與繪製。
   m_FpsOverlay = std::make_unique<FpsOverlay>();
+
+  // 建立設定選單
+  createSettingsPopup();
 }
 
 // -------------------- 地圖存取 --------------------
@@ -264,7 +268,7 @@ void GameSession::update(float deltaTime, float rawDeltaTime) {
   }
 
   // 1) 暫停時不推進遊戲，只維持畫面物件與 HUD 的位置正確。
-  if (!isSessionActive) {
+  if (!isSessionActive || m_ShowSettings) {
     enemyManager->updateEnemyDisplay(map->getOffsetX(), map->getOffsetY(),
                                      map->getCurrentScale());
     updateTowerDisplay();
@@ -360,6 +364,14 @@ void GameSession::display() {
   if (canAdvanceToNextLevel) {
     updateNextLevelButtonDisplay();
     nextLevelButtonRoot.Update();
+  }
+
+  // 9) 如果設定選單開啟，繪製設定選單。
+  if (m_ShowSettings) {
+    const std::shared_ptr<Core::Context> context = Core::Context::GetInstance();
+    layoutSettings(static_cast<float>(context->GetWindowWidth()),
+                   static_cast<float>(context->GetWindowHeight()));
+    m_SettingsRoot.Update();
   }
 }
 
@@ -707,7 +719,7 @@ bool GameSession::hasNextLevel() const {
 }
 
 void GameSession::showPassedLevelButton() {
-  if (hasNextLevel()) {
+  if (hasNextLevel() || levelNumber == 5) {
     canAdvanceToNextLevel = true;
   }
 }
@@ -718,7 +730,7 @@ void GameSession::beginNextLoop() {
   loopCount += 1;
 
   // 判斷是否達成完跳關條件，達成就顯示跳關按鈕。
-  if (loopCount == 1 && hasNextLevel()) {
+  if (loopCount == 1 && (hasNextLevel() || levelNumber == 5)) {
     canAdvanceToNextLevel = true;
   }
 
@@ -752,4 +764,234 @@ void GameSession::beginNextLoop() {
 
   LOG_INFO("[Session] 進入第 {} 輪循環：HP ×{:.2f}, SPD ×{:.2f}", loopCount + 1,
            hpMult, spdMult);
+}
+
+void GameSession::toggleSettings() {
+  m_ShowSettings = !m_ShowSettings;
+  setSettingsVisible(m_ShowSettings);
+}
+
+void GameSession::updateSettingsInput() {
+  const glm::vec2 mousePos = Util::Input::GetCursorPosition();
+
+  // Check Close button hover/click
+  const glm::vec2 closeBtnCenter = m_SettingsCloseBtnCenter;
+  const glm::vec2 closeBtnSize = m_SettingsCloseBtnSize;
+  const glm::vec2 halfClose = closeBtnSize * 0.5F;
+  const bool closeHovered = mousePos.x >= closeBtnCenter.x - halfClose.x &&
+                            mousePos.x <= closeBtnCenter.x + halfClose.x &&
+                            mousePos.y >= closeBtnCenter.y - halfClose.y &&
+                            mousePos.y <= closeBtnCenter.y + halfClose.y;
+
+  m_SettingsCloseBtnHighlight->SetVisible(closeHovered);
+
+  if (closeHovered && Util::Input::IsKeyDown(Util::Keycode::MOUSE_LB)) {
+    toggleSettings();
+    return;
+  }
+
+  // Check Volume adjustment buttons hover/click
+  for (std::size_t i = 0; i < m_SettingsButtons.size(); ++i) {
+    auto& btn = m_SettingsButtons[i];
+    const glm::vec2 halfBtn = btn.size * 0.5F;
+    const bool btnHovered = mousePos.x >= btn.center.x - halfBtn.x &&
+                            mousePos.x <= btn.center.x + halfBtn.x &&
+                            mousePos.y >= btn.center.y - halfBtn.y &&
+                            mousePos.y <= btn.center.y + halfBtn.y;
+
+    btn.highlight->SetVisible(btnHovered);
+
+    if (btnHovered && Util::Input::IsKeyDown(Util::Keycode::MOUSE_LB)) {
+      int currentVol = Home::GetMusicVolume();
+      if (i == 0) { // Vol -
+        currentVol = std::max(0, currentVol - 16);
+      } else { // Vol +
+        currentVol = std::min(128, currentVol + 16);
+      }
+      Home::SetMusicVolume(currentVol);
+      if (m_LevelBgm) {
+        m_LevelBgm->SetVolume(currentVol);
+      }
+      updateSettingsUIState();
+    }
+  }
+}
+
+void GameSession::createSettingsPopup() {
+  // 1. Dim background
+  m_SettingsDim = addSolidPanelSettings("settings_dim", {2000, 2000}, Util::Color::FromRGB(10, 10, 10, 180), 6.5F);
+
+  // 2. Dialog Border (Golden Border)
+  m_SettingsBorder = addSolidPanelSettings("settings_border", {504, 324}, Util::Color::FromRGB(255, 208, 92), 6.6F);
+
+  // 3. Dialog Box (Dark Blue-Grey)
+  m_SettingsDialog = addSolidPanelSettings("settings_dialog", {500, 320}, Util::Color::FromRGB(30, 45, 54), 6.7F);
+
+  // 4. Header Title
+  m_SettingsTitle = addTextSettings(24, "SETTINGS", Util::Color::FromRGB(255, 255, 255), 6.8F);
+
+  // 5. Volume Status text setup
+  m_SettingsVolumeTextObj = addTextSettings(15, "BGM Volume: 50%", Util::Color::FromRGB(236, 255, 255), 6.8F, &m_SettingsVolumeTextDrawable);
+
+  // 6. Buttons setup
+  m_SettingsButtons.resize(2);
+  for (int i = 0; i < 2; ++i) {
+    SettingsButton btn;
+    btn.label = (i == 0) ? "Vol -" : "Vol +";
+    btn.size = {100.0F, 36.0F};
+
+    btn.btnPanel = addSolidPanelSettings("settings_btn_fill_" + std::to_string(i), {100, 36},
+        Util::Color::FromRGB(45, 60, 72), 6.8F);
+    btn.textObj = addTextSettings(13, btn.label, Util::Color::FromRGB(255, 255, 255), 6.9F, &btn.textDrawable);
+
+    btn.highlight = std::make_shared<Util::GameObject>();
+    btn.highlight->SetDrawable(atlasLoader->getImage("build-selection"));
+    btn.highlight->SetZIndex(6.85F);
+    btn.highlight->SetVisible(false);
+    m_SettingsRoot.AddChild(btn.highlight);
+
+    m_SettingsButtons[i] = btn;
+  }
+
+  // 7. Close button
+  m_SettingsCloseBtn = addSolidPanelSettings("settings_close_btn", {160, 44}, Util::Color::FromRGB(92, 133, 61), 6.8F);
+
+  m_SettingsCloseBtnHighlight = std::make_shared<Util::GameObject>();
+  m_SettingsCloseBtnHighlight->SetDrawable(atlasLoader->getImage("build-selection"));
+  m_SettingsCloseBtnHighlight->SetZIndex(6.85F);
+  m_SettingsCloseBtnHighlight->SetVisible(false);
+  m_SettingsRoot.AddChild(m_SettingsCloseBtnHighlight);
+
+  m_SettingsCloseBtnTextObj = addTextSettings(16, "Close", Util::Color::FromRGB(255, 255, 255), 6.9F, &m_SettingsCloseBtnText);
+
+  setSettingsVisible(false);
+  updateSettingsUIState();
+}
+
+void GameSession::setSettingsVisible(bool visible) {
+  m_SettingsDim->SetVisible(visible);
+  m_SettingsBorder->SetVisible(visible);
+  m_SettingsDialog->SetVisible(visible);
+  m_SettingsTitle->SetVisible(visible);
+  m_SettingsVolumeTextObj->SetVisible(visible);
+  for (auto& btn : m_SettingsButtons) {
+    btn.btnPanel->SetVisible(visible);
+    btn.textObj->SetVisible(visible);
+    if (!visible) {
+      btn.highlight->SetVisible(false);
+    }
+  }
+  m_SettingsCloseBtn->SetVisible(visible);
+  m_SettingsCloseBtnTextObj->SetVisible(visible);
+  if (!visible) {
+    m_SettingsCloseBtnHighlight->SetVisible(false);
+  }
+}
+
+void GameSession::updateSettingsUIState() {
+  int volPercent = Home::GetMusicVolume() * 100 / 128;
+  if (m_SettingsVolumeTextDrawable) {
+    m_SettingsVolumeTextDrawable->SetText("BGM Volume: " + std::to_string(volPercent) + "%");
+  }
+}
+
+void GameSession::layoutSettings(float windowWidth, float windowHeight) {
+  if (m_SettingsDim) {
+    m_SettingsDim->m_Transform.translation = {0.0F, 0.0F};
+    m_SettingsDim->m_Transform.scale = {windowWidth / 2000.0F, windowHeight / 2000.0F};
+  }
+  if (m_SettingsBorder) {
+    m_SettingsBorder->m_Transform.translation = {0.0F, 0.0F};
+  }
+  if (m_SettingsDialog) {
+    m_SettingsDialog->m_Transform.translation = {0.0F, 0.0F};
+  }
+  if (m_SettingsTitle) {
+    m_SettingsTitle->m_Transform.translation = {0.0F, 110.0F};
+  }
+  if (m_SettingsVolumeTextObj) {
+    m_SettingsVolumeTextObj->m_Transform.translation = {0.0F, 40.0F};
+  }
+
+  // Volume adjust buttons
+  for (std::size_t i = 0; i < m_SettingsButtons.size(); ++i) {
+    auto& btn = m_SettingsButtons[i];
+    btn.center = {-60.0F + static_cast<float>(i) * 120.0F, -20.0F};
+    btn.btnPanel->m_Transform.translation = btn.center;
+    btn.textObj->m_Transform.translation = btn.center;
+
+    const glm::vec2 hlSize = atlasLoader->getImage("build-selection")->GetSize();
+    btn.highlight->m_Transform.translation = btn.center;
+    btn.highlight->m_Transform.scale = {
+        (btn.size.x + 8.0F) / hlSize.x,
+        (btn.size.y + 8.0F) / hlSize.y,
+    };
+  }
+
+  if (m_SettingsCloseBtn) {
+    m_SettingsCloseBtn->m_Transform.translation = m_SettingsCloseBtnCenter;
+  }
+  if (m_SettingsCloseBtnHighlight) {
+    m_SettingsCloseBtnHighlight->m_Transform.translation = m_SettingsCloseBtnCenter;
+    const glm::vec2 hlSize = atlasLoader->getImage("build-selection")->GetSize();
+    m_SettingsCloseBtnHighlight->m_Transform.scale = {
+        (m_SettingsCloseBtnSize.x + 8.0F) / hlSize.x,
+        (m_SettingsCloseBtnSize.y + 8.0F) / hlSize.y,
+    };
+  }
+  if (m_SettingsCloseBtnTextObj) {
+    m_SettingsCloseBtnTextObj->m_Transform.translation = m_SettingsCloseBtnCenter;
+  }
+}
+
+std::shared_ptr<Util::GameObject> GameSession::addSolidPanelSettings(
+    const std::string& cacheName, const glm::ivec2& pixelSize,
+    const Util::Color& color, float zIndex) {
+  namespace fs = std::filesystem;
+  const fs::path cacheDir = fs::temp_directory_path() / "home_ui_cache";
+  fs::create_directories(cacheDir);
+
+  const fs::path imagePath = cacheDir / (cacheName + ".bmp");
+  if (!fs::exists(imagePath)) {
+    SDL_Surface* surface = SDL_CreateRGBSurfaceWithFormat(
+        0, pixelSize.x, pixelSize.y, 32, SDL_PIXELFORMAT_RGBA32
+    );
+    if (surface == nullptr) {
+      throw std::runtime_error("SDL_CreateRGBSurfaceWithFormat failed");
+    }
+
+    SDL_FillRect(
+        surface,
+        nullptr,
+        SDL_MapRGBA(
+            surface->format,
+            static_cast<Uint8>(color.r),
+            static_cast<Uint8>(color.g),
+            static_cast<Uint8>(color.b),
+            static_cast<Uint8>(color.a)
+        )
+    );
+    SDL_SaveBMP(surface, imagePath.string().c_str());
+    SDL_FreeSurface(surface);
+  }
+
+  auto object = std::make_shared<Util::GameObject>();
+  object->SetDrawable(std::make_shared<Util::Image>(imagePath.string()));
+  object->SetZIndex(zIndex);
+  m_SettingsRoot.AddChild(object);
+  return object;
+}
+
+std::shared_ptr<Util::GameObject> GameSession::addTextSettings(
+    int fontSize, const std::string& text, const Util::Color& color, float zIndex,
+    std::shared_ptr<Util::Text>* textOut) {
+  auto textDrawable = std::make_shared<Util::Text>(kHudFontPath, fontSize, text, color);
+  auto object = std::make_shared<Util::GameObject>();
+  object->SetDrawable(textDrawable);
+  object->SetZIndex(zIndex);
+  m_SettingsRoot.AddChild(object);
+  if (textOut != nullptr) {
+    *textOut = textDrawable;
+  }
+  return object;
 }

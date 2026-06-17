@@ -14,6 +14,7 @@
 #include "utils/TowerSelectionPanel.hpp"
 
 #include "Util/BGM.hpp"
+#include "Util/Color.hpp"
 
 #include <memory>
 #include <string_view>
@@ -85,7 +86,33 @@ public:
         const std::vector<int>& spawnPointIndices = {}
     ) const;
 
+    // -------------------- 設定選單 --------------------
+    bool isShowingSettings() const { return m_ShowSettings; }
+    void toggleSettings();
+    void updateSettingsInput();
+
 private:
+    struct SettingsButton {
+        std::string label;
+        std::shared_ptr<Util::GameObject> btnPanel;
+        std::shared_ptr<Util::GameObject> textObj;
+        std::shared_ptr<Util::Text> textDrawable;
+        std::shared_ptr<Util::GameObject> highlight;
+        glm::vec2 center = {0.0F, 0.0F};
+        glm::vec2 size = {0.0F, 0.0F};
+    };
+
+    void createSettingsPopup();
+    void setSettingsVisible(bool visible);
+    void updateSettingsUIState();
+    void layoutSettings(float windowWidth, float windowHeight);
+
+    std::shared_ptr<Util::GameObject> addSolidPanelSettings(
+        const std::string& cacheName, const glm::ivec2& pixelSize,
+        const Util::Color& color, float zIndex);
+    std::shared_ptr<Util::GameObject> addTextSettings(
+        int fontSize, const std::string& text, const Util::Color& color, float zIndex,
+        std::shared_ptr<Util::Text>* textOut = nullptr);
     void updateTowerDisplay();
     void updateProjectileDisplay();
     void updateHudDisplay();
@@ -151,6 +178,24 @@ private:
     std::vector<WaveConfig> baseSpawnSchedule; // 第一輪的原始配置（用於重置計算）
 
     std::unique_ptr<Util::BGM> m_LevelBgm;
+
+    // -------------------- 設定彈窗成員 --------------------
+    bool m_ShowSettings = false;
+    Util::Renderer m_SettingsRoot;
+    std::shared_ptr<Util::GameObject> m_SettingsDim;
+    std::shared_ptr<Util::GameObject> m_SettingsBorder;
+    std::shared_ptr<Util::GameObject> m_SettingsDialog;
+    std::shared_ptr<Util::GameObject> m_SettingsTitle;
+    std::shared_ptr<Util::GameObject> m_SettingsVolumeTextObj;
+    std::shared_ptr<Util::Text> m_SettingsVolumeTextDrawable;
+    std::vector<SettingsButton> m_SettingsButtons;
+
+    std::shared_ptr<Util::GameObject> m_SettingsCloseBtn;
+    std::shared_ptr<Util::GameObject> m_SettingsCloseBtnHighlight;
+    std::shared_ptr<Util::GameObject> m_SettingsCloseBtnTextObj;
+    std::shared_ptr<Util::Text> m_SettingsCloseBtnText;
+    glm::vec2 m_SettingsCloseBtnCenter = {0.0F, -90.0F};
+    glm::vec2 m_SettingsCloseBtnSize = {160.0F, 44.0F};
 
     // -------------------- 私有方法 --------------------
     bool hasNextLevel() const;

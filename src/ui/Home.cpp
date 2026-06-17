@@ -35,7 +35,7 @@ HomeAction Home::update() {
     HomeAction action = HomeAction::None;
 
     if (m_ShowAbout) {
-        const glm::vec2 closeBtnCenter = {0.0F, -180.0F};
+        const glm::vec2 closeBtnCenter = {0.0F, -230.0F};
         const glm::vec2 closeBtnSize = {160.0F, 44.0F};
         const glm::vec2 halfSize = closeBtnSize * 0.5F;
         const bool closeHovered = mousePos.x >= closeBtnCenter.x - halfSize.x &&
@@ -421,9 +421,9 @@ void Home::layout(float windowWidth, float windowHeight) {
         m_AboutDialog->m_Transform.translation = {0.0F, 0.0F};
     }
     if (m_AboutTitle) {
-        m_AboutTitle->m_Transform.translation = {0.0F, 180.0F};
+        m_AboutTitle->m_Transform.translation = {0.0F, 230.0F};
     }
-    float startY = 115.0F;
+    float startY = 170.0F;
     const float lineSpacing = 34.0F;
     for (std::size_t i = 0; i < m_AboutContentObjects.size() / 2; ++i) {
         auto keyObj = m_AboutContentObjects[i * 2];
@@ -436,18 +436,18 @@ void Home::layout(float windowWidth, float windowHeight) {
 
         if (keyText) {
             float keyWidth = keyText->GetSize().x;
-            keyObj->m_Transform.translation = {-270.0F + keyWidth * 0.5F, y};
+            keyObj->m_Transform.translation = {-300.0F + keyWidth * 0.5F, y};
         }
         if (descText) {
             float descWidth = descText->GetSize().x;
-            descObj->m_Transform.translation = {-20.0F + descWidth * 0.5F, y};
+            descObj->m_Transform.translation = {-30.0F + descWidth * 0.5F, y};
         }
     }
     if (m_AboutCloseBtn) {
-        m_AboutCloseBtn->m_Transform.translation = {0.0F, -180.0F};
+        m_AboutCloseBtn->m_Transform.translation = {0.0F, -230.0F};
     }
     if (m_AboutCloseBtnHighlight) {
-        m_AboutCloseBtnHighlight->m_Transform.translation = {0.0F, -180.0F};
+        m_AboutCloseBtnHighlight->m_Transform.translation = {0.0F, -230.0F};
         const glm::vec2 hlSize = m_Atlas.getImage("build-selection")->GetSize();
         m_AboutCloseBtnHighlight->m_Transform.scale = {
             (160.0F + 8.0F) / hlSize.x,
@@ -455,7 +455,7 @@ void Home::layout(float windowWidth, float windowHeight) {
         };
     }
     if (m_AboutCloseBtnTextObj) {
-        m_AboutCloseBtnTextObj->m_Transform.translation = {0.0F, -180.0F};
+        m_AboutCloseBtnTextObj->m_Transform.translation = {0.0F, -230.0F};
     }
 
     // Handbook Popup Layout
@@ -719,8 +719,8 @@ std::shared_ptr<Util::GameObject> Home::addSolidPanel(
 
 void Home::createAboutPopup() {
     m_AboutDim = addSolidPanel("about_dim", {2000, 2000}, Util::Color::FromRGB(10, 10, 10, 180), 5.0F);
-    m_AboutBorder = addSolidPanel("about_dialog_border", {654, 484}, Util::Color::FromRGB(255, 208, 92), 5.1F);
-    m_AboutDialog = addSolidPanel("about_dialog", {650, 480}, Util::Color::FromRGB(30, 45, 54), 5.2F);
+    m_AboutBorder = addSolidPanel("about_dialog_border", {704, 584}, Util::Color::FromRGB(255, 208, 92), 5.1F);
+    m_AboutDialog = addSolidPanel("about_dialog", {700, 580}, Util::Color::FromRGB(30, 45, 54), 5.2F);
     m_AboutTitle = addText(24, "GAME CONTROLS & INSTRUCTIONS", Util::Color::FromRGB(255, 255, 255), 5.3F);
 
     struct InstructionRow {
@@ -729,12 +729,15 @@ void Home::createAboutPopup() {
     };
     const std::vector<InstructionRow> instructions = {
         {"WASD / Right-Mouse Drag",  "- Move Camera"},
+        {"Keys Q / E",               "- Zoom Out / Zoom In"},
         {"Mouse Scroll Wheel",       "- Zoom Camera (0.1x to 3.0x)"},
         {"Keys 1, 2, 3",             "- Select Tower (Basic / Sniper / Cannon)"},
         {"Left-Click on Platform",   "- Build Selected Tower"},
         {"Left-Click on UI Panel",   "- Choose Selected Tower Type"},
-        {"Key X",                    "- Sell Tower at cursor (50% Refund)"},
-        {"Key P",                    "- Show 'Pass Level' button (Testing)"},
+        {"Right-Click Tap / Key X",  "- Sell Tower (50% Refund)"},
+        {"Key M",                    "- Open settings popup (In-Game)"},
+        {"Key F1",                   "- Toggle Cheat Mode"},
+        {"Cheats G / H / P",         "- Gold+100 / HP+1 / Next Lvl (Cheat Mode only)"},
         {"Key ESC",                  "- Close Menu / Exit Game"}
     };
 
