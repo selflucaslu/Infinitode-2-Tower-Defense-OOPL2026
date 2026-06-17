@@ -16,6 +16,7 @@ Home::Home() {
     createTextObjects();
     createButtons();
     createAboutPopup();
+    createHandbookPopup();
 }
 
 HomeAction Home::update() {
@@ -54,6 +55,47 @@ HomeAction Home::update() {
         return HomeAction::None;
     }
 
+    if (m_ShowHandbook) {
+        const glm::vec2 closeBtnCenter = {0.0F, -210.0F};
+        const glm::vec2 closeBtnSize = {160.0F, 44.0F};
+        const glm::vec2 halfClose = closeBtnSize * 0.5F;
+        const bool closeHovered = mousePos.x >= closeBtnCenter.x - halfClose.x &&
+                                  mousePos.x <= closeBtnCenter.x + halfClose.x &&
+                                  mousePos.y >= closeBtnCenter.y - halfClose.y &&
+                                  mousePos.y <= closeBtnCenter.y + halfClose.y;
+
+        m_HandbookCloseBtnHighlight->SetVisible(closeHovered);
+
+        if (closeHovered && Util::Input::IsKeyDown(Util::Keycode::MOUSE_LB)) {
+            m_ShowHandbook = false;
+            setHandbookVisible(false);
+        }
+
+        if (Util::Input::IsKeyUp(Util::Keycode::ESCAPE)) {
+            m_ShowHandbook = false;
+            setHandbookVisible(false);
+        }
+
+        for (int i = 0; i < 4; ++i) {
+            auto& tab = m_TabButtons[i];
+            const glm::vec2 halfTab = tab.size * 0.5F;
+            const bool tabHovered = mousePos.x >= tab.center.x - halfTab.x &&
+                                    mousePos.x <= tab.center.x + halfTab.x &&
+                                    mousePos.y >= tab.center.y - halfTab.y &&
+                                    mousePos.y <= tab.center.y + halfTab.y;
+
+            if (tabHovered && Util::Input::IsKeyDown(Util::Keycode::MOUSE_LB)) {
+                switchHandbookTab(i);
+            }
+        }
+
+        for (Button& button : m_Buttons) {
+            button.highlight->SetVisible(false);
+        }
+
+        return HomeAction::None;
+    }
+
     for (Button& button : m_Buttons) {
         const bool hovered = isInsideButton(button, mousePos);
         button.highlight->SetVisible(hovered && !button.disabled);
@@ -61,6 +103,10 @@ HomeAction Home::update() {
             if (button.action == HomeAction::ShowAbout) {
                 m_ShowAbout = true;
                 setAboutVisible(true);
+            } else if (button.action == HomeAction::ShowHandbook) {
+                m_ShowHandbook = true;
+                setHandbookVisible(true);
+                switchHandbookTab(0);
             } else {
                 action = button.action;
             }
@@ -117,8 +163,8 @@ void Home::createButtons() {
          "home_settings", Util::Color::FromRGB(23, 100, 132), HomeAction::None,
          {84.0F, 64.0F}, true},
         {"Handbook", "icon-book-closed", "ui-money-screen-button-small-bottom-edge",
-         "home_handbook", Util::Color::FromRGB(22, 104, 136), HomeAction::None,
-         {84.0F, 64.0F}, true},
+         "home_handbook", Util::Color::FromRGB(22, 104, 136), HomeAction::ShowHandbook,
+         {84.0F, 64.0F}, false},
         {"About", "icon-info", "ui-money-screen-button-small-bottom-edge",
          "home_about", Util::Color::FromRGB(23, 101, 134), HomeAction::ShowAbout,
          {84.0F, 64.0F}, false},
@@ -276,10 +322,25 @@ void Home::layout(float windowWidth, float windowHeight) {
     if (m_AboutTitle) {
         m_AboutTitle->m_Transform.translation = {0.0F, 180.0F};
     }
-    float startY = 110.0F;
-    const float lineSpacing = 32.0F;
-    for (std::size_t i = 0; i < m_AboutContentObjects.size(); ++i) {
-        m_AboutContentObjects[i]->m_Transform.translation = {0.0F, startY - static_cast<float>(i) * lineSpacing};
+    float startY = 115.0F;
+    const float lineSpacing = 34.0F;
+    for (std::size_t i = 0; i < m_AboutContentObjects.size() / 2; ++i) {
+        auto keyObj = m_AboutContentObjects[i * 2];
+        auto descObj = m_AboutContentObjects[i * 2 + 1];
+
+        auto keyText = m_AboutContentTexts[i * 2];
+        auto descText = m_AboutContentTexts[i * 2 + 1];
+
+        float y = startY - static_cast<float>(i) * lineSpacing;
+
+        if (keyText) {
+            float keyWidth = keyText->GetSize().x;
+            keyObj->m_Transform.translation = {-270.0F + keyWidth * 0.5F, y};
+        }
+        if (descText) {
+            float descWidth = descText->GetSize().x;
+            descObj->m_Transform.translation = {-20.0F + descWidth * 0.5F, y};
+        }
     }
     if (m_AboutCloseBtn) {
         m_AboutCloseBtn->m_Transform.translation = {0.0F, -180.0F};
@@ -294,6 +355,73 @@ void Home::layout(float windowWidth, float windowHeight) {
     }
     if (m_AboutCloseBtnTextObj) {
         m_AboutCloseBtnTextObj->m_Transform.translation = {0.0F, -180.0F};
+    }
+
+    // Handbook Popup Layout
+    if (m_HandbookDim) {
+        m_HandbookDim->m_Transform.translation = {0.0F, 0.0F};
+        m_HandbookDim->m_Transform.scale = {windowWidth / 2000.0F, windowHeight / 2000.0F};
+    }
+    if (m_HandbookBorder) {
+        m_HandbookBorder->m_Transform.translation = {0.0F, 0.0F};
+    }
+    if (m_HandbookDialog) {
+        m_HandbookDialog->m_Transform.translation = {0.0F, 0.0F};
+    }
+    if (m_HandbookTitle) {
+        m_HandbookTitle->m_Transform.translation = {0.0F, 215.0F};
+    }
+
+    // Tab buttons layout
+    if (m_TabButtons.size() == 4) {
+        const float tabXs[4] = {-228.0F, -76.0F, 76.0F, 228.0F};
+        const float tabY = 160.0F;
+        for (int i = 0; i < 4; ++i) {
+            auto& tab = m_TabButtons[i];
+            tab.center = {tabXs[i], tabY};
+            tab.fillObject->m_Transform.translation = tab.center;
+            tab.textObject->m_Transform.translation = tab.center;
+        }
+    }
+
+    // Handbook page contents layout
+    float hStartY = 95.0F;
+    const float hLineSpacing = 36.0F;
+    for (int pageIdx = 0; pageIdx < 4; ++pageIdx) {
+        if (pageIdx >= static_cast<int>(m_HandbookPages.size())) break;
+        auto& page = m_HandbookPages[pageIdx];
+        for (std::size_t i = 0; i < page.keyObjects.size(); ++i) {
+            auto keyObj = page.keyObjects[i];
+            auto descObj = page.descObjects[i];
+            auto keyText = page.keyTexts[i];
+            auto descText = page.descTexts[i];
+
+            float y = hStartY - static_cast<float>(i) * hLineSpacing;
+
+            if (keyText) {
+                float kw = keyText->GetSize().x;
+                keyObj->m_Transform.translation = {-320.0F + kw * 0.5F, y};
+            }
+            if (descText) {
+                float dw = descText->GetSize().x;
+                descObj->m_Transform.translation = {-50.0F + dw * 0.5F, y};
+            }
+        }
+    }
+
+    if (m_HandbookCloseBtn) {
+        m_HandbookCloseBtn->m_Transform.translation = {0.0F, -210.0F};
+    }
+    if (m_HandbookCloseBtnHighlight) {
+        m_HandbookCloseBtnHighlight->m_Transform.translation = {0.0F, -210.0F};
+        const glm::vec2 hlSize = m_Atlas.getImage("build-selection")->GetSize();
+        m_HandbookCloseBtnHighlight->m_Transform.scale = {
+            (160.0F + 8.0F) / hlSize.x,
+            (44.0F + 8.0F) / hlSize.y,
+        };
+    }
+    if (m_HandbookCloseBtnTextObj) {
+        m_HandbookCloseBtnTextObj->m_Transform.translation = {0.0F, -210.0F};
     }
 }
 
@@ -376,20 +504,30 @@ void Home::createAboutPopup() {
     m_AboutDialog = addSolidPanel("about_dialog", {650, 480}, Util::Color::FromRGB(30, 45, 54), 5.2F);
     m_AboutTitle = addText(24, "GAME CONTROLS & INSTRUCTIONS", Util::Color::FromRGB(255, 255, 255), 5.3F);
 
-    const std::vector<std::string> instructions = {
-        "WASD / Right-Mouse Drag   - Move Camera",
-        "Mouse Scroll Wheel        - Zoom Camera (0.1x to 3.0x)",
-        "Keys 1, 2, 3              - Select Tower Type (Basic, Sniper, Cannon)",
-        "Left-Click on Platform    - Build Selected Tower",
-        "Left-Click on UI Panel    - Choose Selected Tower Type",
-        "Key X                    - Sell Tower at cursor (50% Gold refund)",
-        "Key P                    - Show 'Pass Level' button (Testing)",
-        "Key ESC                  - Close Menu / Exit Game"
+    struct InstructionRow {
+        std::string key;
+        std::string desc;
+    };
+    const std::vector<InstructionRow> instructions = {
+        {"WASD / Right-Mouse Drag",  "- Move Camera"},
+        {"Mouse Scroll Wheel",       "- Zoom Camera (0.1x to 3.0x)"},
+        {"Keys 1, 2, 3",             "- Select Tower (Basic / Sniper / Cannon)"},
+        {"Left-Click on Platform",   "- Build Selected Tower"},
+        {"Left-Click on UI Panel",   "- Choose Selected Tower Type"},
+        {"Key X",                    "- Sell Tower at cursor (50% Refund)"},
+        {"Key P",                    "- Show 'Pass Level' button (Testing)"},
+        {"Key ESC",                  "- Close Menu / Exit Game"}
     };
 
-    for (const auto& line : instructions) {
-        auto obj = addText(14, line, Util::Color::FromRGB(200, 220, 220), 5.3F);
-        m_AboutContentObjects.push_back(obj);
+    for (const auto& row : instructions) {
+        std::shared_ptr<Util::Text> keyTextObj;
+        std::shared_ptr<Util::Text> descTextObj;
+        auto keyObj = addText(14, row.key, Util::Color::FromRGB(236, 255, 255), 5.3F, &keyTextObj);
+        auto descObj = addText(14, row.desc, Util::Color::FromRGB(180, 220, 220), 5.3F, &descTextObj);
+        m_AboutContentObjects.push_back(keyObj);
+        m_AboutContentObjects.push_back(descObj);
+        m_AboutContentTexts.push_back(keyTextObj);
+        m_AboutContentTexts.push_back(descTextObj);
     }
 
     m_AboutCloseBtn = addSolidPanel("about_close_btn", {160, 44}, Util::Color::FromRGB(92, 133, 61), 5.3F);
@@ -417,5 +555,212 @@ void Home::setAboutVisible(bool visible) {
     m_AboutCloseBtnTextObj->SetVisible(visible);
     if (!visible) {
         m_AboutCloseBtnHighlight->SetVisible(false);
+    }
+}
+
+void Home::createHandbookPopup() {
+    // 1. Pre-create active and inactive tab backgrounds to populate cache and then remove them from renderer
+    auto activeBg = addSolidPanel("handbook_tab_active", {140, 36}, Util::Color::FromRGB(92, 133, 61), 5.8F);
+    m_Renderer.RemoveChild(activeBg);
+    auto inactiveBg = addSolidPanel("handbook_tab_inactive", {140, 36}, Util::Color::FromRGB(45, 60, 72), 5.8F);
+    m_Renderer.RemoveChild(inactiveBg);
+
+    // 2. Dimming background
+    m_HandbookDim = addSolidPanel("handbook_dim", {2000, 2000}, Util::Color::FromRGB(10, 10, 10, 180), 5.5F);
+
+    // 3. Dialog Border (Golden Border)
+    m_HandbookBorder = addSolidPanel("handbook_border", {754, 524}, Util::Color::FromRGB(255, 208, 92), 5.6F);
+
+    // 4. Dialog Box (Dark Blue-Grey)
+    m_HandbookDialog = addSolidPanel("handbook_dialog", {750, 520}, Util::Color::FromRGB(30, 45, 54), 5.7F);
+
+    // 5. Header Title
+    m_HandbookTitle = addText(24, "GAME HANDBOOK", Util::Color::FromRGB(255, 255, 255), 5.8F);
+
+    // 6. Tab Buttons setup
+    const std::vector<std::string> tabNames = {"TOWERS", "ENEMIES", "LEVELS", "SCORING"};
+    m_TabButtons.resize(4);
+    for (int i = 0; i < 4; ++i) {
+        TabButton tab;
+        tab.size = {140.0F, 36.0F};
+        tab.fillObject = addSolidPanel("handbook_tab_fill_" + std::to_string(i), {140, 36}, 
+            (i == 0) ? Util::Color::FromRGB(92, 133, 61) : Util::Color::FromRGB(45, 60, 72), 5.8F);
+        tab.textObject = addText(13, tabNames[i], 
+            (i == 0) ? Util::Color::FromRGB(255, 255, 255) : Util::Color::FromRGB(170, 190, 200), 5.9F, &tab.textDrawable);
+        m_TabButtons[i] = tab;
+    }
+
+    // 7. Handbook Pages content initialization
+    m_HandbookPages.resize(4);
+
+    struct KeyDescRow {
+        std::string key;
+        std::string desc;
+    };
+
+    // --- PAGE 0: TOWERS ---
+    const std::vector<KeyDescRow> towersInfo = {
+        {"Tower Type",                 "Cost  Range  Interval  Dmg  Bullet  Effect"},
+        {"------------------------",   "-----------------------------------------------"},
+        {"Basic Tower",                 " 39    7.0    0.35s     15   9.0     Single Target"},
+        {"Sniper Tower",                " 79    14.0   1.20s     70   16.0    Single Target"},
+        {"Cannon Tower",                " 99    6.0    1.50s     45   7.0     1.5-tile Splash"}
+    };
+    for (const auto& row : towersInfo) {
+        std::shared_ptr<Util::Text> kTextObj;
+        std::shared_ptr<Util::Text> dTextObj;
+        bool isHeader = (row.key == "Tower Type" || row.key.find("---") != std::string::npos);
+        Util::Color kColor = isHeader ? Util::Color::FromRGB(255, 208, 92) : Util::Color::FromRGB(236, 255, 255);
+        Util::Color dColor = isHeader ? Util::Color::FromRGB(255, 208, 92) : Util::Color::FromRGB(180, 220, 220);
+
+        auto kObj = addText(isHeader ? 14 : 13, row.key, kColor, 5.8F, &kTextObj);
+        auto dObj = addText(isHeader ? 14 : 13, row.desc, dColor, 5.8F, &dTextObj);
+        m_HandbookPages[0].keyObjects.push_back(kObj);
+        m_HandbookPages[0].descObjects.push_back(dObj);
+        m_HandbookPages[0].keyTexts.push_back(kTextObj);
+        m_HandbookPages[0].descTexts.push_back(dTextObj);
+    }
+
+    // --- PAGE 1: ENEMIES ---
+    const std::vector<KeyDescRow> enemiesInfo = {
+        {"Enemy Types",                "Description & Core Characteristics"},
+        {"------------------------",   "-----------------------------------------------"},
+        {"Regular / Fast / Strong",    "- Ground: Standard traits, high speed, or high HP"},
+        {"Heli / Jet",                  "- Aerial: Fly directly from Spawn to Goal (ignore roads)"},
+        {"Armored / Healer",            "- Special: High physical armor / heals adjacent units"},
+        {"Toxic / Icy",                 "- Elemental: Inflicts poison / slows down nearby towers"},
+        {"Fighter / Light",             "- Tactical: Fighter/Light fast speed assault units"}
+    };
+    for (const auto& row : enemiesInfo) {
+        std::shared_ptr<Util::Text> kTextObj;
+        std::shared_ptr<Util::Text> dTextObj;
+        bool isHeader = (row.key == "Enemy Types" || row.key.find("---") != std::string::npos);
+        Util::Color kColor = isHeader ? Util::Color::FromRGB(255, 208, 92) : Util::Color::FromRGB(236, 255, 255);
+        Util::Color dColor = isHeader ? Util::Color::FromRGB(255, 208, 92) : Util::Color::FromRGB(180, 220, 220);
+
+        auto kObj = addText(isHeader ? 14 : 13, row.key, kColor, 5.8F, &kTextObj);
+        auto dObj = addText(isHeader ? 14 : 13, row.desc, dColor, 5.8F, &dTextObj);
+        m_HandbookPages[1].keyObjects.push_back(kObj);
+        m_HandbookPages[1].descObjects.push_back(dObj);
+        m_HandbookPages[1].keyTexts.push_back(kTextObj);
+        m_HandbookPages[1].descTexts.push_back(dTextObj);
+    }
+
+    // --- PAGE 2: LEVELS ---
+    const std::vector<KeyDescRow> levelsInfo = {
+        {"Level Selection",             "Configurations (Map size, Starting HP & Gold, Waves)"},
+        {"------------------------",   "-----------------------------------------------"},
+        {"Level 1",                     "- Map: 7x3  | Life: 20  | Gold: 120 | Waves: 3 (Tutorial)"},
+        {"Level 2",                     "- Map: 10x10 | Life: 20  | Gold: 160 | Waves: 5 (Aerial Intro)"},
+        {"Level 3",                     "- Map: 29x30 | Life: 1   | Gold: 200 | Waves: 6 (High Density)"},
+        {"Level 4",                     "- Map: 27x39 | Life: 100 | Gold: 200 | Waves: 5 (Mixed Specials)"},
+        {"Level 5",                     "- Map: 51x51 | Life: 1   | Gold: 200 | Waves: 6 (Large City Grid)"}
+    };
+    for (const auto& row : levelsInfo) {
+        std::shared_ptr<Util::Text> kTextObj;
+        std::shared_ptr<Util::Text> dTextObj;
+        bool isHeader = (row.key == "Level Selection" || row.key.find("---") != std::string::npos);
+        Util::Color kColor = isHeader ? Util::Color::FromRGB(255, 208, 92) : Util::Color::FromRGB(236, 255, 255);
+        Util::Color dColor = isHeader ? Util::Color::FromRGB(255, 208, 92) : Util::Color::FromRGB(180, 220, 220);
+
+        auto kObj = addText(isHeader ? 14 : 13, row.key, kColor, 5.8F, &kTextObj);
+        auto dObj = addText(isHeader ? 14 : 13, row.desc, dColor, 5.8F, &dTextObj);
+        m_HandbookPages[2].keyObjects.push_back(kObj);
+        m_HandbookPages[2].descObjects.push_back(dObj);
+        m_HandbookPages[2].keyTexts.push_back(kTextObj);
+        m_HandbookPages[2].descTexts.push_back(dTextObj);
+    }
+
+    // --- PAGE 3: SCORING ---
+    const std::vector<KeyDescRow> scoringInfo = {
+        {"Scoring Categories",          "Formulas & Target Star Thresholds"},
+        {"------------------------",   "-----------------------------------------------"},
+        {"Scoring Formula",             "Score = Remaining HP + floor(Gold / 1000) + Clear Bonus"},
+        {"Clear Bonus L1 - L3",         "L1: 10 (+0/loop)  |  L2: 15 (+5/loop)  |  L3: 50 (+25/loop)"},
+        {"Clear Bonus L4 - L5",         "L4: 25 (+10/loop) |  L5: 60 (+20/loop)"},
+        {"Loop Scaling Effect",         "HP scaled by 1.2^loop | Speed scaled by 1.1^loop"},
+        {"Star Thresholds",             "1 Star: 330 | 2 Stars: 660 | 3 Stars: 1000"}
+    };
+    for (const auto& row : scoringInfo) {
+        std::shared_ptr<Util::Text> kTextObj;
+        std::shared_ptr<Util::Text> dTextObj;
+        bool isHeader = (row.key == "Scoring Categories" || row.key.find("---") != std::string::npos);
+        Util::Color kColor = isHeader ? Util::Color::FromRGB(255, 208, 92) : Util::Color::FromRGB(236, 255, 255);
+        Util::Color dColor = isHeader ? Util::Color::FromRGB(255, 208, 92) : Util::Color::FromRGB(180, 220, 220);
+
+        auto kObj = addText(isHeader ? 14 : 13, row.key, kColor, 5.8F, &kTextObj);
+        auto dObj = addText(isHeader ? 14 : 13, row.desc, dColor, 5.8F, &dTextObj);
+        m_HandbookPages[3].keyObjects.push_back(kObj);
+        m_HandbookPages[3].descObjects.push_back(dObj);
+        m_HandbookPages[3].keyTexts.push_back(kTextObj);
+        m_HandbookPages[3].descTexts.push_back(dTextObj);
+    }
+
+    // 8. Close button
+    m_HandbookCloseBtn = addSolidPanel("handbook_close_btn", {160, 44}, Util::Color::FromRGB(92, 133, 61), 5.8F);
+
+    m_HandbookCloseBtnHighlight = std::make_shared<Util::GameObject>();
+    m_HandbookCloseBtnHighlight->SetDrawable(m_Atlas.getImage("build-selection"));
+    m_HandbookCloseBtnHighlight->SetZIndex(5.85F);
+    m_HandbookCloseBtnHighlight->SetVisible(false);
+    m_Renderer.AddChild(m_HandbookCloseBtnHighlight);
+
+    m_HandbookCloseBtnTextObj = addText(16, "Close", Util::Color::FromRGB(255, 255, 255), 5.9F, &m_HandbookCloseBtnText);
+
+    setHandbookVisible(false);
+}
+
+void Home::setHandbookVisible(bool visible) {
+    m_HandbookDim->SetVisible(visible);
+    m_HandbookBorder->SetVisible(visible);
+    m_HandbookDialog->SetVisible(visible);
+    m_HandbookTitle->SetVisible(visible);
+    for (auto& tab : m_TabButtons) {
+        tab.fillObject->SetVisible(visible);
+        tab.textObject->SetVisible(visible);
+    }
+    m_HandbookCloseBtn->SetVisible(visible);
+    m_HandbookCloseBtnTextObj->SetVisible(visible);
+    if (!visible) {
+        m_HandbookCloseBtnHighlight->SetVisible(false);
+    }
+
+    for (int i = 0; i < 4; ++i) {
+        bool pageVisible = visible && (i == m_ActiveHandbookTab);
+        for (auto& obj : m_HandbookPages[i].keyObjects) {
+            obj->SetVisible(pageVisible);
+        }
+        for (auto& obj : m_HandbookPages[i].descObjects) {
+            obj->SetVisible(pageVisible);
+        }
+    }
+}
+
+void Home::switchHandbookTab(int tabIndex) {
+    m_ActiveHandbookTab = tabIndex;
+    namespace fs = std::filesystem;
+    const fs::path cacheDir = fs::temp_directory_path() / "home_ui_cache";
+
+    for (int i = 0; i < 4; ++i) {
+        auto& tab = m_TabButtons[i];
+        if (i == tabIndex) {
+            tab.textDrawable->SetColor(Util::Color::FromRGB(255, 255, 255));
+            fs::path activePath = cacheDir / "handbook_tab_active.bmp";
+            tab.fillObject->SetDrawable(std::make_shared<Util::Image>(activePath.string()));
+        } else {
+            tab.textDrawable->SetColor(Util::Color::FromRGB(170, 190, 200));
+            fs::path inactivePath = cacheDir / "handbook_tab_inactive.bmp";
+            tab.fillObject->SetDrawable(std::make_shared<Util::Image>(inactivePath.string()));
+        }
+    }
+
+    for (int i = 0; i < 4; ++i) {
+        bool pageVisible = (i == tabIndex) && m_ShowHandbook;
+        for (auto& obj : m_HandbookPages[i].keyObjects) {
+            obj->SetVisible(pageVisible);
+        }
+        for (auto& obj : m_HandbookPages[i].descObjects) {
+            obj->SetVisible(pageVisible);
+        }
     }
 }

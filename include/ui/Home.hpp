@@ -16,6 +16,7 @@ enum class HomeAction {
     StartGame,
     Quit,
     ShowAbout,
+    ShowHandbook,
 };
 
 class Home {
@@ -26,6 +27,7 @@ public:
     void display();
 
     bool isShowingAbout() const { return m_ShowAbout; }
+    bool isShowingHandbook() const { return m_ShowHandbook; }
 
 private:
     struct Button {
@@ -46,10 +48,28 @@ private:
         std::shared_ptr<Util::Text> labelText;
     };
 
+    struct HandbookPage {
+        std::vector<std::shared_ptr<Util::GameObject>> keyObjects;
+        std::vector<std::shared_ptr<Util::GameObject>> descObjects;
+        std::vector<std::shared_ptr<Util::Text>> keyTexts;
+        std::vector<std::shared_ptr<Util::Text>> descTexts;
+    };
+
+    struct TabButton {
+        std::shared_ptr<Util::GameObject> fillObject;
+        std::shared_ptr<Util::GameObject> textObject;
+        std::shared_ptr<Util::Text> textDrawable;
+        glm::vec2 center;
+        glm::vec2 size;
+    };
+
     void createTextObjects();
     void createButtons();
     void createAboutPopup();
     void setAboutVisible(bool visible);
+    void createHandbookPopup();
+    void setHandbookVisible(bool visible);
+    void switchHandbookTab(int tabIndex);
     void layout(float windowWidth, float windowHeight);
     bool isInsideButton(const Button& button, const glm::vec2& mousePos) const;
     std::shared_ptr<Util::GameObject> addIcon(
@@ -88,9 +108,25 @@ private:
     std::shared_ptr<Util::GameObject> m_AboutDialog;
     std::shared_ptr<Util::GameObject> m_AboutTitle;
     std::vector<std::shared_ptr<Util::GameObject>> m_AboutContentObjects;
+    std::vector<std::shared_ptr<Util::Text>> m_AboutContentTexts;
     std::shared_ptr<Util::GameObject> m_AboutCloseBtn;
     std::shared_ptr<Util::GameObject> m_AboutCloseBtnHighlight;
     std::shared_ptr<Util::GameObject> m_AboutCloseBtnTextObj;
     std::shared_ptr<Util::Text> m_AboutCloseBtnText;
+
+    // Handbook Popup
+    bool m_ShowHandbook = false;
+    int m_ActiveHandbookTab = 0;
+    std::shared_ptr<Util::GameObject> m_HandbookDim;
+    std::shared_ptr<Util::GameObject> m_HandbookBorder;
+    std::shared_ptr<Util::GameObject> m_HandbookDialog;
+    std::shared_ptr<Util::GameObject> m_HandbookTitle;
+    std::vector<HandbookPage> m_HandbookPages;
+    std::vector<TabButton> m_TabButtons;
+    std::shared_ptr<Util::GameObject> m_HandbookCloseBtn;
+    std::shared_ptr<Util::GameObject> m_HandbookCloseBtnHighlight;
+    std::shared_ptr<Util::GameObject> m_HandbookCloseBtnTextObj;
+    std::shared_ptr<Util::Text> m_HandbookCloseBtnText;
 };
+
 
