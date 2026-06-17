@@ -305,13 +305,20 @@ void App::Update() {
           m_GameSession->getLoopCount(),
           m_GameSession->getBaseHp(),
           m_GameSession->getGold());
-      const int nextLevelNumber = m_GameSession->getLevelNumber() + 1;
-      LOG_INFO("Level completed. Score so far={}, loading level {}",
-               m_Score, nextLevelNumber);
-      m_GameSession = std::make_unique<GameSession>(nextLevelNumber);
-      m_SelectedTower = TowerId::Basic;
-      m_GameSession->setSelectedTower(m_SelectedTower);
-      m_GameSession->startSession();
+
+      if (m_GameSession->getLevelNumber() == 5) {
+        LOG_INFO("Level 5 completed. Final Score={}, transitioning to Result screen", m_Score);
+        m_Result = std::make_unique<Result>(m_GameSession->getWave(), m_Score);
+        m_CurrentState = State::RESULT;
+      } else {
+        const int nextLevelNumber = m_GameSession->getLevelNumber() + 1;
+        LOG_INFO("Level completed. Score so far={}, loading level {}",
+                 m_Score, nextLevelNumber);
+        m_GameSession = std::make_unique<GameSession>(nextLevelNumber);
+        m_SelectedTower = TowerId::Basic;
+        m_GameSession->setSelectedTower(m_SelectedTower);
+        m_GameSession->startSession();
+      }
     }
     
     if (m_CurrentState == State::GAME) {
