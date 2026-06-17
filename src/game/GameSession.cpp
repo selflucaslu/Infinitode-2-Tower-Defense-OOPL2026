@@ -1,4 +1,5 @@
 #include "game/GameSession.hpp"
+#include "ui/Home.hpp"
 #include "Core/Context.hpp"
 #include "Util/Color.hpp"
 #include "Util/Input.hpp"
@@ -404,8 +405,34 @@ void GameSession::initSession() {
   LOG_INFO("[Session] init: baseHp={}, gold={}", baseHp, gold);
 }
 
-void GameSession::startSession() { isSessionActive = true; }
-void GameSession::pauseSession() { isSessionActive = false; }
+GameSession::~GameSession() {
+  Mix_HaltMusic();
+}
+
+void GameSession::startSession() {
+  isSessionActive = true;
+
+  std::string bgmPath;
+  if (levelNumber == 1) bgmPath = "assets/music/Smili_1.mp3";
+  else if (levelNumber == 2) bgmPath = "assets/music/fiosion_2.mp3";
+  else if (levelNumber == 3) bgmPath = "assets/music/cionape_3.mp3";
+  else if (levelNumber == 4) bgmPath = "assets/music/havido_4.mp3";
+  else if (levelNumber == 5) bgmPath = "assets/music/Panic_At_The_Ramparts.mp3";
+
+  if (!bgmPath.empty()) {
+    m_LevelBgm = std::make_unique<Util::BGM>(bgmPath);
+    m_LevelBgm->SetVolume(Home::GetMusicVolume());
+    m_LevelBgm->Play(-1);
+  }
+}
+
+void GameSession::pauseSession() {
+  isSessionActive = false;
+  Mix_HaltMusic();
+  if (m_LevelBgm) {
+    m_LevelBgm.reset();
+  }
+}
 
 void GameSession::dispatchEnemiesByTimer() {
   // 1) 先確認波次合法。

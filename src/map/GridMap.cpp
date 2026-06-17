@@ -1,4 +1,5 @@
 #include "map/GridMap.hpp"
+#include "Core/Context.hpp"
 
 #include <array>
 #include <cmath>
@@ -135,12 +136,24 @@ void GridMap::updateTransforms() {
     m_StartX = -(static_cast<float>(mapWidth) * m_CellW) * 0.5F + m_CellW * 0.5F;
     m_StartY = -(static_cast<float>(mapHeight) * m_CellH) * 0.5F + m_CellH * 0.5F;
 
+    const auto context = Core::Context::GetInstance();
+    const float halfW = static_cast<float>(context->GetWindowWidth()) * 0.5F;
+    const float halfH = static_cast<float>(context->GetWindowHeight()) * 0.5F;
+
     for (const TileVisual& tv : tileObjects) {
         tv.obj->m_Transform.scale = {kMapScale * currentScale, kMapScale * currentScale};
-        tv.obj->m_Transform.translation = {
+        const glm::vec2 pos = {
             startX + static_cast<float>(tv.gridX) * m_CellW,
             startY + static_cast<float>(tv.gridY) * m_CellH
         };
+        tv.obj->m_Transform.translation = pos;
+
+        // Frustum culling: check if tile is inside the window boundary (with 1.5 cell margin to prevent popping)
+        const float marginX = m_CellW * 1.5F;
+        const float marginY = m_CellH * 1.5F;
+        const bool visible = (pos.x + marginX >= -halfW) && (pos.x - marginX <= halfW) &&
+                             (pos.y + marginY >= -halfH) && (pos.y - marginY <= halfH);
+        tv.obj->SetVisible(visible);
     }
 }
 

@@ -20,6 +20,7 @@ enum class HomeAction {
     ShowAbout,
     ShowHandbook,
     ShowMusicPlayer,
+    ShowSettings,
 };
 
 class Home {
@@ -33,6 +34,10 @@ public:
     bool isShowingAbout() const { return m_ShowAbout; }
     bool isShowingHandbook() const { return m_ShowHandbook; }
     bool isShowingMusicPlayer() const { return m_ShowMusicPlayer; }
+    bool isShowingSettings() const { return m_ShowSettings; }
+
+    static int GetMusicVolume() { return s_MusicVolume; }
+    static void SetMusicVolume(int vol) { s_MusicVolume = vol; }
 
 private:
     struct Button {
@@ -90,6 +95,17 @@ private:
         std::function<void()> action;
     };
 
+    struct SettingsButton {
+        std::string label;
+        std::shared_ptr<Util::GameObject> btnPanel;
+        std::shared_ptr<Util::GameObject> textObj;
+        std::shared_ptr<Util::Text> textDrawable;
+        std::shared_ptr<Util::GameObject> highlight;
+        glm::vec2 center;
+        glm::vec2 size;
+        std::function<void()> action;
+    };
+
     void createTextObjects();
     void createButtons();
     void createAboutPopup();
@@ -103,6 +119,10 @@ private:
     void updateMusicPlayerUIState();
     void playTrack(int index);
     void stopMusic();
+
+    void createSettingsPopup();
+    void setSettingsVisible(bool visible);
+    void updateSettingsUIState();
 
     void layout(float windowWidth, float windowHeight);
     bool isInsideButton(const Button& button, const glm::vec2& mousePos) const;
@@ -182,6 +202,23 @@ private:
     std::shared_ptr<Util::Text> m_MusicCloseBtnText;
     glm::vec2 m_MusicCloseBtnCenter = {0.0F, -220.0F};
     glm::vec2 m_MusicCloseBtnSize = {160.0F, 44.0F};
+
+    // Settings Popup
+    bool m_ShowSettings = false;
+    std::shared_ptr<Util::GameObject> m_SettingsDim;
+    std::shared_ptr<Util::GameObject> m_SettingsBorder;
+    std::shared_ptr<Util::GameObject> m_SettingsDialog;
+    std::shared_ptr<Util::GameObject> m_SettingsTitle;
+    std::shared_ptr<Util::GameObject> m_SettingsVolumeTextObj;
+    std::shared_ptr<Util::Text> m_SettingsVolumeTextDrawable;
+    std::vector<SettingsButton> m_SettingsButtons;
+
+    std::shared_ptr<Util::GameObject> m_SettingsCloseBtn;
+    std::shared_ptr<Util::GameObject> m_SettingsCloseBtnHighlight;
+    std::shared_ptr<Util::GameObject> m_SettingsCloseBtnTextObj;
+    std::shared_ptr<Util::Text> m_SettingsCloseBtnText;
+    glm::vec2 m_SettingsCloseBtnCenter = {0.0F, -90.0F};
+    glm::vec2 m_SettingsCloseBtnSize = {160.0F, 44.0F};
 
     // Playback state variables (static to persist across reconstructions of Home)
     static std::unique_ptr<Util::BGM> s_Bgm;

@@ -13,6 +13,8 @@
 #include "utils/FpsOverlay.hpp"
 #include "utils/TowerSelectionPanel.hpp"
 
+#include "Util/BGM.hpp"
+
 #include <memory>
 #include <string_view>
 #include <utility>
@@ -22,6 +24,7 @@ class GameSession {
 public:
     // -------------------- 建立與生命週期 --------------------
     GameSession(int levelNumber = 1);
+    ~GameSession();
 
     // -------------------- 地圖與敵人管理 --------------------
     GridMap& getMap();
@@ -146,6 +149,8 @@ private:
     bool canAdvanceToNextLevel = false;    // 完成基本關卡後進入無限關卡時顯示跳關按鈕
     std::vector<WaveConfig> spawnSchedule; // 當前循環（已套用強化）的配置
     std::vector<WaveConfig> baseSpawnSchedule; // 第一輪的原始配置（用於重置計算）
+
+    std::unique_ptr<Util::BGM> m_LevelBgm;
 
     // -------------------- 私有方法 --------------------
     bool hasNextLevel() const;

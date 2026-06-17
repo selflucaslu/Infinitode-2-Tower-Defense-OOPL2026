@@ -23,6 +23,7 @@ Home::Home() {
     createAboutPopup();
     createHandbookPopup();
     createMusicPlayerPopup();
+    createSettingsPopup();
 }
 
 HomeAction Home::update() {
@@ -153,6 +154,43 @@ HomeAction Home::update() {
         return HomeAction::None;
     }
 
+    if (m_ShowSettings) {
+        const bool closeHovered = mousePos.x >= m_SettingsCloseBtnCenter.x - m_SettingsCloseBtnSize.x * 0.5F &&
+                                  mousePos.x <= m_SettingsCloseBtnCenter.x + m_SettingsCloseBtnSize.x * 0.5F &&
+                                  mousePos.y >= m_SettingsCloseBtnCenter.y - m_SettingsCloseBtnSize.y * 0.5F &&
+                                  mousePos.y <= m_SettingsCloseBtnCenter.y + m_SettingsCloseBtnSize.y * 0.5F;
+
+        m_SettingsCloseBtnHighlight->SetVisible(closeHovered);
+
+        if (closeHovered && Util::Input::IsKeyDown(Util::Keycode::MOUSE_LB)) {
+            m_ShowSettings = false;
+            setSettingsVisible(false);
+        }
+
+        if (Util::Input::IsKeyUp(Util::Keycode::ESCAPE)) {
+            m_ShowSettings = false;
+            setSettingsVisible(false);
+        }
+
+        for (std::size_t i = 0; i < m_SettingsButtons.size(); ++i) {
+            auto& btn = m_SettingsButtons[i];
+            const bool hovered = mousePos.x >= btn.center.x - btn.size.x * 0.5F &&
+                                 mousePos.x <= btn.center.x + btn.size.x * 0.5F &&
+                                 mousePos.y >= btn.center.y - btn.size.y * 0.5F &&
+                                 mousePos.y <= btn.center.y + btn.size.y * 0.5F;
+            btn.highlight->SetVisible(hovered);
+            if (hovered && Util::Input::IsKeyDown(Util::Keycode::MOUSE_LB)) {
+                btn.action();
+            }
+        }
+
+        for (Button& button : m_Buttons) {
+            button.highlight->SetVisible(false);
+        }
+
+        return HomeAction::None;
+    }
+
     for (Button& button : m_Buttons) {
         const bool hovered = isInsideButton(button, mousePos);
         button.highlight->SetVisible(hovered && !button.disabled);
@@ -167,6 +205,9 @@ HomeAction Home::update() {
             } else if (button.action == HomeAction::ShowMusicPlayer) {
                 m_ShowMusicPlayer = true;
                 setMusicPlayerVisible(true);
+            } else if (button.action == HomeAction::ShowSettings) {
+                m_ShowSettings = true;
+                setSettingsVisible(true);
             } else {
                 action = button.action;
             }
@@ -220,8 +261,8 @@ void Home::createButtons() {
          "home_music", Util::Color::FromRGB(26, 99, 130), HomeAction::ShowMusicPlayer,
          {92.0F, 76.0F}, false},
         {"Settings", "icon-tools", "ui-money-screen-button-small-bottom-edge",
-         "home_settings", Util::Color::FromRGB(23, 100, 132), HomeAction::None,
-         {84.0F, 64.0F}, true},
+         "home_settings", Util::Color::FromRGB(23, 100, 132), HomeAction::ShowSettings,
+         {84.0F, 64.0F}, false},
         {"Handbook", "icon-book-closed", "ui-money-screen-button-small-bottom-edge",
          "home_handbook", Util::Color::FromRGB(22, 104, 136), HomeAction::ShowHandbook,
          {84.0F, 64.0F}, false},
@@ -552,6 +593,54 @@ void Home::layout(float windowWidth, float windowHeight) {
     }
     if (m_MusicCloseBtnTextObj) {
         m_MusicCloseBtnTextObj->m_Transform.translation = m_MusicCloseBtnCenter;
+    }
+
+    // Settings Popup Layout
+    if (m_SettingsDim) {
+        m_SettingsDim->m_Transform.translation = {0.0F, 0.0F};
+        m_SettingsDim->m_Transform.scale = {windowWidth / 2000.0F, windowHeight / 2000.0F};
+    }
+    if (m_SettingsBorder) {
+        m_SettingsBorder->m_Transform.translation = {0.0F, 0.0F};
+    }
+    if (m_SettingsDialog) {
+        m_SettingsDialog->m_Transform.translation = {0.0F, 0.0F};
+    }
+    if (m_SettingsTitle) {
+        m_SettingsTitle->m_Transform.translation = {0.0F, 110.0F};
+    }
+    if (m_SettingsVolumeTextDrawable) {
+        m_SettingsVolumeTextObj->m_Transform.translation = {0.0F, 40.0F};
+    }
+
+    // Volume adjust buttons
+    for (std::size_t i = 0; i < m_SettingsButtons.size(); ++i) {
+        auto& btn = m_SettingsButtons[i];
+        btn.center = {-60.0F + static_cast<float>(i) * 120.0F, -20.0F};
+        btn.btnPanel->m_Transform.translation = btn.center;
+        btn.textObj->m_Transform.translation = btn.center;
+
+        const glm::vec2 hlSize = m_Atlas.getImage("build-selection")->GetSize();
+        btn.highlight->m_Transform.translation = btn.center;
+        btn.highlight->m_Transform.scale = {
+            (btn.size.x + 8.0F) / hlSize.x,
+            (btn.size.y + 8.0F) / hlSize.y,
+        };
+    }
+
+    if (m_SettingsCloseBtn) {
+        m_SettingsCloseBtn->m_Transform.translation = m_SettingsCloseBtnCenter;
+    }
+    if (m_SettingsCloseBtnHighlight) {
+        m_SettingsCloseBtnHighlight->m_Transform.translation = m_SettingsCloseBtnCenter;
+        const glm::vec2 hlSize = m_Atlas.getImage("build-selection")->GetSize();
+        m_SettingsCloseBtnHighlight->m_Transform.scale = {
+            (m_SettingsCloseBtnSize.x + 8.0F) / hlSize.x,
+            (m_SettingsCloseBtnSize.y + 8.0F) / hlSize.y,
+        };
+    }
+    if (m_SettingsCloseBtnTextObj) {
+        m_SettingsCloseBtnTextObj->m_Transform.translation = m_SettingsCloseBtnCenter;
     }
 }
 
@@ -983,6 +1072,7 @@ void Home::createMusicPlayerPopup() {
                 s_Bgm->SetVolume(s_MusicVolume);
             }
             updateMusicPlayerUIState();
+            updateSettingsUIState();
         }},
         {"Vol +", [this]() {
             s_MusicVolume = std::min(128, s_MusicVolume + 16);
@@ -990,6 +1080,7 @@ void Home::createMusicPlayerPopup() {
                 s_Bgm->SetVolume(s_MusicVolume);
             }
             updateMusicPlayerUIState();
+            updateSettingsUIState();
         }}
     };
 
@@ -1118,4 +1209,105 @@ void Home::stopMusic() {
     s_IsPlaying = false;
     s_CurrentPlayingIndex = -1;
     s_Bgm.reset();
+}
+
+void Home::createSettingsPopup() {
+    // 1. Dim background
+    m_SettingsDim = addSolidPanel("settings_dim", {2000, 2000}, Util::Color::FromRGB(10, 10, 10, 180), 5.5F);
+
+    // 2. Dialog Border (Golden Border)
+    m_SettingsBorder = addSolidPanel("settings_border", {504, 324}, Util::Color::FromRGB(255, 208, 92), 5.6F);
+
+    // 3. Dialog Box (Dark Blue-Grey)
+    m_SettingsDialog = addSolidPanel("settings_dialog", {500, 320}, Util::Color::FromRGB(30, 45, 54), 5.7F);
+
+    // 4. Header Title
+    m_SettingsTitle = addText(24, "SETTINGS", Util::Color::FromRGB(255, 255, 255), 5.8F);
+
+    // 5. Volume Status text setup
+    m_SettingsVolumeTextObj = addText(15, "BGM Volume: 50%", Util::Color::FromRGB(236, 255, 255), 5.8F, &m_SettingsVolumeTextDrawable);
+
+    // 6. Buttons setup
+    struct SettingsBtnConfig {
+        std::string label;
+        std::function<void()> action;
+    } btnConfigs[] = {
+        {"Vol -", [this]() {
+            s_MusicVolume = std::max(0, s_MusicVolume - 16);
+            if (s_Bgm) {
+                s_Bgm->SetVolume(s_MusicVolume);
+            }
+            updateSettingsUIState();
+            updateMusicPlayerUIState();
+        }},
+        {"Vol +", [this]() {
+            s_MusicVolume = std::min(128, s_MusicVolume + 16);
+            if (s_Bgm) {
+                s_Bgm->SetVolume(s_MusicVolume);
+            }
+            updateSettingsUIState();
+            updateMusicPlayerUIState();
+        }}
+    };
+
+    m_SettingsButtons.resize(2);
+    for (int i = 0; i < 2; ++i) {
+        SettingsButton btn;
+        btn.label = btnConfigs[i].label;
+        btn.size = {100.0F, 36.0F};
+        btn.action = btnConfigs[i].action;
+
+        btn.btnPanel = addSolidPanel("settings_btn_fill_" + std::to_string(i), {100, 36},
+            Util::Color::FromRGB(45, 60, 72), 5.8F);
+        btn.textObj = addText(13, btn.label, Util::Color::FromRGB(255, 255, 255), 5.9F, &btn.textDrawable);
+
+        btn.highlight = std::make_shared<Util::GameObject>();
+        btn.highlight->SetDrawable(m_Atlas.getImage("build-selection"));
+        btn.highlight->SetZIndex(5.85F);
+        btn.highlight->SetVisible(false);
+        m_Renderer.AddChild(btn.highlight);
+
+        m_SettingsButtons[i] = btn;
+    }
+
+    // 7. Close button
+    m_SettingsCloseBtn = addSolidPanel("settings_close_btn", {160, 44}, Util::Color::FromRGB(92, 133, 61), 5.8F);
+
+    m_SettingsCloseBtnHighlight = std::make_shared<Util::GameObject>();
+    m_SettingsCloseBtnHighlight->SetDrawable(m_Atlas.getImage("build-selection"));
+    m_SettingsCloseBtnHighlight->SetZIndex(5.85F);
+    m_SettingsCloseBtnHighlight->SetVisible(false);
+    m_Renderer.AddChild(m_SettingsCloseBtnHighlight);
+
+    m_SettingsCloseBtnTextObj = addText(16, "Close", Util::Color::FromRGB(255, 255, 255), 5.9F, &m_SettingsCloseBtnText);
+
+    setSettingsVisible(false);
+    updateSettingsUIState();
+}
+
+void Home::setSettingsVisible(bool visible) {
+    m_SettingsDim->SetVisible(visible);
+    m_SettingsBorder->SetVisible(visible);
+    m_SettingsDialog->SetVisible(visible);
+    m_SettingsTitle->SetVisible(visible);
+    m_SettingsVolumeTextObj->SetVisible(visible);
+    for (auto& btn : m_SettingsButtons) {
+        btn.btnPanel->SetVisible(visible);
+        btn.textObj->SetVisible(visible);
+        if (!visible) {
+            btn.highlight->SetVisible(false);
+        }
+    }
+    m_SettingsCloseBtn->SetVisible(visible);
+    m_SettingsCloseBtnTextObj->SetVisible(visible);
+    if (!visible) {
+        m_SettingsCloseBtnHighlight->SetVisible(false);
+    }
+}
+
+void Home::updateSettingsUIState() {
+    int volPercent = s_MusicVolume * 100 / 128;
+    if (m_SettingsVolumeTextDrawable) {
+        m_SettingsVolumeTextDrawable->SetText("BGM Volume: " + std::to_string(volPercent) + "%");
+    }
 }

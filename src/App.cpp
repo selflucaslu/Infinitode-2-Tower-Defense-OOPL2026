@@ -62,7 +62,8 @@ void App::Update() {
   if (m_CurrentState == State::HOME) {
     const bool wasPopupShowing = m_Home && (m_Home->isShowingAbout() || 
                                             m_Home->isShowingHandbook() || 
-                                            m_Home->isShowingMusicPlayer());
+                                            m_Home->isShowingMusicPlayer() ||
+                                            m_Home->isShowingSettings());
     if (m_Home) {
       const HomeAction action = m_Home->update();
       m_Home->display();
