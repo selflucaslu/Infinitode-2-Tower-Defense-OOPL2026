@@ -40,6 +40,11 @@ private:
     int m_Score = 0;                            // 跨關卡累積分數
     bool m_CheatModeEnabled = false;            // 是否啟用作弊模式
 
+    // -------------------- 遊戲速度與暫停控制成員 --------------------
+    bool m_SpeedIconPressed = false;
+    float m_SpeedIconPressTime = 0.0F;
+    bool m_SpeedIconLongPressedTriggered = false;
+
     // 計算並累加本關分數（關卡完成或遊戲結束時呼叫）
     int calcLevelScore(int levelNumber, int loopCount, int remainHp, int remainGold) const;
 };

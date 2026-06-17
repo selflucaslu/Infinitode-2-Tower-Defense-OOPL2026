@@ -421,9 +421,9 @@ void Home::layout(float windowWidth, float windowHeight) {
         m_AboutDialog->m_Transform.translation = {0.0F, 0.0F};
     }
     if (m_AboutTitle) {
-        m_AboutTitle->m_Transform.translation = {0.0F, 230.0F};
+        m_AboutTitle->m_Transform.translation = {0.0F, 265.0F};
     }
-    float startY = 170.0F;
+    float startY = 205.0F;
     const float lineSpacing = 34.0F;
     for (std::size_t i = 0; i < m_AboutContentObjects.size() / 2; ++i) {
         auto keyObj = m_AboutContentObjects[i * 2];
@@ -444,10 +444,10 @@ void Home::layout(float windowWidth, float windowHeight) {
         }
     }
     if (m_AboutCloseBtn) {
-        m_AboutCloseBtn->m_Transform.translation = {0.0F, -230.0F};
+        m_AboutCloseBtn->m_Transform.translation = {0.0F, -265.0F};
     }
     if (m_AboutCloseBtnHighlight) {
-        m_AboutCloseBtnHighlight->m_Transform.translation = {0.0F, -230.0F};
+        m_AboutCloseBtnHighlight->m_Transform.translation = {0.0F, -265.0F};
         const glm::vec2 hlSize = m_Atlas.getImage("build-selection")->GetSize();
         m_AboutCloseBtnHighlight->m_Transform.scale = {
             (160.0F + 8.0F) / hlSize.x,
@@ -455,7 +455,7 @@ void Home::layout(float windowWidth, float windowHeight) {
         };
     }
     if (m_AboutCloseBtnTextObj) {
-        m_AboutCloseBtnTextObj->m_Transform.translation = {0.0F, -230.0F};
+        m_AboutCloseBtnTextObj->m_Transform.translation = {0.0F, -265.0F};
     }
 
     // Handbook Popup Layout
@@ -719,8 +719,8 @@ std::shared_ptr<Util::GameObject> Home::addSolidPanel(
 
 void Home::createAboutPopup() {
     m_AboutDim = addSolidPanel("about_dim", {2000, 2000}, Util::Color::FromRGB(10, 10, 10, 180), 5.0F);
-    m_AboutBorder = addSolidPanel("about_dialog_border", {704, 584}, Util::Color::FromRGB(255, 208, 92), 5.1F);
-    m_AboutDialog = addSolidPanel("about_dialog", {700, 580}, Util::Color::FromRGB(30, 45, 54), 5.2F);
+    m_AboutBorder = addSolidPanel("about_dialog_border", {704, 654}, Util::Color::FromRGB(255, 208, 92), 5.1F);
+    m_AboutDialog = addSolidPanel("about_dialog", {700, 650}, Util::Color::FromRGB(30, 45, 54), 5.2F);
     m_AboutTitle = addText(24, "GAME CONTROLS & INSTRUCTIONS", Util::Color::FromRGB(255, 255, 255), 5.3F);
 
     struct InstructionRow {
@@ -736,6 +736,8 @@ void Home::createAboutPopup() {
         {"Left-Click on UI Panel",   "- Choose Selected Tower Type"},
         {"Right-Click Tap / Key X",  "- Sell Tower (50% Refund)"},
         {"Key M",                    "- Open settings popup (In-Game)"},
+        {"Keys J / L",               "- Decelerate / Accelerate speed (1x - 3x)"},
+        {"Key K",                    "- Pause / Resume game simulation"},
         {"Key F1",                   "- Toggle Cheat Mode"},
         {"Cheats G / H / P",         "- Gold+100 / HP+1 / Next Lvl (Cheat Mode only)"},
         {"Key ESC",                  "- Close Menu / Exit Game"}

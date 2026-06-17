@@ -91,6 +91,18 @@ public:
     void toggleSettings();
     void updateSettingsInput();
 
+    // -------------------- 作弊模式 --------------------
+    void setCheatMode(bool enabled);
+
+    // -------------------- 遊戲速度與暫停 --------------------
+    int getSpeedGear() const { return m_SpeedGear; }
+    bool isSpeedPaused() const { return m_SpeedPaused; }
+    void cycleSpeed();
+    void togglePause();
+    void accelerateSpeed();
+    void decelerateSpeed();
+    bool hitTestSpeedIcon(float screenX, float screenY) const;
+
 private:
     struct SettingsButton {
         std::string label;
@@ -196,6 +208,18 @@ private:
     std::shared_ptr<Util::Text> m_SettingsCloseBtnText;
     glm::vec2 m_SettingsCloseBtnCenter = {0.0F, -90.0F};
     glm::vec2 m_SettingsCloseBtnSize = {160.0F, 44.0F};
+
+    // -------------------- 作弊模式成員 --------------------
+    bool m_CheatModeEnabled = false;
+    std::shared_ptr<Util::GameObject> m_CheatIconObject;
+
+    // -------------------- 遊戲速度與暫停成員 --------------------
+    int m_SpeedGear = 1;
+    bool m_SpeedPaused = false;
+    std::shared_ptr<Util::GameObject> m_SpeedIconObject;
+    static constexpr float kSpeedIconSize = 48.0F;
+
+    void updateSpeedIconDrawable();
 
     // -------------------- 私有方法 --------------------
     bool hasNextLevel() const;

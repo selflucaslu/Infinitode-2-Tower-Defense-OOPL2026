@@ -70,6 +70,7 @@ void App::Update() {
 
       if (action == HomeAction::StartGame) {
         m_GameSession = std::make_unique<GameSession>(1); // 更改起點
+        m_GameSession->setCheatMode(m_CheatModeEnabled);
         m_GameSession->startSession();
         m_CurrentState = State::GAME;
       } else if (action == HomeAction::Quit) {
@@ -129,6 +130,9 @@ void App::Update() {
   // 切換作弊模式 (Key F1)
   if (Util::Input::IsKeyDown(Util::Keycode::F1)) {
     m_CheatModeEnabled = !m_CheatModeEnabled;
+    if (m_GameSession) {
+      m_GameSession->setCheatMode(m_CheatModeEnabled);
+    }
     LOG_INFO("Cheat Mode toggled: {}", m_CheatModeEnabled ? "ENABLED" : "DISABLED");
   }
 
@@ -153,9 +157,9 @@ void App::Update() {
   if (m_GameSession && Util::Input::IsKeyDown(Util::Keycode::MOUSE_LB)) {
     const glm::vec2 mousePos = Util::Input::GetCursorPosition();
 
-    // 先做面板 hitTest（選塔面板使用 OpenGL 螢幕座標，與 GetCursorPosition()
-    // 相同）
-    if (m_GameSession->hitTestNextLevelButton(mousePos.x, mousePos.y)) {
+    if (m_GameSession->hitTestSpeedIcon(mousePos.x, mousePos.y)) {
+      // 點到速度圖示，不進行建塔或按鈕觸發
+    } else if (m_GameSession->hitTestNextLevelButton(mousePos.x, mousePos.y)) {
       m_GameSession->advanceToNextLevel();
       LOG_INFO("Advancing to next level");
     } else if (auto hitTower = m_GameSession->hitTestSelectionPanel(
@@ -196,8 +200,60 @@ void App::Update() {
   if (m_GameSession) {
     const float rawDeltaTime =
         Util::Time::GetDeltaTimeMs() * 0.001F; // 真實每幀秒數（秒）
-    const float simDeltaTime =
+    const float baseSimDeltaTime =
         std::clamp(rawDeltaTime, 0.0F, 0.05F); // 過濾極端值
+
+    // 處理滑鼠點擊/長按速度圖示 (長按暫停，單擊切換 1x->2x->3x)
+    const glm::vec2 mousePos = Util::Input::GetCursorPosition();
+    if (Util::Input::IsKeyDown(Util::Keycode::MOUSE_LB)) {
+      if (m_GameSession->hitTestSpeedIcon(mousePos.x, mousePos.y)) {
+        m_SpeedIconPressed = true;
+        m_SpeedIconPressTime = 0.0F;
+        m_SpeedIconLongPressedTriggered = false;
+      }
+    }
+
+    if (m_SpeedIconPressed) {
+      if (Util::Input::IsKeyPressed(Util::Keycode::MOUSE_LB)) {
+        m_SpeedIconPressTime += rawDeltaTime;
+        if (!m_SpeedIconLongPressedTriggered && m_SpeedIconPressTime >= 0.5F) {
+          m_GameSession->togglePause();
+          m_SpeedIconLongPressedTriggered = true;
+          LOG_INFO("Speed Icon Long Pressed - Pause toggled. State: {}", m_GameSession->isSpeedPaused() ? "PAUSED" : "RUNNING");
+        }
+      }
+
+      if (Util::Input::IsKeyUp(Util::Keycode::MOUSE_LB)) {
+        if (!m_SpeedIconLongPressedTriggered) {
+          m_GameSession->cycleSpeed();
+          LOG_INFO("Speed Icon Clicked - Speed cycled to {}x", m_GameSession->getSpeedGear());
+        }
+        m_SpeedIconPressed = false;
+      }
+    }
+
+    // 處理鍵盤 J/K/L 熱鍵
+    if (!m_GameSession->isShowingSettings()) {
+      if (Util::Input::IsKeyDown(Util::Keycode::J)) {
+        m_GameSession->decelerateSpeed();
+        LOG_INFO("Speed decelerated to {}x (Paused: {})", m_GameSession->getSpeedGear(), m_GameSession->isSpeedPaused() ? "YES" : "NO");
+      }
+      if (Util::Input::IsKeyDown(Util::Keycode::K)) {
+        m_GameSession->togglePause();
+        LOG_INFO("Pause toggled via key K. (Paused: {})", m_GameSession->isSpeedPaused() ? "YES" : "NO");
+      }
+      if (Util::Input::IsKeyDown(Util::Keycode::L)) {
+        m_GameSession->accelerateSpeed();
+        LOG_INFO("Speed accelerated to {}x (Paused: {})", m_GameSession->getSpeedGear(), m_GameSession->isSpeedPaused() ? "YES" : "NO");
+      }
+    }
+
+    float simDeltaTime = baseSimDeltaTime;
+    if (m_GameSession->isSpeedPaused()) {
+      simDeltaTime = 0.0F;
+    } else {
+      simDeltaTime *= static_cast<float>(m_GameSession->getSpeedGear());
+    }
 
     // 處理作弊按鍵
     if (m_CheatModeEnabled) {
@@ -315,6 +371,7 @@ void App::Update() {
         LOG_INFO("Level completed. Score so far={}, loading level {}",
                  m_Score, nextLevelNumber);
         m_GameSession = std::make_unique<GameSession>(nextLevelNumber);
+        m_GameSession->setCheatMode(m_CheatModeEnabled);
         m_SelectedTower = TowerId::Basic;
         m_GameSession->setSelectedTower(m_SelectedTower);
         m_GameSession->startSession();

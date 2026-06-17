@@ -51,7 +51,7 @@ GameSession::GameSession(int levelNumber)
   }
 
   // 預載塔、子彈與 HUD 會用到的圖片。
-  static constexpr std::array<std::string_view, 15> preloadTowerSprites = {
+  static constexpr std::array<std::string_view, 20> preloadTowerSprites = {
       "tower-basic-base",      "tower-basic-weapon",
       "tower-sniper-base-new", "tower-sniper-weapon-new",
       "tower-cannon-base-new", "tower-cannon-weapon-new",
@@ -59,7 +59,9 @@ GameSession::GameSession(int levelNumber)
       "icon-tower-top",        "aura-range",
       "game-ui-health-icon",   "game-ui-coin-icon",
       "tile-type-platform",    "build-selection",
-      "icon-step-forward"};
+      "icon-step-forward",     "icon-joystick",
+      "icon-speed-low",        "icon-speed-medium",
+      "icon-speed-high",       "icon-speed-pause"};
   for (std::string_view spriteId : preloadTowerSprites) {
     (void)atlasLoader->getImage(spriteId);
   }
@@ -114,6 +116,21 @@ GameSession::GameSession(int levelNumber)
   hudRoot.AddChild(goldTextObject);
   hudRoot.AddChild(waveIconObject);
   hudRoot.AddChild(waveTextObject);
+
+  // 建立作弊模式圖示
+  m_CheatIconObject = std::make_shared<Util::GameObject>();
+  m_CheatIconObject->SetDrawable(atlasLoader->getImage("icon-joystick"));
+  m_CheatIconObject->m_Transform.scale = {kHudIconScale, kHudIconScale};
+  m_CheatIconObject->SetZIndex(kHudZIndex);
+  m_CheatIconObject->SetVisible(false); // 預設隱藏
+  hudRoot.AddChild(m_CheatIconObject);
+
+  // 建立速度控制圖示。
+  m_SpeedIconObject = std::make_shared<Util::GameObject>();
+  m_SpeedIconObject->SetZIndex(kHudZIndex);
+  hudRoot.AddChild(m_SpeedIconObject);
+  updateSpeedIconDrawable(); // 設定初始圖示與尺寸
+
   updateHudDisplay();
 
   // 第二關以後完成第一輪時顯示的跳關按鈕。
@@ -675,6 +692,16 @@ void GameSession::updateHudDisplay() {
       goldIconObject->m_Transform.translation.x + goldIconWidth * 0.5F +
           kHudGap + goldTextSize.x * 0.5F,
       hudCenterY};
+
+  // 8) 畫面下方中間顯示作弊模式圖示
+  if (m_CheatIconObject) {
+    m_CheatIconObject->m_Transform.translation = {0.0F, -halfWindowHeight + 48.0F};
+  }
+
+  // 9) 畫面右上角顯示速度圖示（在金幣左側）
+  if (m_SpeedIconObject) {
+    m_SpeedIconObject->m_Transform.translation = {goldGroupLeft - 48.0F, hudCenterY};
+  }
 }
 
 void GameSession::updateNextLevelButtonDisplay() {
@@ -994,4 +1021,72 @@ std::shared_ptr<Util::GameObject> GameSession::addTextSettings(
     *textOut = textDrawable;
   }
   return object;
+}
+
+void GameSession::setCheatMode(bool enabled) {
+  m_CheatModeEnabled = enabled;
+  if (m_CheatIconObject) {
+    m_CheatIconObject->SetVisible(enabled);
+  }
+}
+
+void GameSession::cycleSpeed() {
+  m_SpeedPaused = false;
+  m_SpeedGear = (m_SpeedGear % 3) + 1;
+  updateSpeedIconDrawable();
+}
+
+void GameSession::togglePause() {
+  m_SpeedPaused = !m_SpeedPaused;
+  updateSpeedIconDrawable();
+}
+
+void GameSession::accelerateSpeed() {
+  m_SpeedPaused = false;
+  if (m_SpeedGear < 3) {
+    m_SpeedGear++;
+  }
+  updateSpeedIconDrawable();
+}
+
+void GameSession::decelerateSpeed() {
+  m_SpeedPaused = false;
+  if (m_SpeedGear > 1) {
+    m_SpeedGear--;
+  }
+  updateSpeedIconDrawable();
+}
+
+void GameSession::updateSpeedIconDrawable() {
+  if (!m_SpeedIconObject) return;
+
+  std::string spriteName;
+  if (m_SpeedPaused) {
+    spriteName = "icon-speed-pause";
+  } else {
+    if (m_SpeedGear == 1) {
+      spriteName = "icon-speed-low";
+    } else if (m_SpeedGear == 2) {
+      spriteName = "icon-speed-medium";
+    } else if (m_SpeedGear == 3) {
+      spriteName = "icon-speed-high";
+    } else {
+      spriteName = "icon-speed-low";
+    }
+  }
+
+  auto img = atlasLoader->getImage(spriteName);
+  m_SpeedIconObject->SetDrawable(img);
+  const glm::vec2 originalSize = img->GetSize();
+  if (originalSize.x > 0.0F && originalSize.y > 0.0F) {
+    m_SpeedIconObject->m_Transform.scale = {kSpeedIconSize / originalSize.x, kSpeedIconSize / originalSize.y};
+  }
+}
+
+bool GameSession::hitTestSpeedIcon(float screenX, float screenY) const {
+  if (!m_SpeedIconObject) return false;
+  const glm::vec2 center = m_SpeedIconObject->m_Transform.translation;
+  const float halfSize = kSpeedIconSize * 0.5F;
+  return screenX >= center.x - halfSize && screenX <= center.x + halfSize &&
+         screenY >= center.y - halfSize && screenY <= center.y + halfSize;
 }
