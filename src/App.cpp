@@ -129,11 +129,15 @@ void App::Update() {
 
   // 切換作弊模式 (Key F1)
   if (Util::Input::IsKeyDown(Util::Keycode::F1)) {
-    m_CheatModeEnabled = !m_CheatModeEnabled;
-    if (m_GameSession) {
-      m_GameSession->setCheatMode(m_CheatModeEnabled);
+    if (Home::GetCheatModeAllowed()) {
+      m_CheatModeEnabled = !m_CheatModeEnabled;
+      if (m_GameSession) {
+        m_GameSession->setCheatMode(m_CheatModeEnabled);
+      }
+      LOG_INFO("Cheat Mode toggled: {}", m_CheatModeEnabled ? "ENABLED" : "DISABLED");
+    } else {
+      LOG_INFO("Cheat Mode is disabled in Settings.");
     }
-    LOG_INFO("Cheat Mode toggled: {}", m_CheatModeEnabled ? "ENABLED" : "DISABLED");
   }
 
   // 顯示跳關按鈕（測試用，正式版可刪除）

@@ -829,17 +829,23 @@ void GameSession::updateSettingsInput() {
     btn.highlight->SetVisible(btnHovered);
 
     if (btnHovered && Util::Input::IsKeyDown(Util::Keycode::MOUSE_LB)) {
-      int currentVol = Home::GetMusicVolume();
-      if (i == 0) { // Vol -
-        currentVol = std::max(0, currentVol - 16);
-      } else { // Vol +
-        currentVol = std::min(128, currentVol + 16);
+      if (i == 2) {
+        // Cheat Mode toggle
+        Home::SetCheatModeAllowed(!Home::GetCheatModeAllowed());
+        updateSettingsUIState();
+      } else {
+        int currentVol = Home::GetMusicVolume();
+        if (i == 0) { // Vol -
+          currentVol = std::max(0, currentVol - 16);
+        } else if (i == 1) { // Vol +
+          currentVol = std::min(128, currentVol + 16);
+        }
+        Home::SetMusicVolume(currentVol);
+        if (m_LevelBgm) {
+          m_LevelBgm->SetVolume(currentVol);
+        }
+        updateSettingsUIState();
       }
-      Home::SetMusicVolume(currentVol);
-      if (m_LevelBgm) {
-        m_LevelBgm->SetVolume(currentVol);
-      }
-      updateSettingsUIState();
     }
   }
 }
@@ -860,11 +866,16 @@ void GameSession::createSettingsPopup() {
   // 5. Volume Status text setup
   m_SettingsVolumeTextObj = addTextSettings(15, "BGM Volume: 50%", Util::Color::FromRGB(236, 255, 255), 6.8F, &m_SettingsVolumeTextDrawable);
 
+  // 5.5. Cheat Status text setup
+  m_SettingsCheatTextObj = addTextSettings(15, "Cheat Mode: OFF", Util::Color::FromRGB(236, 255, 255), 6.8F, &m_SettingsCheatTextDrawable);
+
   // 6. Buttons setup
-  m_SettingsButtons.resize(2);
-  for (int i = 0; i < 2; ++i) {
+  m_SettingsButtons.resize(3);
+  for (int i = 0; i < 3; ++i) {
     SettingsButton btn;
-    btn.label = (i == 0) ? "Vol -" : "Vol +";
+    if (i == 0) btn.label = "Vol -";
+    else if (i == 1) btn.label = "Vol +";
+    else btn.label = "Toggle";
     btn.size = {100.0F, 36.0F};
 
     btn.btnPanel = addSolidPanelSettings("settings_btn_fill_" + std::to_string(i), {100, 36},
@@ -901,6 +912,7 @@ void GameSession::setSettingsVisible(bool visible) {
   m_SettingsDialog->SetVisible(visible);
   m_SettingsTitle->SetVisible(visible);
   m_SettingsVolumeTextObj->SetVisible(visible);
+  m_SettingsCheatTextObj->SetVisible(visible);
   for (auto& btn : m_SettingsButtons) {
     btn.btnPanel->SetVisible(visible);
     btn.textObj->SetVisible(visible);
@@ -919,6 +931,14 @@ void GameSession::updateSettingsUIState() {
   int volPercent = Home::GetMusicVolume() * 100 / 128;
   if (m_SettingsVolumeTextDrawable) {
     m_SettingsVolumeTextDrawable->SetText("BGM Volume: " + std::to_string(volPercent) + "%");
+  }
+  
+  if (m_SettingsCheatTextDrawable) {
+    m_SettingsCheatTextDrawable->SetText(std::string("Cheat Mode: ") + (Home::GetCheatModeAllowed() ? "ON" : "OFF"));
+  }
+  
+  if (m_SettingsButtons.size() >= 3 && m_SettingsButtons[2].textDrawable) {
+    m_SettingsButtons[2].textDrawable->SetText(Home::GetCheatModeAllowed() ? "Disable" : "Enable");
   }
 }
 
@@ -940,10 +960,18 @@ void GameSession::layoutSettings(float windowWidth, float windowHeight) {
     m_SettingsVolumeTextObj->m_Transform.translation = {0.0F, 40.0F};
   }
 
+  if (m_SettingsCheatTextObj) {
+    m_SettingsCheatTextObj->m_Transform.translation = {0.0F, -30.0F};
+  }
+
   // Volume adjust buttons
   for (std::size_t i = 0; i < m_SettingsButtons.size(); ++i) {
     auto& btn = m_SettingsButtons[i];
-    btn.center = {-60.0F + static_cast<float>(i) * 120.0F, -20.0F};
+    if (i < 2) {
+      btn.center = {-60.0F + static_cast<float>(i) * 120.0F, 0.0F};
+    } else {
+      btn.center = {0.0F, -70.0F}; // Cheat toggle button
+    }
     btn.btnPanel->m_Transform.translation = btn.center;
     btn.textObj->m_Transform.translation = btn.center;
 
@@ -955,6 +983,7 @@ void GameSession::layoutSettings(float windowWidth, float windowHeight) {
     };
   }
 
+  m_SettingsCloseBtnCenter = {0.0F, -120.0F};
   if (m_SettingsCloseBtn) {
     m_SettingsCloseBtn->m_Transform.translation = m_SettingsCloseBtnCenter;
   }

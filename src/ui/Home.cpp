@@ -14,6 +14,7 @@ std::unique_ptr<Util::BGM> Home::s_Bgm = nullptr;
 int Home::s_CurrentPlayingIndex = -1;
 bool Home::s_IsPlaying = false;
 int Home::s_MusicVolume = 64;
+bool Home::s_CheatModeAllowed = false;
 
 Home::Home() {
     m_Atlas.loadAtlas("assets/combined.atlas");
@@ -613,10 +614,18 @@ void Home::layout(float windowWidth, float windowHeight) {
         m_SettingsVolumeTextObj->m_Transform.translation = {0.0F, 40.0F};
     }
 
+    if (m_SettingsCheatTextObj) {
+        m_SettingsCheatTextObj->m_Transform.translation = {0.0F, -30.0F};
+    }
+
     // Volume adjust buttons
     for (std::size_t i = 0; i < m_SettingsButtons.size(); ++i) {
         auto& btn = m_SettingsButtons[i];
-        btn.center = {-60.0F + static_cast<float>(i) * 120.0F, -20.0F};
+        if (i < 2) {
+            btn.center = {-60.0F + static_cast<float>(i) * 120.0F, 0.0F};
+        } else {
+            btn.center = {0.0F, -70.0F}; // Cheat toggle button
+        }
         btn.btnPanel->m_Transform.translation = btn.center;
         btn.textObj->m_Transform.translation = btn.center;
 
@@ -628,6 +637,7 @@ void Home::layout(float windowWidth, float windowHeight) {
         };
     }
 
+    m_SettingsCloseBtnCenter = {0.0F, -120.0F};
     if (m_SettingsCloseBtn) {
         m_SettingsCloseBtn->m_Transform.translation = m_SettingsCloseBtnCenter;
     }
@@ -1232,6 +1242,9 @@ void Home::createSettingsPopup() {
     // 5. Volume Status text setup
     m_SettingsVolumeTextObj = addText(15, "BGM Volume: 50%", Util::Color::FromRGB(236, 255, 255), 5.8F, &m_SettingsVolumeTextDrawable);
 
+    // 5.5. Cheat Status text setup
+    m_SettingsCheatTextObj = addText(15, "Cheat Mode: OFF", Util::Color::FromRGB(236, 255, 255), 5.8F, &m_SettingsCheatTextDrawable);
+
     // 6. Buttons setup
     struct SettingsBtnConfig {
         std::string label;
@@ -1252,11 +1265,15 @@ void Home::createSettingsPopup() {
             }
             updateSettingsUIState();
             updateMusicPlayerUIState();
+        }},
+        {"Toggle", [this]() {
+            s_CheatModeAllowed = !s_CheatModeAllowed;
+            updateSettingsUIState();
         }}
     };
 
-    m_SettingsButtons.resize(2);
-    for (int i = 0; i < 2; ++i) {
+    m_SettingsButtons.resize(3);
+    for (int i = 0; i < 3; ++i) {
         SettingsButton btn;
         btn.label = btnConfigs[i].label;
         btn.size = {100.0F, 36.0F};
@@ -1296,6 +1313,7 @@ void Home::setSettingsVisible(bool visible) {
     m_SettingsDialog->SetVisible(visible);
     m_SettingsTitle->SetVisible(visible);
     m_SettingsVolumeTextObj->SetVisible(visible);
+    m_SettingsCheatTextObj->SetVisible(visible);
     for (auto& btn : m_SettingsButtons) {
         btn.btnPanel->SetVisible(visible);
         btn.textObj->SetVisible(visible);
@@ -1314,5 +1332,13 @@ void Home::updateSettingsUIState() {
     int volPercent = s_MusicVolume * 100 / 128;
     if (m_SettingsVolumeTextDrawable) {
         m_SettingsVolumeTextDrawable->SetText("BGM Volume: " + std::to_string(volPercent) + "%");
+    }
+    
+    if (m_SettingsCheatTextDrawable) {
+        m_SettingsCheatTextDrawable->SetText(std::string("Cheat Mode: ") + (s_CheatModeAllowed ? "ON" : "OFF"));
+    }
+    
+    if (m_SettingsButtons.size() >= 3 && m_SettingsButtons[2].textDrawable) {
+        m_SettingsButtons[2].textDrawable->SetText(s_CheatModeAllowed ? "Disable" : "Enable");
     }
 }

@@ -39,6 +39,9 @@ public:
     static int GetMusicVolume() { return s_MusicVolume; }
     static void SetMusicVolume(int vol) { s_MusicVolume = vol; }
 
+    static bool GetCheatModeAllowed() { return s_CheatModeAllowed; }
+    static void SetCheatModeAllowed(bool allowed) { s_CheatModeAllowed = allowed; }
+
 private:
     struct Button {
         HomeAction action = HomeAction::None;
@@ -211,6 +214,10 @@ private:
     std::shared_ptr<Util::GameObject> m_SettingsTitle;
     std::shared_ptr<Util::GameObject> m_SettingsVolumeTextObj;
     std::shared_ptr<Util::Text> m_SettingsVolumeTextDrawable;
+
+    std::shared_ptr<Util::GameObject> m_SettingsCheatTextObj;
+    std::shared_ptr<Util::Text> m_SettingsCheatTextDrawable;
+
     std::vector<SettingsButton> m_SettingsButtons;
 
     std::shared_ptr<Util::GameObject> m_SettingsCloseBtn;
@@ -225,6 +232,7 @@ private:
     static int s_CurrentPlayingIndex;
     static bool s_IsPlaying;
     static int s_MusicVolume;
+    static bool s_CheatModeAllowed;
 };
 
 

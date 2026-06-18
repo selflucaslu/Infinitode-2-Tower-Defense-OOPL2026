@@ -200,6 +200,8 @@ private:
     std::shared_ptr<Util::GameObject> m_SettingsTitle;
     std::shared_ptr<Util::GameObject> m_SettingsVolumeTextObj;
     std::shared_ptr<Util::Text> m_SettingsVolumeTextDrawable;
+    std::shared_ptr<Util::GameObject> m_SettingsCheatTextObj;
+    std::shared_ptr<Util::Text> m_SettingsCheatTextDrawable;
     std::vector<SettingsButton> m_SettingsButtons;
 
     std::shared_ptr<Util::GameObject> m_SettingsCloseBtn;
