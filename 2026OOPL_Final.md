@@ -35,7 +35,7 @@
 
 ### 遊戲規則
 
-1. 啟動後進入首頁，設有 Music player、Settings、Handbook 及 About 等功能選單，並且只有 Continue、Statistics、Research、Custom maps 目前是展示用 disabled 按鈕。
+1. 啟動後進入首頁，設有 Music player、Settings、Handbook 及 About 等功能選單。
 2. 點擊 New game 後從第 1 關開始。
 3. 玩家可以用右下角選塔面板選擇 Basic、Sniper、Cannon，也可以用數字鍵 1、2、3 切換。
 4. 滑鼠左鍵點擊地圖時，若點到選塔面板就切換塔；若點到可建塔的 Platform 格且金幣足夠，就在該格建塔。
