@@ -22,7 +22,7 @@
 | Sniper | 79 | 14.0 | 1.20 秒 | 70 | 16.0 | 單體攻擊 |
 | Cannon | 99 | 6.0 | 1.50 秒 | 45 | 7.0 | 1.5 格爆炸範圍 |
 
-敵人類型包含 Regular、Fast、Strong、Heli、Jet、Armored、Healer、Toxic、Icy、Fighter、Light 等。程式的實際戰鬥流程目前會使用敵人的血量、速度、移動型態、抵達基地傷害、擊殺獎勵金幣與貼圖。
+敵人類型包含 Regular、Fast、Strong、Heli、Jet、Armored、Healer、Toxic、Icy、Fighter、Light 等。程式的實際遊戲流程目前會使用敵人的血量、速度、移動型態（用於地面 / 空中顯示層級）、抵達基地傷害、擊殺獎勵金幣與貼圖。
 
 ### 組別分工
 
@@ -120,7 +120,7 @@
 | `AtlasLoader` | `include/utils/AtlasLoader.hpp`, `src/utils/AtlasLoader.cpp` | 解析 `combined.atlas`，從大圖裁切 sprite 成暫存 BMP，並以快取避免重複建立圖片 |
 | `TowerSelectionPanel` | `include/utils/TowerSelectionPanel.hpp`, `src/utils/TowerSelectionPanel.cpp` | 繪製右下角三格選塔面板、費用文字、選取高亮與滑鼠 hit test |
 | `FpsOverlay` | `include/utils/FpsOverlay.hpp`, `src/utils/FpsOverlay.cpp` | 在遊戲畫面左下角顯示 FPS |
-| `Home` | `include/ui/Home.hpp`, `src/ui/Home.cpp` | 建立首頁 UI、按鈕 layout、hover 與點擊判斷 |
+| `Home` | `include/ui/Home.hpp`, `src/ui/Home.cpp` | 建立首頁 UI、按鈕 layout、hover 與點擊判斷，並管理 About、Handbook、Music player、Settings 彈窗 |
 | `Result` | `include/ui/Result.hpp`, `src/ui/Result.cpp` | 建立結算 UI、分數、星等與回首頁按鈕 |
 
 進入遊戲後，`App` 以 `GameSession` 表示單一關卡的執行環境。`GameSession` 內部再組合 `GridMap`、`EnemyManager`、`TowerManager`、`TowerSelectionPanel` 與 `FpsOverlay` 等子系統，使單局狀態的資料所有權集中於同一個物件。當關卡完成並切換至下一關時，`App` 會重新建立新的 `GameSession`，舊關卡所持有的地圖、敵人、塔、HUD 與 UI 資源會隨物件生命週期一併釋放，避免不同關卡之間殘留狀態。
