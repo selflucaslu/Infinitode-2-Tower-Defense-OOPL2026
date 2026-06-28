@@ -20,7 +20,7 @@ Result::Result(int wavesSurvived, int score, int levelNumber) {
         bgmPath = "assets/music/Next stop,with you( Vocal).wav";
     }
 
-    if (!bgmPath.empty()) {
+    if (!bgmPath.empty() && Home::GetResultBgmEnabled()) {
         m_ResultBgm = std::make_unique<Util::BGM>(bgmPath);
         m_ResultBgm->SetVolume(Home::GetMusicVolume());
         m_ResultBgm->Play(-1);

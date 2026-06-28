@@ -204,13 +204,15 @@ private:
     std::shared_ptr<Util::Text> m_SettingsCheatTextDrawable;
     std::shared_ptr<Util::GameObject> m_SettingsHomeBgmTextObj;
     std::shared_ptr<Util::Text> m_SettingsHomeBgmTextDrawable;
+    std::shared_ptr<Util::GameObject> m_SettingsResultBgmTextObj;
+    std::shared_ptr<Util::Text> m_SettingsResultBgmTextDrawable;
     std::vector<SettingsButton> m_SettingsButtons;
 
     std::shared_ptr<Util::GameObject> m_SettingsCloseBtn;
     std::shared_ptr<Util::GameObject> m_SettingsCloseBtnHighlight;
     std::shared_ptr<Util::GameObject> m_SettingsCloseBtnTextObj;
     std::shared_ptr<Util::Text> m_SettingsCloseBtnText;
-    glm::vec2 m_SettingsCloseBtnCenter = {0.0F, -180.0F};
+    glm::vec2 m_SettingsCloseBtnCenter = {0.0F, -210.0F};
     glm::vec2 m_SettingsCloseBtnSize = {160.0F, 44.0F};
 
     // -------------------- 作弊模式成員 --------------------

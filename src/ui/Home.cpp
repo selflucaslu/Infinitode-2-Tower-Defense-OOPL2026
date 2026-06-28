@@ -16,6 +16,7 @@ bool Home::s_IsPlaying = false;
 int Home::s_MusicVolume = 64;
 bool Home::s_CheatModeAllowed = false;
 bool Home::s_HomeBgmEnabled = false;
+bool Home::s_ResultBgmEnabled = true;
 
 Home::Home() {
     m_Atlas.loadAtlas("assets/combined.atlas");
@@ -614,29 +615,35 @@ void Home::layout(float windowWidth, float windowHeight) {
         m_SettingsDialog->m_Transform.translation = {0.0F, 0.0F};
     }
     if (m_SettingsTitle) {
-        m_SettingsTitle->m_Transform.translation = {0.0F, 170.0F};
+        m_SettingsTitle->m_Transform.translation = {0.0F, 110.0F};
     }
     if (m_SettingsVolumeTextDrawable) {
-        m_SettingsVolumeTextObj->m_Transform.translation = {0.0F, 100.0F};
+        m_SettingsVolumeTextObj->m_Transform.translation = {0.0F, 50.0F};
     }
 
     if (m_SettingsCheatTextObj) {
-        m_SettingsCheatTextObj->m_Transform.translation = {0.0F, 10.0F};
+        m_SettingsCheatTextObj->m_Transform.translation = {-140.0F, -45.0F};
     }
 
     if (m_SettingsHomeBgmTextObj) {
-        m_SettingsHomeBgmTextObj->m_Transform.translation = {0.0F, -80.0F};
+        m_SettingsHomeBgmTextObj->m_Transform.translation = {0.0F, -45.0F};
+    }
+
+    if (m_SettingsResultBgmTextObj) {
+        m_SettingsResultBgmTextObj->m_Transform.translation = {140.0F, -45.0F};
     }
 
     // Settings adjust buttons
     for (std::size_t i = 0; i < m_SettingsButtons.size(); ++i) {
         auto& btn = m_SettingsButtons[i];
         if (i < 2) {
-            btn.center = {-60.0F + static_cast<float>(i) * 120.0F, 60.0F};
+            btn.center = {-60.0F + static_cast<float>(i) * 120.0F, 10.0F};
         } else if (i == 2) {
-            btn.center = {0.0F, -30.0F}; // Cheat toggle button
+            btn.center = {-140.0F, -85.0F}; // Cheat toggle button
+        } else if (i == 3) {
+            btn.center = {0.0F, -85.0F}; // Home BGM toggle button
         } else {
-            btn.center = {0.0F, -120.0F}; // Home BGM toggle button
+            btn.center = {140.0F, -85.0F}; // Result BGM toggle button
         }
         btn.btnPanel->m_Transform.translation = btn.center;
         btn.textObj->m_Transform.translation = btn.center;
@@ -649,7 +656,7 @@ void Home::layout(float windowWidth, float windowHeight) {
         };
     }
 
-    m_SettingsCloseBtnCenter = {0.0F, -180.0F};
+    m_SettingsCloseBtnCenter = {0.0F, -135.0F};
     if (m_SettingsCloseBtn) {
         m_SettingsCloseBtn->m_Transform.translation = m_SettingsCloseBtnCenter;
     }
@@ -1246,10 +1253,10 @@ void Home::createSettingsPopup() {
     m_SettingsDim = addSolidPanel("settings_dim", {2000, 2000}, Util::Color::FromRGB(10, 10, 10, 180), 5.5F);
 
     // 2. Dialog Border (Golden Border)
-    m_SettingsBorder = addSolidPanel("settings_border", {504, 444}, Util::Color::FromRGB(255, 208, 92), 5.6F);
+    m_SettingsBorder = addSolidPanel("settings_border", {504, 324}, Util::Color::FromRGB(255, 208, 92), 5.6F);
 
     // 3. Dialog Box (Dark Blue-Grey)
-    m_SettingsDialog = addSolidPanel("settings_dialog", {500, 440}, Util::Color::FromRGB(30, 45, 54), 5.7F);
+    m_SettingsDialog = addSolidPanel("settings_dialog", {500, 320}, Util::Color::FromRGB(30, 45, 54), 5.7F);
 
     // 4. Header Title
     m_SettingsTitle = addText(24, "SETTINGS", Util::Color::FromRGB(255, 255, 255), 5.8F);
@@ -1262,6 +1269,9 @@ void Home::createSettingsPopup() {
 
     // 5.6. Home BGM Switch Text setup
     m_SettingsHomeBgmTextObj = addText(15, "Home BGM: OFF", Util::Color::FromRGB(236, 255, 255), 5.8F, &m_SettingsHomeBgmTextDrawable);
+
+    // 5.7. Result BGM Switch Text setup
+    m_SettingsResultBgmTextObj = addText(15, "Result BGM: ON", Util::Color::FromRGB(236, 255, 255), 5.8F, &m_SettingsResultBgmTextDrawable);
 
     // 6. Buttons setup
     struct SettingsBtnConfig {
@@ -1300,11 +1310,15 @@ void Home::createSettingsPopup() {
                 }
             }
             updateSettingsUIState();
+        }},
+        {"Toggle Result", [this]() {
+            s_ResultBgmEnabled = !s_ResultBgmEnabled;
+            updateSettingsUIState();
         }}
     };
 
-    m_SettingsButtons.resize(4);
-    for (int i = 0; i < 4; ++i) {
+    m_SettingsButtons.resize(5);
+    for (int i = 0; i < 5; ++i) {
         SettingsButton btn;
         btn.label = btnConfigs[i].label;
         btn.size = {100.0F, 36.0F};
@@ -1348,6 +1362,9 @@ void Home::setSettingsVisible(bool visible) {
     if (m_SettingsHomeBgmTextObj) {
         m_SettingsHomeBgmTextObj->SetVisible(visible);
     }
+    if (m_SettingsResultBgmTextObj) {
+        m_SettingsResultBgmTextObj->SetVisible(visible);
+    }
     for (auto& btn : m_SettingsButtons) {
         btn.btnPanel->SetVisible(visible);
         btn.textObj->SetVisible(visible);
@@ -1375,13 +1392,20 @@ void Home::updateSettingsUIState() {
     if (m_SettingsHomeBgmTextDrawable) {
         m_SettingsHomeBgmTextDrawable->SetText(std::string("Home BGM: ") + (s_HomeBgmEnabled ? "ON" : "OFF"));
     }
+
+    if (m_SettingsResultBgmTextDrawable) {
+        m_SettingsResultBgmTextDrawable->SetText(std::string("Result BGM: ") + (s_ResultBgmEnabled ? "ON" : "OFF"));
+    }
     
-    if (m_SettingsButtons.size() >= 4) {
+    if (m_SettingsButtons.size() >= 5) {
         if (m_SettingsButtons[2].textDrawable) {
             m_SettingsButtons[2].textDrawable->SetText(s_CheatModeAllowed ? "Disable" : "Enable");
         }
         if (m_SettingsButtons[3].textDrawable) {
             m_SettingsButtons[3].textDrawable->SetText(s_HomeBgmEnabled ? "Disable" : "Enable");
+        }
+        if (m_SettingsButtons[4].textDrawable) {
+            m_SettingsButtons[4].textDrawable->SetText(s_ResultBgmEnabled ? "Disable" : "Enable");
         }
     }
 }
