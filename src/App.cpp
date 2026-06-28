@@ -356,7 +356,10 @@ void App::Update() {
           0,  // 基地已被摧毀，血量貢獻為 0
           m_GameSession->getGold());
       LOG_INFO("Game Over. Total score={}, wave={}", m_Score, m_GameSession->getWave());
-      m_Result = std::make_unique<Result>(m_GameSession->getWave(), m_Score);
+      int wave = m_GameSession->getWave();
+      int lvl = m_GameSession->getLevelNumber();
+      m_GameSession.reset(); // Halt game session music and free memory early
+      m_Result = std::make_unique<Result>(wave, m_Score, lvl);
       m_CurrentState = State::RESULT;
     } else if (m_GameSession->isLevelCompleted()) {
       // 關卡通關：計入本關完整分數（hp + gold + 過關獎勵）
@@ -368,7 +371,10 @@ void App::Update() {
 
       if (m_GameSession->getLevelNumber() == 5) {
         LOG_INFO("Level 5 completed. Final Score={}, transitioning to Result screen", m_Score);
-        m_Result = std::make_unique<Result>(m_GameSession->getWave(), m_Score);
+        int wave = m_GameSession->getWave();
+        int lvl = m_GameSession->getLevelNumber();
+        m_GameSession.reset(); // Halt game session music and free memory early
+        m_Result = std::make_unique<Result>(wave, m_Score, lvl);
         m_CurrentState = State::RESULT;
       } else {
         const int nextLevelNumber = m_GameSession->getLevelNumber() + 1;

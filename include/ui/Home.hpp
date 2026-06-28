@@ -42,6 +42,9 @@ public:
     static bool GetCheatModeAllowed() { return s_CheatModeAllowed; }
     static void SetCheatModeAllowed(bool allowed) { s_CheatModeAllowed = allowed; }
 
+    static bool GetHomeBgmEnabled() { return s_HomeBgmEnabled; }
+    static void SetHomeBgmEnabled(bool enabled) { s_HomeBgmEnabled = enabled; }
+
 private:
     struct Button {
         HomeAction action = HomeAction::None;
@@ -218,13 +221,16 @@ private:
     std::shared_ptr<Util::GameObject> m_SettingsCheatTextObj;
     std::shared_ptr<Util::Text> m_SettingsCheatTextDrawable;
 
+    std::shared_ptr<Util::GameObject> m_SettingsHomeBgmTextObj;
+    std::shared_ptr<Util::Text> m_SettingsHomeBgmTextDrawable;
+
     std::vector<SettingsButton> m_SettingsButtons;
 
     std::shared_ptr<Util::GameObject> m_SettingsCloseBtn;
     std::shared_ptr<Util::GameObject> m_SettingsCloseBtnHighlight;
     std::shared_ptr<Util::GameObject> m_SettingsCloseBtnTextObj;
     std::shared_ptr<Util::Text> m_SettingsCloseBtnText;
-    glm::vec2 m_SettingsCloseBtnCenter = {0.0F, -90.0F};
+    glm::vec2 m_SettingsCloseBtnCenter = {0.0F, -180.0F};
     glm::vec2 m_SettingsCloseBtnSize = {160.0F, 44.0F};
 
     // Playback state variables (static to persist across reconstructions of Home)
@@ -233,6 +239,7 @@ private:
     static bool s_IsPlaying;
     static int s_MusicVolume;
     static bool s_CheatModeAllowed;
+    static bool s_HomeBgmEnabled;
 };
 
 
