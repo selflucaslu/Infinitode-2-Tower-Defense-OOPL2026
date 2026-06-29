@@ -3,14 +3,32 @@
 #include "Core/Context.hpp"
 #include "Util/Input.hpp"
 #include "Util/Keycode.hpp"
+#include "ui/Home.hpp"
 
 #include <SDL.h>
 
 // -------------------- 建構子 --------------------
-Result::Result(int wavesSurvived, int score) {
+Result::Result(int wavesSurvived, int score, int levelNumber) {
     m_Atlas.loadAtlas("assets/combined.atlas");
     createTextObjects(wavesSurvived, score);
     createButtons();
+
+    std::string bgmPath;
+    if (levelNumber >= 1 && levelNumber <= 4) {
+        bgmPath = "assets/music/Next stop,with you(No Vocal).wav";
+    } else if (levelNumber == 5) {
+        bgmPath = "assets/music/Next stop,with you( Vocal).wav";
+    }
+
+    if (!bgmPath.empty() && Home::GetResultBgmEnabled()) {
+        m_ResultBgm = std::make_unique<Util::BGM>(bgmPath);
+        m_ResultBgm->SetVolume(Home::GetMusicVolume());
+        m_ResultBgm->Play(-1);
+    }
+}
+
+Result::~Result() {
+    Mix_HaltMusic();
 }
 
 // -------------------- 每幀邏輯 --------------------

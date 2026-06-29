@@ -7,6 +7,8 @@
 #include "Util/Text.hpp"
 #include "utils/AtlasLoader.hpp"
 
+#include "Util/BGM.hpp"
+
 #include <memory>
 #include <string>
 #include <vector>
@@ -19,7 +21,8 @@ enum class ResultAction {
 class Result {
 public:
     // wavesSurvived：存活波次；score：本局累計分數
-    Result(int wavesSurvived, int score);
+    Result(int wavesSurvived, int score, int levelNumber);
+    ~Result();
 
     ResultAction update();
     void display();
@@ -72,4 +75,6 @@ private:
     std::shared_ptr<Util::GameObject> m_StatsObject;
 
     std::vector<Button> m_Buttons;
+
+    std::unique_ptr<Util::BGM> m_ResultBgm;
 };

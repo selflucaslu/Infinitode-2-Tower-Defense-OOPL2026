@@ -69,17 +69,20 @@ void App::Update() {
       m_Home->display();
 
       if (action == HomeAction::StartGame) {
+        m_Home.reset();
         m_GameSession = std::make_unique<GameSession>(1); // 更改起點
         m_GameSession->setCheatMode(m_CheatModeEnabled);
         m_GameSession->startSession();
         m_CurrentState = State::GAME;
       } else if (action == HomeAction::Quit) {
+        m_Home.reset();
         m_CurrentState = State::END;
       }
     }
 
     if (!wasPopupShowing) {
       if (Util::Input::IsKeyUp(Util::Keycode::ESCAPE) || Util::Input::IfExit()) {
+        m_Home.reset();
         m_CurrentState = State::END;
       }
     }
@@ -95,6 +98,7 @@ void App::Update() {
         m_Result.reset();
         m_GameSession.reset();
         m_Score = 0;  // 回首頁時重置分數
+        m_Home.reset();
         m_Home = std::make_unique<Home>();
         m_CurrentState = State::HOME;
         return;
@@ -356,7 +360,10 @@ void App::Update() {
           0,  // 基地已被摧毀，血量貢獻為 0
           m_GameSession->getGold());
       LOG_INFO("Game Over. Total score={}, wave={}", m_Score, m_GameSession->getWave());
-      m_Result = std::make_unique<Result>(m_GameSession->getWave(), m_Score);
+      int wave = m_GameSession->getWave();
+      int lvl = m_GameSession->getLevelNumber();
+      m_GameSession.reset(); // Halt game session music and free memory early
+      m_Result = std::make_unique<Result>(wave, m_Score, lvl);
       m_CurrentState = State::RESULT;
     } else if (m_GameSession->isLevelCompleted()) {
       // 關卡通關：計入本關完整分數（hp + gold + 過關獎勵）
@@ -368,7 +375,10 @@ void App::Update() {
 
       if (m_GameSession->getLevelNumber() == 5) {
         LOG_INFO("Level 5 completed. Final Score={}, transitioning to Result screen", m_Score);
-        m_Result = std::make_unique<Result>(m_GameSession->getWave(), m_Score);
+        int wave = m_GameSession->getWave();
+        int lvl = m_GameSession->getLevelNumber();
+        m_GameSession.reset(); // Halt game session music and free memory early
+        m_Result = std::make_unique<Result>(wave, m_Score, lvl);
         m_CurrentState = State::RESULT;
       } else {
         const int nextLevelNumber = m_GameSession->getLevelNumber() + 1;

@@ -833,6 +833,14 @@ void GameSession::updateSettingsInput() {
         // Cheat Mode toggle
         Home::SetCheatModeAllowed(!Home::GetCheatModeAllowed());
         updateSettingsUIState();
+      } else if (i == 3) {
+        // Home BGM toggle
+        Home::SetHomeBgmEnabled(!Home::GetHomeBgmEnabled());
+        updateSettingsUIState();
+      } else if (i == 4) {
+        // Result BGM toggle
+        Home::SetResultBgmEnabled(!Home::GetResultBgmEnabled());
+        updateSettingsUIState();
       } else {
         int currentVol = Home::GetMusicVolume();
         if (i == 0) { // Vol -
@@ -869,13 +877,21 @@ void GameSession::createSettingsPopup() {
   // 5.5. Cheat Status text setup
   m_SettingsCheatTextObj = addTextSettings(15, "Cheat Mode: OFF", Util::Color::FromRGB(236, 255, 255), 6.8F, &m_SettingsCheatTextDrawable);
 
+  // 5.6. Home BGM Switch Text setup
+  m_SettingsHomeBgmTextObj = addTextSettings(15, "Home BGM: OFF", Util::Color::FromRGB(236, 255, 255), 6.8F, &m_SettingsHomeBgmTextDrawable);
+
+  // 5.7. Result BGM Switch Text setup
+  m_SettingsResultBgmTextObj = addTextSettings(15, "Result BGM: ON", Util::Color::FromRGB(236, 255, 255), 6.8F, &m_SettingsResultBgmTextDrawable);
+
   // 6. Buttons setup
-  m_SettingsButtons.resize(3);
-  for (int i = 0; i < 3; ++i) {
+  m_SettingsButtons.resize(5);
+  for (int i = 0; i < 5; ++i) {
     SettingsButton btn;
     if (i == 0) btn.label = "Vol -";
     else if (i == 1) btn.label = "Vol +";
-    else btn.label = "Toggle";
+    else if (i == 2) btn.label = "Toggle";
+    else if (i == 3) btn.label = "Toggle BGM";
+    else btn.label = "Toggle Result";
     btn.size = {100.0F, 36.0F};
 
     btn.btnPanel = addSolidPanelSettings("settings_btn_fill_" + std::to_string(i), {100, 36},
@@ -913,6 +929,12 @@ void GameSession::setSettingsVisible(bool visible) {
   m_SettingsTitle->SetVisible(visible);
   m_SettingsVolumeTextObj->SetVisible(visible);
   m_SettingsCheatTextObj->SetVisible(visible);
+  if (m_SettingsHomeBgmTextObj) {
+    m_SettingsHomeBgmTextObj->SetVisible(visible);
+  }
+  if (m_SettingsResultBgmTextObj) {
+    m_SettingsResultBgmTextObj->SetVisible(visible);
+  }
   for (auto& btn : m_SettingsButtons) {
     btn.btnPanel->SetVisible(visible);
     btn.textObj->SetVisible(visible);
@@ -936,9 +958,25 @@ void GameSession::updateSettingsUIState() {
   if (m_SettingsCheatTextDrawable) {
     m_SettingsCheatTextDrawable->SetText(std::string("Cheat Mode: ") + (Home::GetCheatModeAllowed() ? "ON" : "OFF"));
   }
+
+  if (m_SettingsHomeBgmTextDrawable) {
+    m_SettingsHomeBgmTextDrawable->SetText(std::string("Home BGM: ") + (Home::GetHomeBgmEnabled() ? "ON" : "OFF"));
+  }
+
+  if (m_SettingsResultBgmTextDrawable) {
+    m_SettingsResultBgmTextDrawable->SetText(std::string("Result BGM: ") + (Home::GetResultBgmEnabled() ? "ON" : "OFF"));
+  }
   
-  if (m_SettingsButtons.size() >= 3 && m_SettingsButtons[2].textDrawable) {
-    m_SettingsButtons[2].textDrawable->SetText(Home::GetCheatModeAllowed() ? "Disable" : "Enable");
+  if (m_SettingsButtons.size() >= 5) {
+    if (m_SettingsButtons[2].textDrawable) {
+      m_SettingsButtons[2].textDrawable->SetText(Home::GetCheatModeAllowed() ? "Disable" : "Enable");
+    }
+    if (m_SettingsButtons[3].textDrawable) {
+      m_SettingsButtons[3].textDrawable->SetText(Home::GetHomeBgmEnabled() ? "Disable" : "Enable");
+    }
+    if (m_SettingsButtons[4].textDrawable) {
+      m_SettingsButtons[4].textDrawable->SetText(Home::GetResultBgmEnabled() ? "Disable" : "Enable");
+    }
   }
 }
 
@@ -957,20 +995,32 @@ void GameSession::layoutSettings(float windowWidth, float windowHeight) {
     m_SettingsTitle->m_Transform.translation = {0.0F, 110.0F};
   }
   if (m_SettingsVolumeTextObj) {
-    m_SettingsVolumeTextObj->m_Transform.translation = {0.0F, 40.0F};
+    m_SettingsVolumeTextObj->m_Transform.translation = {0.0F, 50.0F};
   }
 
   if (m_SettingsCheatTextObj) {
-    m_SettingsCheatTextObj->m_Transform.translation = {0.0F, -30.0F};
+    m_SettingsCheatTextObj->m_Transform.translation = {-140.0F, -45.0F};
+  }
+
+  if (m_SettingsHomeBgmTextObj) {
+    m_SettingsHomeBgmTextObj->m_Transform.translation = {0.0F, -45.0F};
+  }
+
+  if (m_SettingsResultBgmTextObj) {
+    m_SettingsResultBgmTextObj->m_Transform.translation = {140.0F, -45.0F};
   }
 
   // Volume adjust buttons
   for (std::size_t i = 0; i < m_SettingsButtons.size(); ++i) {
     auto& btn = m_SettingsButtons[i];
     if (i < 2) {
-      btn.center = {-60.0F + static_cast<float>(i) * 120.0F, 0.0F};
+      btn.center = {-60.0F + static_cast<float>(i) * 120.0F, 10.0F};
+    } else if (i == 2) {
+      btn.center = {-140.0F, -85.0F}; // Cheat toggle button
+    } else if (i == 3) {
+      btn.center = {0.0F, -85.0F}; // Home BGM toggle button
     } else {
-      btn.center = {0.0F, -70.0F}; // Cheat toggle button
+      btn.center = {140.0F, -85.0F}; // Result BGM toggle button
     }
     btn.btnPanel->m_Transform.translation = btn.center;
     btn.textObj->m_Transform.translation = btn.center;
@@ -983,7 +1033,7 @@ void GameSession::layoutSettings(float windowWidth, float windowHeight) {
     };
   }
 
-  m_SettingsCloseBtnCenter = {0.0F, -120.0F};
+  m_SettingsCloseBtnCenter = {0.0F, -135.0F};
   if (m_SettingsCloseBtn) {
     m_SettingsCloseBtn->m_Transform.translation = m_SettingsCloseBtnCenter;
   }

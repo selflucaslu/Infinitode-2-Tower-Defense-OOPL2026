@@ -15,6 +15,8 @@ int Home::s_CurrentPlayingIndex = -1;
 bool Home::s_IsPlaying = false;
 int Home::s_MusicVolume = 64;
 bool Home::s_CheatModeAllowed = false;
+bool Home::s_HomeBgmEnabled = false;
+bool Home::s_ResultBgmEnabled = true;
 
 Home::Home() {
     m_Atlas.loadAtlas("assets/combined.atlas");
@@ -25,6 +27,11 @@ Home::Home() {
     createHandbookPopup();
     createMusicPlayerPopup();
     createSettingsPopup();
+
+    if (s_HomeBgmEnabled) {
+        s_CurrentPlayingIndex = -1;
+        playTrack(6);
+    }
 }
 
 HomeAction Home::update() {
@@ -544,7 +551,7 @@ void Home::layout(float windowWidth, float windowHeight) {
     // Tracks layout
     for (std::size_t i = 0; i < m_MusicTracks.size(); ++i) {
         auto& track = m_MusicTracks[i];
-        track.center = {0.0F, 140.0F - static_cast<float>(i) * 50.0F};
+        track.center = {0.0F, 145.0F - static_cast<float>(i) * 35.0F};
         track.rowPanel->m_Transform.translation = track.center;
         track.textObj->m_Transform.translation = track.center;
 
@@ -611,20 +618,32 @@ void Home::layout(float windowWidth, float windowHeight) {
         m_SettingsTitle->m_Transform.translation = {0.0F, 110.0F};
     }
     if (m_SettingsVolumeTextDrawable) {
-        m_SettingsVolumeTextObj->m_Transform.translation = {0.0F, 40.0F};
+        m_SettingsVolumeTextObj->m_Transform.translation = {0.0F, 50.0F};
     }
 
     if (m_SettingsCheatTextObj) {
-        m_SettingsCheatTextObj->m_Transform.translation = {0.0F, -30.0F};
+        m_SettingsCheatTextObj->m_Transform.translation = {-140.0F, -45.0F};
     }
 
-    // Volume adjust buttons
+    if (m_SettingsHomeBgmTextObj) {
+        m_SettingsHomeBgmTextObj->m_Transform.translation = {0.0F, -45.0F};
+    }
+
+    if (m_SettingsResultBgmTextObj) {
+        m_SettingsResultBgmTextObj->m_Transform.translation = {140.0F, -45.0F};
+    }
+
+    // Settings adjust buttons
     for (std::size_t i = 0; i < m_SettingsButtons.size(); ++i) {
         auto& btn = m_SettingsButtons[i];
         if (i < 2) {
-            btn.center = {-60.0F + static_cast<float>(i) * 120.0F, 0.0F};
+            btn.center = {-60.0F + static_cast<float>(i) * 120.0F, 10.0F};
+        } else if (i == 2) {
+            btn.center = {-140.0F, -85.0F}; // Cheat toggle button
+        } else if (i == 3) {
+            btn.center = {0.0F, -85.0F}; // Home BGM toggle button
         } else {
-            btn.center = {0.0F, -70.0F}; // Cheat toggle button
+            btn.center = {140.0F, -85.0F}; // Result BGM toggle button
         }
         btn.btnPanel->m_Transform.translation = btn.center;
         btn.textObj->m_Transform.translation = btn.center;
@@ -637,7 +656,7 @@ void Home::layout(float windowWidth, float windowHeight) {
         };
     }
 
-    m_SettingsCloseBtnCenter = {0.0F, -120.0F};
+    m_SettingsCloseBtnCenter = {0.0F, -135.0F};
     if (m_SettingsCloseBtn) {
         m_SettingsCloseBtn->m_Transform.translation = m_SettingsCloseBtnCenter;
     }
@@ -1001,9 +1020,9 @@ void Home::switchHandbookTab(int tabIndex) {
 
 void Home::createMusicPlayerPopup() {
     // 1. Pre-create active, inactive and button panel backgrounds
-    auto activeBg = addSolidPanel("music_row_active", {480, 38}, Util::Color::FromRGB(92, 133, 61), 5.8F);
+    auto activeBg = addSolidPanel("music_row_active", {480, 32}, Util::Color::FromRGB(92, 133, 61), 5.8F);
     m_Renderer.RemoveChild(activeBg);
-    auto inactiveBg = addSolidPanel("music_row_inactive", {480, 38}, Util::Color::FromRGB(45, 60, 72), 5.8F);
+    auto inactiveBg = addSolidPanel("music_row_inactive", {480, 32}, Util::Color::FromRGB(45, 60, 72), 5.8F);
     m_Renderer.RemoveChild(inactiveBg);
 
     auto btnActiveBg = addSolidPanel("music_ctrl_active", {100, 36}, Util::Color::FromRGB(92, 133, 61), 5.8F);
@@ -1032,17 +1051,20 @@ void Home::createMusicPlayerPopup() {
         {"assets/music/Smili_1.mp3",               "2. Smili 1"},
         {"assets/music/cionape_3.mp3",             "3. Cionape 3"},
         {"assets/music/fiosion_2.mp3",             "4. Fiosion 2"},
-        {"assets/music/havido_4.mp3",              "5. Havido 4"}
+        {"assets/music/havido_4.mp3",              "5. Havido 4"},
+        {"assets/music/Next stop,with you(No Vocal).wav", "6. Next stop,with you(No Vocal)"},
+        {"assets/music/Man Ya (Mixed Voice).wav",      "7. Man Ya (Mixed Voice)"}
     };
 
-    m_MusicTracks.resize(5);
-    for (int i = 0; i < 5; ++i) {
+    const int numTracks = sizeof(trackConfigs) / sizeof(trackConfigs[0]);
+    m_MusicTracks.resize(numTracks);
+    for (int i = 0; i < numTracks; ++i) {
         MusicTrack track;
         track.filename = trackConfigs[i].filename;
         track.displayName = trackConfigs[i].displayName;
-        track.size = {480.0F, 38.0F};
+        track.size = {480.0F, 32.0F};
 
-        track.rowPanel = addSolidPanel("music_track_fill_" + std::to_string(i), {480, 38},
+        track.rowPanel = addSolidPanel("music_track_fill_" + std::to_string(i), {480, 32},
             Util::Color::FromRGB(45, 60, 72), 5.8F);
         track.textObj = addText(14, track.displayName,
             Util::Color::FromRGB(170, 190, 200), 5.9F, &track.textDrawable);
@@ -1245,6 +1267,12 @@ void Home::createSettingsPopup() {
     // 5.5. Cheat Status text setup
     m_SettingsCheatTextObj = addText(15, "Cheat Mode: OFF", Util::Color::FromRGB(236, 255, 255), 5.8F, &m_SettingsCheatTextDrawable);
 
+    // 5.6. Home BGM Switch Text setup
+    m_SettingsHomeBgmTextObj = addText(15, "Home BGM: OFF", Util::Color::FromRGB(236, 255, 255), 5.8F, &m_SettingsHomeBgmTextDrawable);
+
+    // 5.7. Result BGM Switch Text setup
+    m_SettingsResultBgmTextObj = addText(15, "Result BGM: ON", Util::Color::FromRGB(236, 255, 255), 5.8F, &m_SettingsResultBgmTextDrawable);
+
     // 6. Buttons setup
     struct SettingsBtnConfig {
         std::string label;
@@ -1269,11 +1297,28 @@ void Home::createSettingsPopup() {
         {"Toggle", [this]() {
             s_CheatModeAllowed = !s_CheatModeAllowed;
             updateSettingsUIState();
+        }},
+        {"Toggle BGM", [this]() {
+            s_HomeBgmEnabled = !s_HomeBgmEnabled;
+            if (s_HomeBgmEnabled) {
+                s_CurrentPlayingIndex = -1;
+                playTrack(6);
+            } else {
+                if (s_CurrentPlayingIndex == 6) {
+                    stopMusic();
+                    updateMusicPlayerUIState();
+                }
+            }
+            updateSettingsUIState();
+        }},
+        {"Toggle Result", [this]() {
+            s_ResultBgmEnabled = !s_ResultBgmEnabled;
+            updateSettingsUIState();
         }}
     };
 
-    m_SettingsButtons.resize(3);
-    for (int i = 0; i < 3; ++i) {
+    m_SettingsButtons.resize(5);
+    for (int i = 0; i < 5; ++i) {
         SettingsButton btn;
         btn.label = btnConfigs[i].label;
         btn.size = {100.0F, 36.0F};
@@ -1314,6 +1359,12 @@ void Home::setSettingsVisible(bool visible) {
     m_SettingsTitle->SetVisible(visible);
     m_SettingsVolumeTextObj->SetVisible(visible);
     m_SettingsCheatTextObj->SetVisible(visible);
+    if (m_SettingsHomeBgmTextObj) {
+        m_SettingsHomeBgmTextObj->SetVisible(visible);
+    }
+    if (m_SettingsResultBgmTextObj) {
+        m_SettingsResultBgmTextObj->SetVisible(visible);
+    }
     for (auto& btn : m_SettingsButtons) {
         btn.btnPanel->SetVisible(visible);
         btn.textObj->SetVisible(visible);
@@ -1337,8 +1388,24 @@ void Home::updateSettingsUIState() {
     if (m_SettingsCheatTextDrawable) {
         m_SettingsCheatTextDrawable->SetText(std::string("Cheat Mode: ") + (s_CheatModeAllowed ? "ON" : "OFF"));
     }
+
+    if (m_SettingsHomeBgmTextDrawable) {
+        m_SettingsHomeBgmTextDrawable->SetText(std::string("Home BGM: ") + (s_HomeBgmEnabled ? "ON" : "OFF"));
+    }
+
+    if (m_SettingsResultBgmTextDrawable) {
+        m_SettingsResultBgmTextDrawable->SetText(std::string("Result BGM: ") + (s_ResultBgmEnabled ? "ON" : "OFF"));
+    }
     
-    if (m_SettingsButtons.size() >= 3 && m_SettingsButtons[2].textDrawable) {
-        m_SettingsButtons[2].textDrawable->SetText(s_CheatModeAllowed ? "Disable" : "Enable");
+    if (m_SettingsButtons.size() >= 5) {
+        if (m_SettingsButtons[2].textDrawable) {
+            m_SettingsButtons[2].textDrawable->SetText(s_CheatModeAllowed ? "Disable" : "Enable");
+        }
+        if (m_SettingsButtons[3].textDrawable) {
+            m_SettingsButtons[3].textDrawable->SetText(s_HomeBgmEnabled ? "Disable" : "Enable");
+        }
+        if (m_SettingsButtons[4].textDrawable) {
+            m_SettingsButtons[4].textDrawable->SetText(s_ResultBgmEnabled ? "Disable" : "Enable");
+        }
     }
 }
