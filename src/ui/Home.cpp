@@ -123,12 +123,20 @@ HomeAction Home::update() {
             m_ShowMusicPlayer = false;
             setMusicPlayerVisible(false);
             stopMusic();
+            if (s_HomeBgmEnabled) {
+                s_CurrentPlayingIndex = -1;
+                playTrack(6);
+            }
         }
 
         if (Util::Input::IsKeyUp(Util::Keycode::ESCAPE)) {
             m_ShowMusicPlayer = false;
             setMusicPlayerVisible(false);
             stopMusic();
+            if (s_HomeBgmEnabled) {
+                s_CurrentPlayingIndex = -1;
+                playTrack(6);
+            }
         }
 
         for (std::size_t i = 0; i < m_MusicTracks.size(); ++i) {
