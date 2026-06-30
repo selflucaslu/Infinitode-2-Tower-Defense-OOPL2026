@@ -1,0 +1,108 @@
+{
+    "baseHp": 20,
+    "description": "認識敵人的固定行進路線，學會分辨出生點、道路與平台位置，理解防禦配置的基礎。",
+    "difficulty": "簡單",
+    "grid": [
+        [
+            "tile-type-spawn-portal",
+            "tile-type-road-xoxo",
+            "tile-type-road-xoxo",
+            "tile-type-road-xxoo",
+            "tile-type-empty",
+            "tile-type-empty",
+            "tile-type-empty"
+        ],
+        [
+            "tile-type-empty",
+            "tile-type-platform",
+            "tile-type-platform",
+            "tile-type-road-oxox",
+            "tile-type-platform",
+            "tile-type-platform",
+            "tile-type-empty"
+        ],
+        [
+            "tile-type-empty",
+            "tile-type-empty",
+            "tile-type-empty",
+            "tile-type-road-ooxx",
+            "tile-type-road-xoxo",
+            "tile-type-road-xoxo",
+            "tile-type-target-base"
+        ]
+    ],
+    "levelNumber": 1,
+    "name": "第一關：學習路線",
+    "startingGold": 120,
+    "waves": [
+        {
+            "clearRewardGold": 20,
+            "groups": [
+                {
+                    "count": 8,
+                    "hpMultiplier": 1.0,
+                    "interval": 0.949999988079071,
+                    "spawnPointIndices": [],
+                    "spdMultiplier": 1.0,
+                    "startDelay": 0.0,
+                    "type": "Regular"
+                }
+            ],
+            "isBossWave": false,
+            "prepTime": 4.0,
+            "waveNumber": 1
+        },
+        {
+            "clearRewardGold": 25,
+            "groups": [
+                {
+                    "count": 10,
+                    "hpMultiplier": 1.0,
+                    "interval": 0.800000011920929,
+                    "spawnPointIndices": [],
+                    "spdMultiplier": 1.0,
+                    "startDelay": 0.0,
+                    "type": "Regular"
+                },
+                {
+                    "count": 4,
+                    "hpMultiplier": 1.0,
+                    "interval": 1.100000023841858,
+                    "spawnPointIndices": [],
+                    "spdMultiplier": 1.0,
+                    "startDelay": 1.5,
+                    "type": "Fast"
+                }
+            ],
+            "isBossWave": false,
+            "prepTime": 4.0,
+            "waveNumber": 2
+        },
+        {
+            "clearRewardGold": 30,
+            "groups": [
+                {
+                    "count": 6,
+                    "hpMultiplier": 1.0,
+                    "interval": 1.2000000476837158,
+                    "spawnPointIndices": [],
+                    "spdMultiplier": 1.0,
+                    "startDelay": 0.0,
+                    "type": "Strong"
+                },
+                {
+                    "count": 8,
+                    "hpMultiplier": 1.0,
+                    "interval": 0.8500000238418579,
+                    "spawnPointIndices": [],
+                    "spdMultiplier": 1.0,
+                    "startDelay": 0.800000011920929,
+                    "type": "Regular"
+                }
+            ],
+            "isBossWave": false,
+            "prepTime": 4.0,
+            "waveNumber": 3
+        }
+    ]
+}

@@ -1,0 +1,280 @@
+{
+    "baseHp": 20,
+    "description": "面對多條路線的分布與交會，學習判斷敵人的行進重點，並在合適的平台上配置更有效率的防禦塔。",
+    "difficulty": "簡單",
+    "grid": [
+        [
+            "tile-type-platform",
+            "tile-type-platform",
+            "tile-type-platform",
+            "tile-type-platform",
+            "tile-type-platform",
+            "tile-type-platform",
+            "tile-type-platform",
+            "tile-type-platform",
+            "tile-type-platform",
+            "tile-type-platform"
+        ],
+        [
+            "tile-type-platform",
+            "tile-type-spawn-portal",
+            "tile-type-platform",
+            "tile-type-road-xoox",
+            "tile-type-road-xooo",
+            "tile-type-road-xoxo",
+            "tile-type-road-xoxo",
+            "tile-type-road-xooo",
+            "tile-type-road-xxoo",
+            "tile-type-platform"
+        ],
+        [
+            "tile-type-platform",
+            "tile-type-road-oxox",
+            "tile-type-platform",
+            "tile-type-road-ooox",
+            "tile-type-spawn-portal",
+            "tile-type-platform",
+            "tile-type-platform",
+            "tile-type-spawn-portal",
+            "tile-type-road-oxoo",
+            "tile-type-platform"
+        ],
+        [
+            "tile-type-platform",
+            "tile-type-road-oxox",
+            "tile-type-platform",
+            "tile-type-road-oxox",
+            "tile-type-platform",
+            "tile-type-target-base",
+            "tile-type-road-xxoo",
+            "tile-type-platform",
+            "tile-type-road-oxox",
+            "tile-type-platform"
+        ],
+        [
+            "tile-type-platform",
+            "tile-type-road-oxox",
+            "tile-type-platform",
+            "tile-type-road-oxox",
+            "tile-type-platform",
+            "tile-type-platform",
+            "tile-type-road-oxox",
+            "tile-type-platform",
+            "tile-type-road-oxox",
+            "tile-type-platform"
+        ],
+        [
+            "tile-type-platform",
+            "tile-type-road-oxox",
+            "tile-type-platform",
+            "tile-type-road-oxox",
+            "tile-type-platform",
+            "tile-type-platform",
+            "tile-type-road-oxox",
+            "tile-type-platform",
+            "tile-type-road-oxox",
+            "tile-type-platform"
+        ],
+        [
+            "tile-type-platform",
+            "tile-type-road-oxox",
+            "tile-type-platform",
+            "tile-type-road-ooxx",
+            "tile-type-road-xoxo",
+            "tile-type-road-xoxo",
+            "tile-type-road-ooxo",
+            "tile-type-road-xoxo",
+            "tile-type-road-oxox",
+            "tile-type-platform"
+        ],
+        [
+            "tile-type-platform",
+            "tile-type-road-oxox",
+            "tile-type-platform",
+            "tile-type-platform",
+            "tile-type-platform",
+            "tile-type-platform",
+            "tile-type-platform",
+            "tile-type-platform",
+            "tile-type-road-oxox",
+            "tile-type-platform"
+        ],
+        [
+            "tile-type-platform",
+            "tile-type-road-ooxx",
+            "tile-type-road-xoxo",
+            "tile-type-road-xoxo",
+            "tile-type-road-xoxo",
+            "tile-type-road-xoxo",
+            "tile-type-road-xoxo",
+            "tile-type-road-xoxo",
+            "tile-type-road-oxxo",
+            "tile-type-platform"
+        ],
+        [
+            "tile-type-platform",
+            "tile-type-platform",
+            "tile-type-platform",
+            "tile-type-platform",
+            "tile-type-platform",
+            "tile-type-platform",
+            "tile-type-platform",
+            "tile-type-platform",
+            "tile-type-platform",
+            "tile-type-platform"
+        ]
+    ],
+    "levelNumber": 2,
+    "name": "第二關：基礎判讀",
+    "startingGold": 160,
+    "waves": [
+        {
+            "clearRewardGold": 25,
+            "groups": [
+                {
+                    "count": 10,
+                    "hpMultiplier": 1.0,
+                    "interval": 0.800000011920929,
+                    "spawnPointIndices": [],
+                    "spdMultiplier": 1.0,
+                    "startDelay": 0.0,
+                    "type": "Regular"
+                },
+                {
+                    "count": 6,
+                    "hpMultiplier": 1.0,
+                    "interval": 0.699999988079071,
+                    "spawnPointIndices": [],
+                    "spdMultiplier": 1.0,
+                    "startDelay": 1.0,
+                    "type": "Fast"
+                }
+            ],
+            "isBossWave": false,
+            "prepTime": 4.0,
+            "waveNumber": 1
+        },
+        {
+            "clearRewardGold": 30,
+            "groups": [
+                {
+                    "count": 4,
+                    "hpMultiplier": 1.0,
+                    "interval": 1.600000023841858,
+                    "spawnPointIndices": [],
+                    "spdMultiplier": 1.0,
+                    "startDelay": 0.0,
+                    "type": "Heli"
+                },
+                {
+                    "count": 10,
+                    "hpMultiplier": 1.0,
+                    "interval": 0.800000011920929,
+                    "spawnPointIndices": [],
+                    "spdMultiplier": 1.0,
+                    "startDelay": 0.5,
+                    "type": "Regular"
+                }
+            ],
+            "isBossWave": false,
+            "prepTime": 4.0,
+            "waveNumber": 2
+        },
+        {
+            "clearRewardGold": 35,
+            "groups": [
+                {
+                    "count": 6,
+                    "hpMultiplier": 1.0,
+                    "interval": 1.2000000476837158,
+                    "spawnPointIndices": [],
+                    "spdMultiplier": 1.0,
+                    "startDelay": 0.0,
+                    "type": "Heli"
+                },
+                {
+                    "count": 8,
+                    "hpMultiplier": 1.0,
+                    "interval": 0.6499999761581421,
+                    "spawnPointIndices": [],
+                    "spdMultiplier": 1.0,
+                    "startDelay": 1.0,
+                    "type": "Fast"
+                }
+            ],
+            "isBossWave": false,
+            "prepTime": 4.0,
+            "waveNumber": 3
+        },
+        {
+            "clearRewardGold": 40,
+            "groups": [
+                {
+                    "count": 6,
+                    "hpMultiplier": 1.0,
+                    "interval": 1.100000023841858,
+                    "spawnPointIndices": [],
+                    "spdMultiplier": 1.0,
+                    "startDelay": 0.0,
+                    "type": "Strong"
+                },
+                {
+                    "count": 4,
+                    "hpMultiplier": 1.0,
+                    "interval": 1.350000023841858,
+                    "spawnPointIndices": [],
+                    "spdMultiplier": 1.0,
+                    "startDelay": 2.0,
+                    "type": "Heli"
+                },
+                {
+                    "count": 10,
+                    "hpMultiplier": 1.0,
+                    "interval": 0.6499999761581421,
+                    "spawnPointIndices": [],
+                    "spdMultiplier": 1.0,
+                    "startDelay": 1.0,
+                    "type": "Fast"
+                }
+            ],
+            "isBossWave": false,
+            "prepTime": 5.0,
+            "waveNumber": 4
+        },
+        {
+            "clearRewardGold": 50,
+            "groups": [
+                {
+                    "count": 6,
+                    "hpMultiplier": 1.0,
+                    "interval": 1.100000023841858,
+                    "spawnPointIndices": [],
+                    "spdMultiplier": 1.0,
+                    "startDelay": 0.0,
+                    "type": "Heli"
+                },
+                {
+                    "count": 6,
+                    "hpMultiplier": 1.0,
+                    "interval": 1.0,
+                    "spawnPointIndices": [],
+                    "spdMultiplier": 1.0,
+                    "startDelay": 2.0,
+                    "type": "Strong"
+                },
+                {
+                    "count": 6,
+                    "hpMultiplier": 1.0,
+                    "interval": 0.6499999761581421,
+                    "spawnPointIndices": [],
+                    "spdMultiplier": 1.0,
+                    "startDelay": 0.5,
+                    "type": "Fast"
+                }
+            ],
+            "isBossWave": false,
+            "prepTime": 5.0,
+            "waveNumber": 5
+        }
+    ]
+}

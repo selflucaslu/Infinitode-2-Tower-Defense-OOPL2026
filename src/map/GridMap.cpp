@@ -1,6 +1,7 @@
 #include "map/GridMap.hpp"
 #include "Core/Context.hpp"
 
+#include <nlohmann/json.hpp>
 #include <array>
 #include <cmath>
 #include <fstream>
@@ -18,47 +19,33 @@ GridMap::GridMap(std::string_view MAP_FILE_PATH, AtlasLoader& atlas)
         throw std::runtime_error("無法打開地圖文件: " + std::string(MAP_FILE_PATH));
     }
 
-    std::string line;
-    bool isFirstLine = true;
-    bool isSecondLine = true;
-    bool isThirdLine = true;
-    int heightCounter = 0;
-    int widthCounter = -1;
-
-    // -------------------- 讀取地圖資料 --------------------
-    while (std::getline(file, line)) {
-        if (!line.empty() && line.back() == '\r') {
-            line.pop_back();
-        }
-
-        if (isFirstLine) { mapName = line; isFirstLine = false; continue; }
-        if (isSecondLine) { mapDescription = line; isSecondLine = false; continue; }
-        if (isThirdLine) { mapDifficulty = line; isThirdLine = false; continue; }
-
-        if (line.empty()) continue;
-
-        std::istringstream iss(line);
-        std::string tileType;
-        int currentRowWidth = 0;
-        while (std::getline(iss, tileType, ',')) {
-            if (!tileType.empty() && tileType.back() == '\r') {
-                tileType.pop_back();
-            }
-            tilesArray.emplace_back(tileType);
-            currentRowWidth++;
-        }
-
-        if (widthCounter == -1) {
-            widthCounter = currentRowWidth;
-        } else if (currentRowWidth != widthCounter) {
-            throw std::runtime_error("地圖每一行欄數不一致");
-        }
-        heightCounter++;
+    nlohmann::json j;
+    try {
+        file >> j;
+    } catch (const std::exception& e) {
+        throw std::runtime_error("地圖 JSON 解析失敗: " + std::string(e.what()));
     }
 
-    if (heightCounter == 0) throw std::runtime_error("地圖文件中沒有地圖數據");
-    mapHeight = heightCounter;
-    mapWidth = widthCounter;
+    mapName = j.at("name").get<std::string>();
+    mapDescription = j.at("description").get<std::string>();
+    mapDifficulty = j.at("difficulty").get<std::string>();
+
+    auto grid = j.at("grid").get<std::vector<std::vector<std::string>>>();
+    if (grid.empty()) {
+        throw std::runtime_error("地圖文件中沒有地圖數據");
+    }
+
+    mapHeight = static_cast<int>(grid.size());
+    mapWidth = static_cast<int>(grid[0].size());
+
+    for (const auto& row : grid) {
+        if (static_cast<int>(row.size()) != mapWidth) {
+            throw std::runtime_error("地圖每一行欄數不一致");
+        }
+        for (const auto& tileType : row) {
+            tilesArray.emplace_back(tileType);
+        }
+    }
 
     // -------------------- 開始繪製地圖 --------------------
     tileObjects.reserve(tilesArray.size());
